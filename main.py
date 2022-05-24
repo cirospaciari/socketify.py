@@ -430,7 +430,7 @@ class UWSApp:
     def run(self):
         lib.uws_app_run(self.SSL, self.app)
         return self
-
+        
     def close(self):
         if hasattr(self, "socket"):
             if not self.socket == ffi.NULL:
@@ -460,28 +460,30 @@ def time_thread():
         current_http_date = datetime.utcnow().isoformat() + "Z"
         time.sleep(1)
 
-timing = threading.Thread(target=time_thread, args=())
-timing.start()
-
 def plaintext(res, req):
     res.write_header("Date", current_http_date)
     res.write_header("Server", "uws.py")
     res.write_header("Content-Type", "text/plain")
     res.end("Hello, World!")
 
+def run_app():
+    timing = threading.Thread(target=time_thread, args=())
+    timing.start()
+    app = UWSApp()
+    app.get("/", plaintext)
+    app.listen(3000, lambda config: print("Listening on port http://localhost:%s now\n" % str(config.port)))
+    app.run()
 
 def create_fork():
     n = os.fork()
     # n greater than 0 means parent process
     if not n > 0:
-        app = UWSApp()
-        app.get("/", plaintext)
-        app.listen(3000, lambda config: print("Listening on port http://localhost:%s now\n" % str(config.port)))
-        app.run()
+        run_app()
 
-for index in range(4):
+for index in range(3):
     create_fork()
-    
+
+run_app()
 #pip install git+https://github.com/inducer/pycuda.git (submodules are cloned recursively)
 #https://stackoverflow.com/questions/1754966/how-can-i-run-a-makefile-in-setup-py
 #https://packaging.python.org/en/latest/tutorials/packaging-projects/
