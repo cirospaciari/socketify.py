@@ -213,8 +213,16 @@ lib = ffi.dlopen("./libuwebsockets.so")
 def uws_generic_method_handler(res, req, user_data):
     if not user_data == ffi.NULL:
         handler = ffi.from_handle(user_data)
-        response = UWSResponse(res, False)
-        request = UWSRequest(req)
+        response = AppResponse(res, False)
+        request = AppRequest(req)
+        handler(response, request)
+
+@ffi.callback("void(uws_res_t *, uws_req_t *, void *)")
+def uws_generic_ssl_method_handler(res, req, user_data):
+    if not user_data == ffi.NULL:
+        handler = ffi.from_handle(user_data)
+        response = AppResponse(res, True)
+        request = AppRequest(req)
         handler(response, request)
 
 @ffi.callback("void(struct us_listen_socket_t *, uws_app_listen_config_t, void *)")
@@ -223,7 +231,7 @@ def uws_generic_listen_handler(listen_socket, config, user_data):
         app = ffi.from_handle(user_data)
         if hasattr(app, "_listen_handler") and hasattr(app._listen_handler, '__call__'):
             app.socket = listen_socket
-            app._listen_handler(config)
+            app._listen_handler(None if config == ffi.NULL else AppListenOptions(port=int(config.port),host=None if config.host == ffi.NULL else ffi.string(config.host).decode("utf-8"), options=int(config.options)))
 
 @ffi.callback("void(uws_res_t *, void*)")
 def uws_generic_abord_handler(response, user_data):
@@ -232,7 +240,7 @@ def uws_generic_abord_handler(response, user_data):
         res.aborted = True
         res.trigger_aborted()
 
-class UWSRequest:
+class AppRequest:
     def __init__(self, request):
         self.req = request
     def get_url(self):
@@ -279,7 +287,7 @@ class UWSRequest:
     def is_ancient(self):
         return bool(lib.uws_req_is_ancient(self.req))
 
-class UWSResponse:
+class AppResponse:
     def __init__(self, response, is_ssl):
         self.res = response
         self.SSL = ffi.cast("int", 1 if is_ssl else 0)
@@ -361,70 +369,96 @@ class UWSResponse:
 # void uws_res_on_writable(int ssl, uws_res_t *res, bool (*handler)(uws_res_t *res, uintmax_t, void *opcional_data), void *user_data);
 
 
-class UWSApp:
-    def __init__(self):
-        socket_options = ffi.new("struct us_socket_context_options_t *")
-        self.SSL = ffi.cast("int", 0)
-        self.app = lib.uws_create_app(self.SSL, socket_options[0])
+class App:
+    def __init__(self, options=None):
+        socket_options_ptr = ffi.new("struct us_socket_context_options_t *")
+        socket_options = socket_options_ptr[0]
+        self.options = options
+        if options != None:
+            self.is_ssl = True
+            self.SSL = ffi.cast("int", 1)
+            socket_options.key_file_name = ffi.NULL if options.key_file_name == None else ffi.new("char[]", options.key_file_name.encode("utf-8"))
+            socket_options.key_file_name = ffi.NULL if options.key_file_name == None else ffi.new("char[]", options.key_file_name.encode("utf-8"))
+            socket_options.cert_file_name = ffi.NULL if options.cert_file_name == None else ffi.new("char[]", options.cert_file_name.encode("utf-8"))
+            socket_options.passphrase = ffi.NULL if options.passphrase == None else ffi.new("char[]", options.passphrase.encode("utf-8"))
+            socket_options.dh_params_file_name = ffi.NULL if options.dh_params_file_name == None else ffi.new("char[]", options.dh_params_file_name.encode("utf-8"))
+            socket_options.ca_file_name = ffi.NULL if options.ca_file_name == None else ffi.new("char[]", options.ca_file_name.encode("utf-8"))
+            socket_options.ssl_ciphers = ffi.NULL if options.ssl_ciphers == None else ffi.new("char[]", options.ssl_ciphers.encode("utf-8"))
+            socket_options.ssl_prefer_low_memory_usage = ffi.cast("int", options.ssl_prefer_low_memory_usage)
+        else:
+            self.is_ssl = False
+            self.SSL = ffi.cast("int", 0)
+
+        self.app = lib.uws_create_app(self.SSL, socket_options)
         self._ptr = ffi.new_handle(self)
         if bool(lib.uws_constructor_failed(self.SSL, self.app)):
-            raise RuntimeError("Failed to create connection") from exc
+            raise RuntimeError("Failed to create connection") 
         self.handlers = []
 
     def get(self, path, handler):
         user_data = ffi.new_handle(handler)
         self.handlers.append(user_data) #Keep alive handler
-        lib.uws_app_get(self.SSL, self.app, path.encode("utf-8"), uws_generic_method_handler, user_data)
+        lib.uws_app_get(self.SSL, self.app, path.encode("utf-8"), uws_generic_ssl_method_handler if self.is_ssl else uws_generic_method_handler, user_data)
         return self
     def post(self, path, handler):
         user_data = ffi.new_handle(handler)
         self.handlers.append(user_data) #Keep alive handler
-        lib.uws_app_post(self.SSL, self.app, path.encode("utf-8"), uws_generic_method_handler, user_data)
+        lib.uws_app_post(self.SSL, self.app, path.encode("utf-8"), uws_generic_ssl_method_handler if self.is_ssl else uws_generic_method_handler, user_data)
         return self
     def options(self, path, handler):
         user_data = ffi.new_handle(handler)
         self.handlers.append(user_data) #Keep alive handler
-        lib.uws_app_options(self.SSL, self.app, path.encode("utf-8"), uws_generic_method_handler, user_data)
+        lib.uws_app_options(self.SSL, self.app, path.encode("utf-8"), uws_generic_ssl_method_handler if self.is_ssl else uws_generic_method_handler, user_data)
         return self
     def delete(self, path, handler):
         user_data = ffi.new_handle(handler)
         self.handlers.append(user_data) #Keep alive handler
-        lib.uws_app_delete(self.SSL, self.app, path.encode("utf-8"), uws_generic_method_handler, user_data)
+        lib.uws_app_delete(self.SSL, self.app, path.encode("utf-8"), uws_generic_ssl_method_handler if self.is_ssl else uws_generic_method_handler, user_data)
         return self
     def patch(self, path, handler):
         user_data = ffi.new_handle(handler)
         self.handlers.append(user_data) #Keep alive handler
-        lib.uws_app_patch(self.SSL, self.app, path.encode("utf-8"), uws_generic_method_handler, user_data)
+        lib.uws_app_patch(self.SSL, self.app, path.encode("utf-8"), uws_generic_ssl_method_handler if self.is_ssl else uws_generic_method_handler, user_data)
         return self
     def put(self, path, handler):
         user_data = ffi.new_handle(handler)
         self.handlers.append(user_data) #Keep alive handler
-        lib.uws_app_put(self.SSL, self.app, path.encode("utf-8"), uws_generic_method_handler, user_data)
+        lib.uws_app_put(self.SSL, self.app, path.encode("utf-8"), uws_generic_ssl_method_handler if self.is_ssl else uws_generic_method_handler, user_data)
         return self
     def head(self, path, handler):
         user_data = ffi.new_handle(handler)
         self.handlers.append(user_data) #Keep alive handler
-        lib.uws_app_head(self.SSL, self.app, path.encode("utf-8"), uws_generic_method_handler, user_data)
+        lib.uws_app_head(self.SSL, self.app, path.encode("utf-8"), uws_generic_ssl_method_handler if self.is_ssl else uws_generic_method_handler, user_data)
         return self
     def connect(self, path, handler):
         user_data = ffi.new_handle(handler)
         self.handlers.append(user_data) #Keep alive handler
-        lib.uws_app_connect(self.SSL, self.app, path.encode("utf-8"), uws_generic_method_handler, user_data)
+        lib.uws_app_connect(self.SSL, self.app, path.encode("utf-8"), uws_generic_ssl_method_handler if self.is_ssl else uws_generic_method_handler, user_data)
         return self
     def trace(self, path, handler):
         user_data = ffi.new_handle(handler)
         self.handlers.append(user_data) #Keep alive handler
-        lib.uws_app_trace(self.SSL, self.app, path.encode("utf-8"), uws_generic_method_handler, user_data)
+        lib.uws_app_trace(self.SSL, self.app, path.encode("utf-8"), uws_generic_ssl_method_handler if self.is_ssl else uws_generic_method_handler, user_data)
         return self
     def any(self, path, handler):
         user_data = ffi.new_handle(handler)
         self.handlers.append(user_data) #Keep alive handler
-        lib.uws_app_any(self.SSL, self.app, path.encode("utf-8"), uws_generic_method_handler, user_data)
+        lib.uws_app_any(self.SSL, self.app, path.encode("utf-8"), uws_generic_ssl_method_handler if self.is_ssl else uws_generic_method_handler, user_data)
         return self
 
-    def listen(self, port, handler):
+    def listen(self, port_or_options, handler):
         self._listen_handler = handler
-        lib.uws_app_listen(self.SSL, self.app, ffi.cast("int", port), uws_generic_listen_handler, self._ptr)
+        if isinstance(port_or_options, int): 
+            lib.uws_app_listen(self.SSL, self.app, ffi.cast("int", port_or_options), uws_generic_listen_handler, self._ptr)
+        else:
+            native_options = ffi.new("uws_app_listen_config_t *")
+            options = native_options[0]
+            options.port = ffi.cast("int", port_or_options.port)
+            options.host = ffi.NULL if port_or_options.host == None else ffi.new("char[]", port_or_options.host.encode("utf-8"))
+            options.options = ffi.cast("int", port_or_options.options)
+            self.native_options_listen = native_options #Keep alive native_options
+            lib.uws_app_listen_with_config(self.SSL, self.app, options, uws_generic_listen_handler, self._ptr)
+
         return self
 
     def run(self):
@@ -440,17 +474,40 @@ class UWSApp:
         lib.uws_app_destroy(self.SSL, self.app)
 
 
-# uws_app_t *app = uws_create_app(SSL, (struct us_socket_context_options_t){
-#     /* There are example certificates in uWebSockets.js repo */
-#     .key_file_name = "../misc/key.pem",
-#     .cert_file_name = "../misc/cert.pem",
-#     .passphrase = "1234"
-# });
-# uws_app_get(SSL, app, "/*", get_handler, NULL);
-# uws_app_listen(SSL, app, 3000, listen_handler, NULL);
-# uws_app_run(SSL, app);
+class AppListenOptions:
+    def __init__(self, port=0, host=None, options=0):
+        if not isinstance(port, int): raise RuntimeError("port must be an int") 
+        if host != None and not isinstance(host, str): raise RuntimeError("host must be an String or None") 
+        if not isinstance(options, int): raise RuntimeError("options must be an int") 
+        self.port = port
+        self.host = host
+        self.options = options
+        
+# typedef struct
+# {
+#     int port;
+#     const char *host;
+#     int options;
+# } uws_app_listen_config_t;
 
-# res.writeHeader("Date", current_http_date).writeHeader("Server", "uws.js").writeHeader("Content-Type", "text/plain").end('Hello, World!');
+class AppOptions:
+    def __init__(self, key_file_name=None, cert_file_name=None, passphrase=None, dh_params_file_name=None, ca_file_name=None, ssl_ciphers=None, ssl_prefer_low_memory_usage=0):
+        if key_file_name != None and not isinstance(key_file_name, str): raise RuntimeError("key_file_name must be an String or None") 
+        if cert_file_name != None and not isinstance(cert_file_name, str): raise RuntimeError("cert_file_name must be an String or None") 
+        if passphrase != None and not isinstance(passphrase, str): raise RuntimeError("passphrase must be an String or None") 
+        if dh_params_file_name != None and not isinstance(dh_params_file_name, str): raise RuntimeError("dh_params_file_name must be an String or None") 
+        if ca_file_name != None and not isinstance(ca_file_name, str): raise RuntimeError("ca_file_name must be an String or None") 
+        if ssl_ciphers != None and not isinstance(ssl_ciphers, str): raise RuntimeError("ssl_ciphers must be an String or None") 
+        if not isinstance(ssl_prefer_low_memory_usage, int): raise RuntimeError("ssl_prefer_low_memory_usage must be an int") 
+
+        self.key_file_name = key_file_name
+        self.cert_file_name = cert_file_name
+        self.passphrase = passphrase
+        self.dh_params_file_name = dh_params_file_name
+        self.ca_file_name = ca_file_name
+        self.ssl_ciphers = ssl_ciphers
+        self.ssl_prefer_low_memory_usage = ssl_prefer_low_memory_usage
+
 
 current_http_date = datetime.utcnow().isoformat() + "Z"
 stopped = False
@@ -469,9 +526,10 @@ def plaintext(res, req):
 def run_app():
     timing = threading.Thread(target=time_thread, args=())
     timing.start()
-    app = UWSApp()
+    app = App(AppOptions(key_file_name="./misc/key.pem", cert_file_name="./misc/cert.pem", passphrase="1234"))
     app.get("/", plaintext)
-    app.listen(3000, lambda config: print("Listening on port http://localhost:%s now\n" % str(config.port)))
+    # app.listen(3000, lambda config: print("Listening on port http://localhost:%s now\n" % str(config.port)))
+    app.listen(AppListenOptions(port=3000, host="0.0.0.0"), lambda config: print("Listening on port http://%s:%d now\n" % (config.host, config.port)))
     app.run()
 
 def create_fork():
@@ -480,7 +538,7 @@ def create_fork():
     if not n > 0:
         run_app()
 
-for index in range(3):
+for index in range(1):
     create_fork()
 
 run_app()
