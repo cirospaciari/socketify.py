@@ -483,13 +483,6 @@ class AppListenOptions:
         self.host = host
         self.options = options
         
-# typedef struct
-# {
-#     int port;
-#     const char *host;
-#     int options;
-# } uws_app_listen_config_t;
-
 class AppOptions:
     def __init__(self, key_file_name=None, cert_file_name=None, passphrase=None, dh_params_file_name=None, ca_file_name=None, ssl_ciphers=None, ssl_prefer_low_memory_usage=0):
         if key_file_name != None and not isinstance(key_file_name, str): raise RuntimeError("key_file_name must be an String or None") 

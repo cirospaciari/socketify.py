@@ -5,11 +5,11 @@ Fast WebSocket and Http/Https server using CFFI with C API from [uNetworking/uWe
 
 ### Overly simple hello world app
 ```python
-from "uws" import UWSApp
+from "uws" import App
 
-app = UWSApp()
+app = App()
 app.get("/", lambda res, req: res.end("Hello World uWS from Python!"))
-app.listen(3000, lambda socket, config: print("Listening on port http://localhost:%s now\n" % str(config.port)))
+app.listen(3000, lambda socket, config: print("Listening on port http://localhost:%d now\n" % config.port))
 app.run()
 ```
 
@@ -22,4 +22,14 @@ pip install git+https://github.com/cirospaciari/uWebSockets.py.git
 ### Run
 ```bash
 pypy3 ./hello_world.py
+```
+
+### SSL version sample
+``` python
+from "uws" import App, AppOptions
+
+app = App(AppOptions(key_file_name="./misc/key.pem", cert_file_name="./misc/cert.pem", passphrase="1234"))
+app.get("/", plaintext)
+app.listen(3000, lambda socket, config: print("Listening on port http://localhost:%d now\n" % config.port))
+app.run()
 ```
