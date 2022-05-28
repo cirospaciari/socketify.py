@@ -1,4 +1,4 @@
-[submodule "uWebSockets"]
+[submodule "src/socketify/uWebSockets"]
 	path = src/socketify/uWebSockets
 	url = https://github.com/cirospaciari/uWebSockets
  	branch = capi-complete-with-ssl-and-samples
