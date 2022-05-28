@@ -16,9 +16,9 @@ app.run()
 ### pip install
 
 ```bash
-pip install git+https://github.com/cirospaciari/socketify.py.git
+pip install git+https://github.com/cirospaciari/socketify.py.git --global-option=build_ext
 #or specify PyPy3
-pypy3 -m pip install git+https://github.com/cirospaciari/socketify.py.git
+pypy3 -m pip install git+https://github.com/cirospaciari/socketify.py.git --global-option=build_ext
 ```
 
 ### Run
@@ -46,7 +46,7 @@ git submodule update --init --recursive --remote
 pypy3 -m pip install --upgrade build
 #build and install
 pypy3 -m build
-pypy3 -m pip install .
+pypy3 -m pip install . --no-cache-dir --global-option=build_ext
 #if you want to remove
 pypy3 -m pip uninstall socketify
 ```

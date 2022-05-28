@@ -9,21 +9,30 @@ if sys.platform in ('win32', 'cygwin', 'cli'):
 
 import setuptools
 from setuptools.command.sdist import sdist
+from setuptools.command.build_ext import build_ext
+
 import pathlib
 import os
 import shutil
 import subprocess
 
 _ROOT = pathlib.Path(__file__).parent
-UWS_DIR = str(_ROOT / "uWebSockets")
+
+UWS_CAPI_DIR = str(_ROOT / "build" / "uWebSockets" / "capi") 
 UWS_CAPI_DIR = str(_ROOT / "build" / "uWebSockets" / "capi")
 UWS_LIB_PATH = str(_ROOT / "build" / "uWebSockets" / "capi" / "libuwebsockets.so")
-UWS_BUILD_DIR = str(_ROOT / "build"/ "uWebSockets")
+UWS_DIR = str(_ROOT / "src" / "socketify" /"uWebSockets")
+UWS_BUILD_DIR = str(_ROOT / "build" /"uWebSockets")
 UWS_LIB_OUTPUT = str(_ROOT / "src" / "socketify" / "libuwebsockets.so")
 
-class Makefile(sdist):
+class Prepare(sdist):
+    def run(self):
+        super().run()
+        
+class Makefile(build_ext):
     def run(self):
         env = os.environ.copy()
+        
         if os.path.exists(UWS_BUILD_DIR):
             shutil.rmtree(UWS_BUILD_DIR)
         shutil.copytree(UWS_DIR, UWS_BUILD_DIR)
@@ -55,11 +64,12 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
+    packages=["socketify"],
     package_dir={"": "src"},
-    package_data={"": ['./libuwebsockets.so']},
-    packages=setuptools.find_packages(where="src"),
+    package_data={"": ['./*.so', './uWebSockets/*','./uWebSockets/*/*','./uWebSockets/*/*/*']},
     python_requires=">=3.7",
-    cmdclass={'sdist': Makefile},
-    include_package_data=True,
-    install_requires=[]
+    install_requires=["cffi>=1.0.0"],
+    has_ext_modules=lambda: True,
+    cmdclass={'sdist': Prepare,'build_ext': Makefile},
+    include_package_data=True
 )
