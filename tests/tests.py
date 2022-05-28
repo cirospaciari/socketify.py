@@ -108,9 +108,6 @@ run_app()
 
 # print(json(AppOptions(key_file_name="./misc/key.pem", cert_file_name="./misc/cert.pem", passphrase="1234").__dict__))
 
-#pip install git+https://github.com/inducer/pycuda.git (submodules are cloned recursively)
-#https://stackoverflow.com/questions/1754966/how-can-i-run-a-makefile-in-setup-py
-#https://packaging.python.org/en/latest/tutorials/packaging-projects/
 #pypy3 -m pip install uvloop (not working with pypy)
 #apt install pypy3-dev
 #pypy3 -m pip install ujson (its slow D=)
@@ -119,10 +116,3 @@ run_app()
 #pypy3 -m pip install rapidjson (not working with pypy)
 #https://github.com/MagicStack/uvloop/issues/380
 #https://foss.heptapod.net/pypy/pypy/-/issues/3740
-
-
-#git submodule update --init --recursive --remote
-#pypy3 -m pip install --upgrade build
-#pypy3 -m build
-#pypy3 -m pip install .
-#pypy3 -m pip uninstall socketify
