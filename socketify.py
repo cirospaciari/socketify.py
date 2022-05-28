@@ -1,9 +1,4 @@
 import cffi
-import threading
-from datetime import datetime
-import time
-import os
-
 
 ffi = cffi.FFI()
 ffi.cdef("""
@@ -56,6 +51,7 @@ struct us_listen_socket_t {
     unsigned int socket_ext_size;
 };
 void us_listen_socket_close(int ssl, struct us_listen_socket_t *ls);
+struct us_loop_t *uws_get_loop();
 
 typedef enum
 {
@@ -106,8 +102,6 @@ typedef struct
     const char *host;
     int options;
 } uws_app_listen_config_t;
-
-
 
 struct uws_app_s;
 struct uws_req_s;
@@ -500,41 +494,3 @@ class AppOptions:
         self.ca_file_name = ca_file_name
         self.ssl_ciphers = ssl_ciphers
         self.ssl_prefer_low_memory_usage = ssl_prefer_low_memory_usage
-
-
-current_http_date = datetime.utcnow().isoformat() + "Z"
-stopped = False
-def time_thread():
-    while not stopped:
-        global current_http_date
-        current_http_date = datetime.utcnow().isoformat() + "Z"
-        time.sleep(1)
-
-def plaintext(res, req):
-    res.write_header("Date", current_http_date)
-    res.write_header("Server", "uws.py")
-    res.write_header("Content-Type", "text/plain")
-    res.end("Hello, World!")
-
-def run_app():
-    timing = threading.Thread(target=time_thread, args=())
-    timing.start()
-    app = App(AppOptions(key_file_name="./misc/key.pem", cert_file_name="./misc/cert.pem", passphrase="1234"))
-    app.get("/", plaintext)
-    # app.listen(3000, lambda config: print("Listening on port http://localhost:%s now\n" % str(config.port)))
-    app.listen(AppListenOptions(port=3000, host="0.0.0.0"), lambda config: print("Listening on port http://%s:%d now\n" % (config.host, config.port)))
-    app.run()
-
-def create_fork():
-    n = os.fork()
-    # n greater than 0 means parent process
-    if not n > 0:
-        run_app()
-
-for index in range(1):
-    create_fork()
-
-run_app()
-#pip install git+https://github.com/inducer/pycuda.git (submodules are cloned recursively)
-#https://stackoverflow.com/questions/1754966/how-can-i-run-a-makefile-in-setup-py
-#https://packaging.python.org/en/latest/tutorials/packaging-projects/
