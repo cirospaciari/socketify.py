@@ -3,3 +3,5 @@ __pycache__
 /build/
 /dist/
 /uWebSockets/
+/src/socketify/*.so
+*.so
