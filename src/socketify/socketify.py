@@ -1,5 +1,5 @@
 import cffi
-
+import os
 ffi = cffi.FFI()
 ffi.cdef("""
 
@@ -200,8 +200,9 @@ size_t uws_req_get_query(uws_req_t *res, const char *key, size_t key_length, con
 size_t uws_req_get_parameter(uws_req_t *res, unsigned short index, const char **dest);
 """)
 
+library_path = os.path.join(os.path.dirname(__file__), "libuwebsockets.so")
 
-lib = ffi.dlopen("./libuwebsockets.so")
+lib = ffi.dlopen(library_path)
 
 @ffi.callback("void(uws_res_t *, uws_req_t *, void *)")
 def uws_generic_method_handler(res, req, user_data):

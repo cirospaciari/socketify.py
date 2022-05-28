@@ -119,3 +119,10 @@ run_app()
 #pypy3 -m pip install rapidjson (not working with pypy)
 #https://github.com/MagicStack/uvloop/issues/380
 #https://foss.heptapod.net/pypy/pypy/-/issues/3740
+
+
+#git submodule update --init --recursive --remote
+#pypy3 -m pip install --upgrade build
+#pypy3 -m build
+#pypy3 -m pip install .
+#pypy3 -m pip uninstall socketify

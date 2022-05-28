@@ -1,1 +1,5 @@
 __pycache__
+/src/socketify.egg-info
+/build/
+/dist/
+/uWebSockets/
