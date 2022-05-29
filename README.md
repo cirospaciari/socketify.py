@@ -19,11 +19,22 @@ app.run()
 pip install git+https://github.com/cirospaciari/socketify.py.git --global-option=build_ext
 #or specify PyPy3
 pypy3 -m pip install git+https://github.com/cirospaciari/socketify.py.git --global-option=build_ext
+#or in editable mode
+pypy3 -m pip install -e git+https://github.com/cirospaciari/socketify.py.git@main#egg=socketify
 ```
 
-### Run
+### Install via requirements.txt
+
+requirements.txt file content
+```text
+git+https://github.com/cirospaciari/socketify.py.git@main#socketify --global-option="build_ext"
+```
+
+install command
 ```bash
-pypy3 ./hello_world.py
+pip install -r ./requirements.txt 
+#or specify PyPy3
+pypy3 -m pip install -r ./requirements.txt 
 ```
 
 ### SSL version sample
@@ -42,11 +53,10 @@ app.run()
 git clone https://github.com/cirospaciari/socketify.py.git
 cd ./socketify.py
 git submodule update --init --recursive --remote
-#install build with pip
-pypy3 -m pip install --upgrade build
-#build and install
-pypy3 -m build
-pypy3 -m pip install . --no-cache-dir --global-option=build_ext
+#install local pip
+pypy3 -m pip install . --global-option=build_ext #--no-cache-dir is an option
+#install in editable mode
+pypy3 -m pip install -e .
 #if you want to remove
 pypy3 -m pip uninstall socketify
 ```
