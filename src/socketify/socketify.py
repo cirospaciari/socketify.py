@@ -240,6 +240,8 @@ def uws_generic_listen_handler(listen_socket, config, user_data):
         app = ffi.from_handle(user_data)
         if hasattr(app, "_listen_handler") and hasattr(app._listen_handler, '__call__'):
             app.socket = listen_socket
+            if listen_socket == ffi.NULL:
+                raise RuntimeError("Failed to listen on port %d" % int(config.port))
             app._listen_handler(None if config == ffi.NULL else AppListenOptions(port=int(config.port),host=None if config.host == ffi.NULL else ffi.string(config.host).decode("utf-8"), options=int(config.options)))
 
 @ffi.callback("void(uws_res_t *, void*)")
