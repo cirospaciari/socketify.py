@@ -5,7 +5,7 @@ import multiprocessing
 def run_app():
     app = App()
     app.get("/", lambda res, req: res.end("Hello World socketify from Python!"))
-    app.listen(3000, lambda config: print("Listening on port http://localhost:%d now\n" % config.port))
+    app.listen(3000, lambda config: print("PID %d Listening on port http://localhost:%d now\n" % (os.getpid(), config.port)))
     app.run()
 
 def create_fork():
