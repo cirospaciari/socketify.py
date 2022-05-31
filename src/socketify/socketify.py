@@ -215,11 +215,15 @@ def uws_generic_method_handler(res, req, user_data):
         (handler, app) = ffi.from_handle(user_data)
         response = AppResponse(res, app.loop, False)
         request = AppRequest(req)
-        if inspect.iscoroutinefunction(handler):
+        try:
+            if inspect.iscoroutinefunction(handler):
+                response.grab_aborted_handler()
+                app.run_async(handler(response, request), response)
+            else:
+                handler(response, request)
+        except Exception as err:
             response.grab_aborted_handler()
-            app.run_async(handler(response, request))
-        else:
-            handler(response, request)
+            app.trigger_error(err, response, request)
 
 @ffi.callback("void(uws_res_t *, uws_req_t *, void *)")
 def uws_generic_ssl_method_handler(res, req, user_data):
@@ -227,21 +231,24 @@ def uws_generic_ssl_method_handler(res, req, user_data):
         (handler, app) = ffi.from_handle(user_data)
         response = AppResponse(res, app.loop, True)
         request = AppRequest(req)
-        task = handler(response, request)
-        if inspect.iscoroutinefunction(handler):
+        try:
+            if inspect.iscoroutinefunction(handler):
+                response.grab_aborted_handler()
+                app.run_async(handler(response, request), response)
+            else:
+                handler(response, request)
+        except Exception as err:
             response.grab_aborted_handler()
-            app.run_async(handler(response, request))
-        else:
-            handler(response, request)
+            app.trigger_error(err, response, request)
 
 @ffi.callback("void(struct us_listen_socket_t *, uws_app_listen_config_t, void *)")
 def uws_generic_listen_handler(listen_socket, config, user_data):
+    if listen_socket == ffi.NULL:
+        raise RuntimeError("Failed to listen on port %d" % int(config.port))
     if not user_data == ffi.NULL:
         app = ffi.from_handle(user_data)
         if hasattr(app, "_listen_handler") and hasattr(app._listen_handler, '__call__'):
             app.socket = listen_socket
-            if listen_socket == ffi.NULL:
-                raise RuntimeError("Failed to listen on port %d" % int(config.port))
             app._listen_handler(None if config == ffi.NULL else AppListenOptions(port=int(config.port),host=None if config.host == ffi.NULL else ffi.string(config.host).decode("utf-8"), options=int(config.options)))
 
 @ffi.callback("void(uws_res_t *, void*)")
@@ -308,7 +315,7 @@ class AppResponse:
 
     def run_async(self, task):
         self.grab_aborted_handler()
-        return self.loop.run_async(task)
+        return self.loop.run_async(task, self)
 
     def grab_aborted_handler(self):
         #only needed if is async
@@ -443,13 +450,13 @@ class App:
         else:
             self.is_ssl = False
             self.SSL = ffi.cast("int", 0)
-
         self.app = lib.uws_create_app(self.SSL, socket_options)
         self._ptr = ffi.new_handle(self)
         if bool(lib.uws_constructor_failed(self.SSL, self.app)):
             raise RuntimeError("Failed to create connection") 
         self.handlers = []
-        self.loop = Loop()
+        self.loop = Loop(lambda loop, context, response: self.trigger_error(context, response, None))
+        self.error_handler = None
 
     def get(self, path, handler):
         user_data = ffi.new_handle((handler, self))
@@ -520,8 +527,8 @@ class App:
     def get_loop():
         return self.loop.loop
         
-    def run_async(self, task):
-        return self.loop.run_async(task)
+    def run_async(self, task, response=None):
+        return self.loop.run_async(task, response)
 
     def run(self):
         self.loop.start()
@@ -535,6 +542,34 @@ class App:
                 lib.us_listen_socket_close(self.SSL, self.socket)
         return self
 
+    def set_error_handler(self, handler):
+        if hasattr(handler, '__call__'):
+            self.error_handler = handler 
+        else:
+            self.error_handler = None
+
+    def trigger_error(self, error, response, request):
+        if self.error_handler == None:
+            try:
+                print("Uncaught Exception: %s" % str(error)) #just log in console the error to call attention
+                response.write_status(500).end("Internal Error")
+            finally:
+                return
+        else:
+            try:
+                if inspect.iscoroutinefunction(self.error_handler ):
+                    self.run_async(self.error_handler(error, response, request), response)
+                else:
+                    self.error_handler(error, response, request)
+            except Exception as error:
+                try:
+                    #Error handler got an error :D
+                    print("Uncaught Exception: %s" % str(error)) #just log in console the error to call attention
+                    response.write_status(500).end("Internal Error")
+                finally:
+                   pass
+
+    
     def __del__(self):
         lib.uws_app_destroy(self.SSL, self.app)
 

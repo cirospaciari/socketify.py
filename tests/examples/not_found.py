@@ -2,7 +2,7 @@ from socketify import App, AppOptions, AppListenOptions
 
 app = App()
 
-def home(res, req):
+async def home(res, req):
     res.end("Hello, World!")
 
 def user(res, req):
