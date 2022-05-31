@@ -1,11 +1,16 @@
-import threading
-from datetime import datetime
-import time
+
 import os
+import sys
 import asyncio
-#import uvloop
+import threading
+import time
 from json import dumps as json
+from datetime import datetime
+
 from socketify import App, AppOptions, AppListenOptions
+
+#import uvloop
+
 # from ujson import dumps as json
 # from zzzjson import stringify as json #is too slow with CFFI
 # from orjson import dumps
@@ -50,19 +55,6 @@ def applicationjson(res, req):
     res.end(json({"message":"Hello, World!"}))
 
 
-def async_route(handler):
-    return lambda res,req: asyncio.run(handler(res, req))
-
-async def plaintext_async(res, req):
-    # await asyncio.sleep(1)
-    res.write_header("Date", current_http_date)
-    res.write_header("Server", "socketify")
-    res.write_header("Content-Type", "text/plain")
-    res.end("Hello, World!")   
-
-async def test():
-    await asyncio.sleep(1)
-    print("Hello!")
 
 def run_app():
     timing = threading.Thread(target=time_thread, args=())
@@ -71,7 +63,6 @@ def run_app():
     app.get("/", plaintext)
     # app.get("/json", applicationjson)
     # app.get("/plaintext", plaintext)
-    # app.get("/", async_route(plaintext_async))
     app.listen(3000, lambda config: print("Listening on port http://localhost:%s now\n" % str(config.port)))
     # app.listen(AppListenOptions(port=3000, host="0.0.0.0"), lambda config: print("Listening on port http://%s:%d now\n" % (config.host, config.port)))
     
@@ -83,11 +74,11 @@ def run_app():
     
     # app.run()
     # asyncio.get_event_loop().run_forever()
-def create_fork():
-    n = os.fork()
-    # n greater than 0 means parent process
-    if not n > 0:
-        run_app()
+# def create_fork():
+#     n = os.fork()
+#     # n greater than 0 means parent process
+#     if not n > 0:
+#         run_app()
 
 # for index in range(3):
 #     create_fork()
@@ -116,3 +107,6 @@ run_app()
 #pypy3 -m pip install rapidjson (not working with pypy)
 #https://github.com/MagicStack/uvloop/issues/380
 #https://foss.heptapod.net/pypy/pypy/-/issues/3740
+
+# make shared -C ./src/socketify/uWebSockets/capi
+#cp ./src/socketify/uWebSockets/capi/libuwebsockets.so ./src/socketify/libuwebsockets.so

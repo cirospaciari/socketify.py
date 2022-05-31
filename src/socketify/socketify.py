@@ -1,5 +1,10 @@
 import cffi
 import os
+from .loop import Loop
+from .status_codes import status_codes
+import json
+import inspect
+
 ffi = cffi.FFI()
 ffi.cdef("""
 
@@ -207,18 +212,27 @@ lib = ffi.dlopen(library_path)
 @ffi.callback("void(uws_res_t *, uws_req_t *, void *)")
 def uws_generic_method_handler(res, req, user_data):
     if not user_data == ffi.NULL:
-        handler = ffi.from_handle(user_data)
-        response = AppResponse(res, False)
+        (handler, app) = ffi.from_handle(user_data)
+        response = AppResponse(res, app.loop, False)
         request = AppRequest(req)
-        handler(response, request)
+        if inspect.iscoroutinefunction(handler):
+            response.grab_aborted_handler()
+            app.run_async(handler(response, request))
+        else:
+            handler(response, request)
 
 @ffi.callback("void(uws_res_t *, uws_req_t *, void *)")
 def uws_generic_ssl_method_handler(res, req, user_data):
     if not user_data == ffi.NULL:
-        handler = ffi.from_handle(user_data)
-        response = AppResponse(res, True)
+        (handler, app) = ffi.from_handle(user_data)
+        response = AppResponse(res, app.loop, True)
         request = AppRequest(req)
-        handler(response, request)
+        task = handler(response, request)
+        if inspect.iscoroutinefunction(handler):
+            response.grab_aborted_handler()
+            app.run_async(handler(response, request))
+        else:
+            handler(response, request)
 
 @ffi.callback("void(struct us_listen_socket_t *, uws_app_listen_config_t, void *)")
 def uws_generic_listen_handler(listen_socket, config, user_data):
@@ -283,16 +297,31 @@ class AppRequest:
         return bool(lib.uws_req_is_ancient(self.req))
 
 class AppResponse:
-    def __init__(self, response, is_ssl):
+    def __init__(self, response, loop, is_ssl):
         self.res = response
         self.SSL = ffi.cast("int", 1 if is_ssl else 0)
         self.aborted = False
-        self._ptr = ffi.new_handle(self)
-        lib.uws_res_on_aborted(self.SSL, response, uws_generic_abord_handler, self._ptr)
+        self._ptr = ffi.NULL
+        self.loop = loop
 
+    def run_async(self, task):
+        self.grab_aborted_handler()
+        return self.loop.run_async(task)
+
+    def grab_aborted_handler(self):
+        #only needed if is async
+        if self._ptr == ffi.NULL:
+            self._ptr = ffi.new_handle(self)
+            lib.uws_res_on_aborted(self.SSL, self.res, uws_generic_abord_handler, self._ptr)
+    
     def end(self, message, end_connection=False):
         if not self.aborted:
-            data = message.encode("utf-8")
+            if isinstance(message, str):
+                data = message.encode("utf-8")
+            elif isinstance(message, bytes):
+                data = message
+            else:
+                data = json.dumps(message).encode("utf-8")
             lib.uws_res_end(self.SSL, self.res, data, len(data), 1 if end_connection else 0)
         return self
 
@@ -311,9 +340,20 @@ class AppResponse:
             lib.uws_res_write_continue(self.SSL, self.res)
         return self
 
-    def write_status(self, status_text):
+    def write_status(self, status_or_status_text):
         if not self.aborted:
-            data = status_text.encode("utf-8")
+            if isinstance(status_or_status_text, int):
+                try:
+                    data = status_codes[status_or_status_text].encode("utf-8")
+                except: #invalid status
+                    raise RuntimeError("\"%d\" Is not an valid Status Code" % status_or_status_text) 
+            elif isinstance(status_text, str):
+                data = status_text.encode("utf-8")
+            elif isinstance(status_text, bytes):
+                data = status_text
+            else:
+                data = json.dumps(status_text).encode("utf-8")
+
             lib.uws_res_write_status(self.SSL, self.res, data, len(data))
         return self
 
@@ -322,9 +362,13 @@ class AppResponse:
             key_data = key.encode("utf-8")
             if isinstance(value, int):
                 lib.uws_res_write_header_int(self.SSL, self.res, key_data, len(key_data),  ffi.cast("uint64_t", value))
-            else:
+            elif isinstance(value, str):
                 value_data = value.encode("utf-8")
-                lib.uws_res_write_header(self.SSL, self.res, key_data, len(key_data),  value_data, len(value_data))
+            elif isinstance(value, bytes):
+                value_data = value
+            else:
+                value_data = json.dumps(value).encode("utf-8")
+            lib.uws_res_write_header(self.SSL, self.res, key_data, len(key_data),  value_data, len(value_data))
         return self
 
     def end_without_body(self):
@@ -334,13 +378,23 @@ class AppResponse:
 
     def write(self, message):
         if not self.aborted:
-            data = message.encode("utf-8")
+            if isinstance(message, str):
+                data = message.encode("utf-8")
+            elif isinstance(message, bytes):
+                data = message
+            else:
+                data = json.dumps(message).encode("utf-8")
             lib.uws_res_write(self.SSL, self.res, data, len(data))
         return self
 
     def get_write_offset(self, message):
         if not self.aborted:
-            data = message.encode("utf-8")
+            if isinstance(message, str):
+                data = message.encode("utf-8")
+            elif isinstance(message, bytes):
+                data = message
+            else:
+                data = json.dumps(message).encode("utf-8")
             return int(lib.uws_res_get_write_offset(self.SSL, self.res, data, len(data)))
         return 0
 
@@ -356,9 +410,13 @@ class AppResponse:
 
     def on_aborted(self, handler):
         if hasattr(handler, '__call__'):
+           self.grab_aborted_handler()
            self._aborted_handler = handler
         return self
-        
+
+    def __del__(self):
+        self.res = ffi.NULL
+        self._ptr = ffi.NULL
 # void uws_res_on_data(int ssl, uws_res_t *res, void (*handler)(uws_res_t *res, const char *chunk, size_t chunk_length, bool is_end, void *opcional_data), void *opcional_data);
 # void uws_res_upgrade(int ssl, uws_res_t *res, void *data, const char *sec_web_socket_key, size_t sec_web_socket_key_length, const char *sec_web_socket_protocol, size_t sec_web_socket_protocol_length, const char *sec_web_socket_extensions, size_t sec_web_socket_extensions_length, uws_socket_context_t *ws);
 # void uws_res_on_writable(int ssl, uws_res_t *res, bool (*handler)(uws_res_t *res, uintmax_t, void *opcional_data), void *user_data);
@@ -389,59 +447,60 @@ class App:
         if bool(lib.uws_constructor_failed(self.SSL, self.app)):
             raise RuntimeError("Failed to create connection") 
         self.handlers = []
+        self.loop = Loop()
 
     def get(self, path, handler):
-        user_data = ffi.new_handle(handler)
+        user_data = ffi.new_handle((handler, self))
         self.handlers.append(user_data) #Keep alive handler
         lib.uws_app_get(self.SSL, self.app, path.encode("utf-8"), uws_generic_ssl_method_handler if self.is_ssl else uws_generic_method_handler, user_data)
         return self
     def post(self, path, handler):
-        user_data = ffi.new_handle(handler)
+        user_data = ffi.new_handle((handler, self))
         self.handlers.append(user_data) #Keep alive handler
         lib.uws_app_post(self.SSL, self.app, path.encode("utf-8"), uws_generic_ssl_method_handler if self.is_ssl else uws_generic_method_handler, user_data)
         return self
     def options(self, path, handler):
-        user_data = ffi.new_handle(handler)
+        user_data = ffi.new_handle((handler, self))
         self.handlers.append(user_data) #Keep alive handler
         lib.uws_app_options(self.SSL, self.app, path.encode("utf-8"), uws_generic_ssl_method_handler if self.is_ssl else uws_generic_method_handler, user_data)
         return self
     def delete(self, path, handler):
-        user_data = ffi.new_handle(handler)
+        user_data = ffi.new_handle((handler, self))
         self.handlers.append(user_data) #Keep alive handler
         lib.uws_app_delete(self.SSL, self.app, path.encode("utf-8"), uws_generic_ssl_method_handler if self.is_ssl else uws_generic_method_handler, user_data)
         return self
     def patch(self, path, handler):
-        user_data = ffi.new_handle(handler)
+        user_data = ffi.new_handle((handler, self))
         self.handlers.append(user_data) #Keep alive handler
         lib.uws_app_patch(self.SSL, self.app, path.encode("utf-8"), uws_generic_ssl_method_handler if self.is_ssl else uws_generic_method_handler, user_data)
         return self
     def put(self, path, handler):
-        user_data = ffi.new_handle(handler)
+        user_data = ffi.new_handle((handler, self))
         self.handlers.append(user_data) #Keep alive handler
         lib.uws_app_put(self.SSL, self.app, path.encode("utf-8"), uws_generic_ssl_method_handler if self.is_ssl else uws_generic_method_handler, user_data)
         return self
     def head(self, path, handler):
-        user_data = ffi.new_handle(handler)
+        user_data = ffi.new_handle((handler, self))
         self.handlers.append(user_data) #Keep alive handler
         lib.uws_app_head(self.SSL, self.app, path.encode("utf-8"), uws_generic_ssl_method_handler if self.is_ssl else uws_generic_method_handler, user_data)
         return self
     def connect(self, path, handler):
-        user_data = ffi.new_handle(handler)
+        user_data = ffi.new_handle((handler, self))
         self.handlers.append(user_data) #Keep alive handler
         lib.uws_app_connect(self.SSL, self.app, path.encode("utf-8"), uws_generic_ssl_method_handler if self.is_ssl else uws_generic_method_handler, user_data)
         return self
     def trace(self, path, handler):
-        user_data = ffi.new_handle(handler)
+        user_data = ffi.new_handle((handler, self))
         self.handlers.append(user_data) #Keep alive handler
         lib.uws_app_trace(self.SSL, self.app, path.encode("utf-8"), uws_generic_ssl_method_handler if self.is_ssl else uws_generic_method_handler, user_data)
         return self
     def any(self, path, handler):
-        user_data = ffi.new_handle(handler)
+        user_data = ffi.new_handle((handler, self))
         self.handlers.append(user_data) #Keep alive handler
         lib.uws_app_any(self.SSL, self.app, path.encode("utf-8"), uws_generic_ssl_method_handler if self.is_ssl else uws_generic_method_handler, user_data)
         return self
 
-    def listen(self, port_or_options, handler):
+    def listen(self, port_or_options, handler=None):
         self._listen_handler = handler
         if isinstance(port_or_options, int): 
             lib.uws_app_listen(self.SSL, self.app, ffi.cast("int", port_or_options), uws_generic_listen_handler, self._ptr)
@@ -456,8 +515,16 @@ class App:
 
         return self
 
+    def get_loop():
+        return self.loop.loop
+        
+    def run_async(self, task):
+        return self.loop.run_async(task)
+
     def run(self):
+        self.loop.start()
         lib.uws_app_run(self.SSL, self.app)
+        self.loop.stop()
         return self
         
     def close(self):
@@ -465,6 +532,7 @@ class App:
             if not self.socket == ffi.NULL:
                 lib.us_listen_socket_close(self.SSL, self.socket)
         return self
+
     def __del__(self):
         lib.uws_app_destroy(self.SSL, self.app)
 
@@ -495,3 +563,4 @@ class AppOptions:
         self.ca_file_name = ca_file_name
         self.ssl_ciphers = ssl_ciphers
         self.ssl_prefer_low_memory_usage = ssl_prefer_low_memory_usage
+
