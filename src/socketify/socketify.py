@@ -56,6 +56,7 @@ struct us_listen_socket_t {
     unsigned int socket_ext_size;
 };
 void us_listen_socket_close(int ssl, struct us_listen_socket_t *ls);
+int us_socket_local_port(int ssl, struct us_listen_socket_t *ls);
 struct us_loop_t *uws_get_loop();
 
 typedef enum
@@ -245,8 +246,11 @@ def uws_generic_ssl_method_handler(res, req, user_data):
 def uws_generic_listen_handler(listen_socket, config, user_data):
     if listen_socket == ffi.NULL:
         raise RuntimeError("Failed to listen on port %d" % int(config.port))
+    
+
     if not user_data == ffi.NULL:
         app = ffi.from_handle(user_data)
+        config.port = lib.us_socket_local_port(app.SSL, listen_socket)
         if hasattr(app, "_listen_handler") and hasattr(app._listen_handler, '__call__'):
             app.socket = listen_socket
             app._listen_handler(None if config == ffi.NULL else AppListenOptions(port=int(config.port),host=None if config.host == ffi.NULL else ffi.string(config.host).decode("utf-8"), options=int(config.options)))
@@ -330,6 +334,7 @@ class AppResponse:
             elif isinstance(message, bytes):
                 data = message
             else:
+                self.write_header("Content-Type", "application/json")
                 data = json.dumps(message).encode("utf-8")
             lib.uws_res_end(self.SSL, self.res, data, len(data), 1 if end_connection else 0)
         return self

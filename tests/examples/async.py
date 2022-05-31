@@ -20,7 +20,6 @@ async def json(res, _):
     #req maybe will not be available in direct attached async functions
     #but if you dont care about req info you can do it
     await asyncio.sleep(2) #do something async
-    res.write_header("Content-Type", "application/json")
     res.end({ "message": "I'm delayed!"})
 
 def not_found(res, req):
