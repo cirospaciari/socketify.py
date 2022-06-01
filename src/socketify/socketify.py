@@ -333,6 +333,9 @@ class AppResponse:
                 data = message.encode("utf-8")
             elif isinstance(message, bytes):
                 data = message
+            elif message == None:
+                self.end_without_body()
+                return self
             else:
                 self.write_header("Content-Type", "application/json")
                 data = json.dumps(message).encode("utf-8")
