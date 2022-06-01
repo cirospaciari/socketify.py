@@ -16,23 +16,17 @@ cache = TwoLevelCache(redis_conection, 10, 10)
 # Model
 ###
 
-async def get_pokemon(session, number):
-    async with session.get(f'https://pokeapi.co/api/v2/pokemon/{number}') as response:
-        pokemon = await response.text()
-        pokemon_name = json.loads(pokemon)['name']
-        return pokemon_name
-
-async def get_pokemon_by_number(number):
-        async with aiohttp.ClientSession() as session:
-            return await get_pokemon(session, number)
+async def get_pokemon(number):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f'https://pokeapi.co/api/v2/pokemon/{number}') as response:
+            pokemon = await response.text()
+            return json.loads(pokemon)
 
 async def get_original_pokemons():
     async with aiohttp.ClientSession() as session:
-        tasks = []
-        for number in range(1, 151):
-            tasks.append(asyncio.ensure_future(get_pokemon(session, number)))
-        result = await asyncio.gather(*tasks)
-        return result
+        async with session.get(f'https://pokeapi.co/api/v2/pokemon?limit=151') as response:
+            pokemons = await response.text()
+            return json.loads(pokemons)
 
 
 ###
@@ -63,8 +57,8 @@ def list_pokemon(res, req):
         return req.set_yield(1) 
 
     #check cache for faster response
-    key = f"pokemon-{number}"
-    value = cache.get(key)
+    cache_key = f"pokemon-{number}"
+    value = cache.get(cache_key)
     if value != None: 
         return res.end(value)
 
@@ -72,7 +66,7 @@ def list_pokemon(res, req):
     async def find_pokemon(number, res):
         #sync with redis lock to run only once
         #if more than 1 worker/request try to do this request, only one will call the Model and the others will get from cache
-        value = await cache.run_once(key, 5, get_pokemon_by_number, number)
+        value = await cache.run_once(cache_key, 5, get_pokemon, number)
         res.end(value)
 
     res.run_async(find_pokemon(number, res))
