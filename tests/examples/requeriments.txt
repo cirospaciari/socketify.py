@@ -1,2 +1,3 @@
 aiohttp
 redis
+git+https://github.com/cirospaciari/socketify.py.git@main#socketify --global-option="build_ext"

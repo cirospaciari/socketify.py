@@ -326,7 +326,14 @@ class AppResponse:
         if self._ptr == ffi.NULL:
             self._ptr = ffi.new_handle(self)
             lib.uws_res_on_aborted(self.SSL, self.res, uws_generic_abord_handler, self._ptr)
-    
+
+    def redirect(self, location, status_code=302):
+        if not isinstance(location, str):
+            raise RuntimeError("Location must be an string")
+        self.write_status(status_code)
+        self.write_header("Location", location)
+        self.end_without_body()
+   
     def end(self, message, end_connection=False):
         if not self.aborted:
             if isinstance(message, str):

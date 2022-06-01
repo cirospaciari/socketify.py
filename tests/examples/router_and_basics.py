@@ -56,6 +56,15 @@ def send_in_parts(res, req):
     res.write("messages")
     res.end(" in parts!")
 
+
+def redirect(res, req):
+    #status code is optional default is 302
+    res.redirect("/redirected", 302)
+
+def redirected(res, req):
+    res.end("You got redirected to here :D")
+
+
 def not_found(res, req):
     res.write_status(404).end("Not Found")
 
@@ -69,6 +78,8 @@ app.get("/json", json)
 app.get("/sleepy", sleepy_json)
 app.get("/custom_header", custom_header)
 app.get("/send_in_parts", send_in_parts)
+app.get("/redirect", redirect)
+app.get("/redirected", redirected)
 # Wildcard at last always :)
 app.any("/*", not_found)
 
