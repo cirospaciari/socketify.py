@@ -56,14 +56,12 @@ def send_in_parts(res, req):
     res.write("messages")
     res.end(" in parts!")
 
-
 def redirect(res, req):
     #status code is optional default is 302
     res.redirect("/redirected", 302)
 
 def redirected(res, req):
     res.end("You got redirected to here :D")
-
 
 def not_found(res, req):
     res.write_status(404).end("Not Found")

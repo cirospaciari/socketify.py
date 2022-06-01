@@ -54,3 +54,12 @@ class Loop:
         future = asyncio.run_coroutine_threadsafe(task, self.loop)
         future.add_done_callback(lambda f: future_handler(f, self.loop, self.exception_handler, response))
         return future
+
+
+
+#  if sys.version_info >= (3, 11)
+#         with asyncio.Runner(loop_factory=uvloop.new_event_loop) as runner:
+#             runner.run(main())
+#     else:
+#         uvloop.install()
+#         asyncio.run(main())

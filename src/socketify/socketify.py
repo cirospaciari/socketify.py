@@ -4,6 +4,7 @@ from .loop import Loop
 from .status_codes import status_codes
 import json
 import inspect
+import threading
 
 ffi = cffi.FFI()
 ffi.cdef("""
@@ -186,7 +187,7 @@ void uws_res_write_status(int ssl, uws_res_t *res, const char *status, size_t le
 void uws_res_write_header(int ssl, uws_res_t *res, const char *key, size_t key_length, const char *value, size_t value_length);
 
 void uws_res_write_header_int(int ssl, uws_res_t *res, const char *key, size_t key_length, uint64_t value);
-void uws_res_end_without_body(int ssl, uws_res_t *res);
+void uws_res_end_without_body(int ssl, uws_res_t *res, bool close_connection);
 bool uws_res_write(int ssl, uws_res_t *res, const char *data, size_t length);
 uintmax_t uws_res_get_write_offset(int ssl, uws_res_t *res);
 bool uws_res_has_responded(int ssl, uws_res_t *res);
@@ -246,7 +247,6 @@ def uws_generic_ssl_method_handler(res, req, user_data):
 def uws_generic_listen_handler(listen_socket, config, user_data):
     if listen_socket == ffi.NULL:
         raise RuntimeError("Failed to listen on port %d" % int(config.port))
-    
 
     if not user_data == ffi.NULL:
         app = ffi.from_handle(user_data)
@@ -256,10 +256,9 @@ def uws_generic_listen_handler(listen_socket, config, user_data):
             app._listen_handler(None if config == ffi.NULL else AppListenOptions(port=int(config.port),host=None if config.host == ffi.NULL else ffi.string(config.host).decode("utf-8"), options=int(config.options)))
 
 @ffi.callback("void(uws_res_t *, void*)")
-def uws_generic_abord_handler(response, user_data):
+def uws_generic_aborted_handler(response, user_data):
     if not user_data == ffi.NULL:
         res = ffi.from_handle(user_data)
-        res.aborted = True
         res.trigger_aborted()
 
 class AppRequest:
@@ -309,6 +308,7 @@ class AppRequest:
     def is_ancient(self):
         return bool(lib.uws_req_is_ancient(self.req))
 
+
 class AppResponse:
     def __init__(self, response, loop, is_ssl):
         self.res = response
@@ -317,22 +317,28 @@ class AppResponse:
         self._ptr = ffi.NULL
         self.loop = loop
 
+    def trigger_aborted(self):
+        self.aborted = True
+        self.res = ffi.NULL
+        self._ptr = ffi.NULL
+        if hasattr(self, "_aborted_handler") and hasattr(self._aborted_handler, '__call__'):
+            self._aborted_handler()
+        return self
+             
     def run_async(self, task):
         self.grab_aborted_handler()
         return self.loop.run_async(task, self)
 
     def grab_aborted_handler(self):
         #only needed if is async
-        if self._ptr == ffi.NULL:
+        if self._ptr == ffi.NULL and not self.aborted:
             self._ptr = ffi.new_handle(self)
-            lib.uws_res_on_aborted(self.SSL, self.res, uws_generic_abord_handler, self._ptr)
+            lib.uws_res_on_aborted(self.SSL, self.res, uws_generic_aborted_handler, self._ptr)
 
     def redirect(self, location, status_code=302):
-        if not isinstance(location, str):
-            raise RuntimeError("Location must be an string")
         self.write_status(status_code)
         self.write_header("Location", location)
-        self.end_without_body()
+        self.end_without_body(False)
    
     def end(self, message, end_connection=False):
         if not self.aborted:
@@ -341,7 +347,7 @@ class AppResponse:
             elif isinstance(message, bytes):
                 data = message
             elif message == None:
-                self.end_without_body()
+                self.end_without_body(end_connection)
                 return self
             else:
                 self.write_header("Content-Type", "application/json")
@@ -395,9 +401,9 @@ class AppResponse:
             lib.uws_res_write_header(self.SSL, self.res, key_data, len(key_data),  value_data, len(value_data))
         return self
 
-    def end_without_body(self):
+    def end_without_body(self,  end_connection=False):
         if not self.aborted:
-            lib.uws_res_end_without_body(self.SSL, self.res)
+            lib.uws_res_end_without_body(self.SSL, self.res, 1 if end_connection else 0)
         return self
 
     def write(self, message):
@@ -426,11 +432,6 @@ class AppResponse:
         if not self.aborted:
             return False
         return bool(lib.uws_res_has_responded(self.SSL, self.res, data, len(data)))
-
-    def trigger_aborted(self):
-        if hasattr(self, "_aborted_handler") and hasattr(self._aborted_handler, '__call__'):
-           self._aborted_handler()
-        return self
 
     def on_aborted(self, handler):
         if hasattr(handler, '__call__'):
