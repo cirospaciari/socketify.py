@@ -10,7 +10,7 @@ redis_pool = redis.ConnectionPool(host='localhost', port=6379, db=0)
 redis_conection = redis.Redis(connection_pool=redis_pool)
 # 2 LEVEL CACHE (Redis to share amoung workers, Memory to be much faster)
 # cache in memory is 5s, cache in redis is 10s duration 
-cache = TwoLevelCache(redis_conection, 10, 10)
+cache = TwoLevelCache(redis_conection, 5, 10)
 
 ###
 # Model
