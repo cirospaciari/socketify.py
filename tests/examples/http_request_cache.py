@@ -2,7 +2,6 @@ from socketify import App
 import redis
 import aiohttp
 import asyncio
-import json
 from helpers.twolevel_cache import TwoLevelCache
 
 #create redis poll + connections
@@ -20,13 +19,17 @@ async def get_pokemon(number):
     async with aiohttp.ClientSession() as session:
         async with session.get(f'https://pokeapi.co/api/v2/pokemon/{number}') as response:
             pokemon = await response.text()
-            return json.loads(pokemon)
+            #cache only works with strings/bytes/buffer
+            #we will not change nothing here so no needs to parse json
+            return pokemon
 
 async def get_original_pokemons():
     async with aiohttp.ClientSession() as session:
         async with session.get(f'https://pokeapi.co/api/v2/pokemon?limit=151') as response:
+            #cache only works with strings/bytes/buffer 
+            #we will not change nothing here so no needs to parse json
             pokemons = await response.text()
-            return json.loads(pokemons)
+            return pokemons
 
 
 ###

@@ -1,5 +1,4 @@
 import asyncio
-import json
 from .memory_cache import MemoryCache
 
 # 2 LEVEL CACHE (Redis to share amoung worker, Memory to be much faster)
@@ -50,10 +49,10 @@ class TwoLevelCache:
                 #always check cache first
                 cached = self.get(key)
                 if cached != None:
-                    return json.loads(cached)
+                    return cached
                 result = await executor(*args)
                 if result != None:
-                    self.set(key, json.dumps(result))
+                    self.set(key, result)
             except Exception as err:
                 # the lock wasn't acquired
                 pass
@@ -67,5 +66,5 @@ class TwoLevelCache:
             if result == None:
                 cache = self.get(key)
                 if cache != None:
-                    return json.loads(cache)
+                    return cache
             return result
