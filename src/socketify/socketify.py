@@ -270,14 +270,14 @@ class AppRequest:
         buffer_address = ffi.addressof(buffer, 0)[0]
         if buffer_address == ffi.NULL: 
             return None
-        return ffi.unpack(buffer_address, length)
+        return ffi.unpack(buffer_address, length).decode("utf-8")
     def get_method(self):
         buffer = ffi.new("char**")
         length = lib.uws_req_get_method(self.req, buffer)   
         buffer_address = ffi.addressof(buffer, 0)[0]
         if buffer_address == ffi.NULL: 
             return None
-        return ffi.unpack(buffer_address, length)
+        return ffi.unpack(buffer_address, length).decode("utf-8")
     def get_header(self, lower_case_header):
         buffer = ffi.new("char**")
         data = lower_case_header.encode("utf-8")
@@ -285,7 +285,7 @@ class AppRequest:
         buffer_address = ffi.addressof(buffer, 0)[0]
         if buffer_address == ffi.NULL: 
             return None
-        return ffi.unpack(buffer_address, length)
+        return ffi.unpack(buffer_address, length).decode("utf-8")
     def get_query(self, key):
         buffer = ffi.new("char**")
         data = key.encode("utf-8")
@@ -293,14 +293,14 @@ class AppRequest:
         buffer_address = ffi.addressof(buffer, 0)[0]
         if buffer_address == ffi.NULL: 
             return None
-        return ffi.unpack(buffer_address, length)
+        return ffi.unpack(buffer_address, length).decode("utf-8")
     def get_parameter(self, index):
         buffer = ffi.new("char**")
         length = lib.uws_req_get_parameter(self.req, ffi.cast("unsigned short", index), buffer)   
         buffer_address = ffi.addressof(buffer, 0)[0]
         if buffer_address == ffi.NULL: 
             return None
-        return ffi.unpack(buffer_address, length)
+        return ffi.unpack(buffer_address, length).decode("utf-8")
     def set_yield(self, has_yield):
         lib.uws_req_set_field(self.req, 1 if has_yield else 0)
     def get_yield(self):

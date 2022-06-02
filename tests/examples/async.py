@@ -16,11 +16,13 @@ def home(res, req):
     #abort handler is grabed here, so responses only will be send if res.aborted == False
     res.run_async(delayed_hello(delay, res))
 
-async def json(res, _):
-    #req maybe will not be available in direct attached async functions
-    #but if you dont care about req info you can do it
+async def json(res, req):
+    #request object only lives during the life time of this call
+    #get parameters, query, headers anything you need here before first await :)
+    user_agent = req.get_header("user-agent")
+    #req maybe will not be available in direct attached async functions after await
     await asyncio.sleep(2) #do something async
-    res.end({ "message": "I'm delayed!"})
+    res.end({ "message": "I'm delayed!", "user-agent": user_agent})
 
 def not_found(res, req):
     res.write_status(404).end("Not Found")

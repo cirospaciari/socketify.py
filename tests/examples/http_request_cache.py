@@ -71,7 +71,9 @@ def list_pokemon(res, req):
 
     res.run_async(find_pokemon(number, res))
 
-
+###
+# Here i decided to use an sync first and async only if needs, but you can use async directly see ./async.py
+###
 app = App()
 app.get("/", list_original_pokemons)
 app.get("/:number", list_pokemon)

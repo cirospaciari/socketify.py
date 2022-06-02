@@ -38,11 +38,13 @@ def json(res, req):
     #if you pass an object will auto write an header with application/json
     res.end({ "message": "I'm an application/json!"})
 
-async def sleepy_json(res, _):
-    #req maybe will not be available in direct attached async functions
+async def sleepy_json(res, req):
+    #get parameters, query, headers anything you need here before first await :)
+    user_agent = req.get_header("user-agent")
+    #req maybe will not be available in direct attached async functions after await
     #but if you dont care about req info you can do it
     await asyncio.sleep(2) #do something async
-    res.end({ "message": "I'm delayed!"})
+    res.end({ "message": "I'm delayed!", "user-agent": user_agent})
 
 def custom_header(res, req):
     res.write_header("Content-Type", "application/octet-stream")
