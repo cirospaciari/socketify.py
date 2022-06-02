@@ -4,7 +4,7 @@ WORKDIR /usr/src/app
 
 COPY requirements.txt ./
 
-RUN apk add --no-cache  git openssl-dev libffi-dev build-base python3-dev
+RUN apk add --no-cache libuv-dev git openssl-dev libffi-dev build-base python3-dev
 
 RUN pip install --no-cache-dir -r requirements.txt
 
