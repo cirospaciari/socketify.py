@@ -3,10 +3,8 @@ import asyncio
 import threading
 import time
 
-def loop_thread(loop, exception_handler):
-    if hasattr(exception_handler, '__call__'):
-        loop.set_exception_handler(lambda loop, context: exception_handler(loop, context, None))
-    loop.run_forever()
+from .native import UVLoop
+
 
 def future_handler(future, loop, exception_handler, response):
     try:
@@ -27,6 +25,7 @@ def future_handler(future, loop, exception_handler, response):
 class Loop:
     def __init__(self, exception_handler=None):
         self.loop = asyncio.new_event_loop()
+        self.uv_loop = UVLoop()
         if hasattr(exception_handler, '__call__'):
             self.exception_handler = exception_handler
             self.loop.set_exception_handler(lambda loop, context: exception_handler(loop, context, None))
@@ -34,24 +33,46 @@ class Loop:
             self.exception_handler = None
 
         asyncio.set_event_loop(self.loop)
-        self.loop_thread = None
+        self.started = False
+        # self.loop_thread = None
 
     def start(self):
-        self.loop_thread = threading.Thread(target=loop_thread, args=(self.loop,self.exception_handler), daemon=True)
-        self.loop_thread.start()  
-        
+        self.started = True
+        self.timer = self.uv_loop.create_timer(0, 100, lambda loop: loop.run_once_asyncio(), self)
+    
+    def run(self):
+        self.uv_loop.run()
+
+    def run_once(self):
+        self.uv_loop.run_once()
+
+    def run_once_asyncio(self):
+        #run only one step
+        self.loop.call_soon(self.loop.stop)
+        self.loop.run_forever()
     def stop(self):
-        #stop loop
-        self.loop.call_soon_threadsafe(self.loop.stop) 
-        #wait loop thread to stops
-        self.loop_thread.join()
+        if(self.started):
+            self.timer.stop()
+            self.started = False
+        #unbind run_once 
+        #if is still running stops
+        if self.loop.is_running(): 
+            self.loop.stop()
+
         # Find all running tasks in main thread:
         pending = asyncio.all_tasks(self.loop)
         # Run loop until tasks done
         self.loop.run_until_complete(asyncio.gather(*pending))
+        
+    #Exposes native loop for uWS
+    def get_native_loop(self):
+        return self.uv_loop.get_native_loop()
 
     def run_async(self, task, response=None):
-        future = asyncio.run_coroutine_threadsafe(task, self.loop)
+        #with run_once
+        future = asyncio.ensure_future(task, loop=self.loop)
+
+        #with threads
         future.add_done_callback(lambda f: future_handler(f, self.loop, self.exception_handler, response))
         return future
 

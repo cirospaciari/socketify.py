@@ -30,4 +30,5 @@ app.get("/json", json)
 app.any("/*", not_found)
 
 app.listen(3000, lambda config: print("Listening on port http://localhost:%s now\n" % str(config.port)))
+
 app.run()

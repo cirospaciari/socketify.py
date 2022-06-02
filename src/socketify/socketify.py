@@ -4,7 +4,7 @@ from .loop import Loop
 from .status_codes import status_codes
 import json
 import inspect
-import threading
+import signal
 
 ffi = cffi.FFI()
 ffi.cdef("""
@@ -59,7 +59,7 @@ struct us_listen_socket_t {
 void us_listen_socket_close(int ssl, struct us_listen_socket_t *ls);
 int us_socket_local_port(int ssl, struct us_listen_socket_t *ls);
 struct us_loop_t *uws_get_loop();
-
+struct us_loop_t *uws_get_loop_with_native(void* existing_native_loop);
 typedef enum
 {
     _COMPRESSOR_MASK = 0x00FF,
@@ -466,12 +466,19 @@ class App:
         else:
             self.is_ssl = False
             self.SSL = ffi.cast("int", 0)
+
+        self.loop = Loop(lambda loop, context, response: self.trigger_error(context, response, None))
+
+        #set async loop to be the last created (is thread_local), App must be one per thread otherwise will use only the lasted loop
+        #needs to be called before uws_create_app or otherwise will create another loop and will not receive the right one
+        lib.uws_get_loop_with_native(self.loop.get_native_loop())
         self.app = lib.uws_create_app(self.SSL, socket_options)
         self._ptr = ffi.new_handle(self)
         if bool(lib.uws_constructor_failed(self.SSL, self.app)):
             raise RuntimeError("Failed to create connection") 
+
+
         self.handlers = []
-        self.loop = Loop(lambda loop, context, response: self.trigger_error(context, response, None))
         self.error_handler = None
 
     def get(self, path, handler):
@@ -547,15 +554,17 @@ class App:
         return self.loop.run_async(task, response)
 
     def run(self):
+        signal.signal(signal.SIGINT, lambda sig, frame: self.close())
         self.loop.start()
-        lib.uws_app_run(self.SSL, self.app)
-        self.loop.stop()
+        self.loop.run()
+        # lib.uws_app_run(self.SSL, self.app)
         return self
         
     def close(self):
         if hasattr(self, "socket"):
             if not self.socket == ffi.NULL:
                 lib.us_listen_socket_close(self.SSL, self.socket)
+                self.loop.stop()
         return self
 
     def set_error_handler(self, handler):

@@ -4,7 +4,7 @@ import multiprocessing
 
 def run_app():
     app = App()
-    app.get("/", lambda res, req: res.end("Hello World socketify from Python!"))
+    app.get("/", lambda res, req: res.end("Hello, World!"))
     app.listen(3000, lambda config: print("PID %d Listening on port http://localhost:%d now\n" % (os.getpid(), config.port)))
     app.run()
 
