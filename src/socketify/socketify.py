@@ -7,6 +7,8 @@ import inspect
 import signal
 from http import cookies
 from datetime import datetime
+from urllib.parse import parse_qs, quote_plus, unquote_plus
+
 ffi = cffi.FFI()
 ffi.cdef("""
 
@@ -393,7 +395,7 @@ class AppResponse:
     def set_cookie(self, name, value, options={}):
         if self._write_jar == None:
             self._write_jar = cookies.SimpleCookie()
-        self._write_jar[name] = value
+        self._write_jar[name] = quote_plus(value)
         if isinstance(options, dict):
             for key in options:
                 if key == "expires" and isinstance(options[key], datetime):
@@ -446,7 +448,27 @@ class AppResponse:
         self.grab_aborted_handler()
         return self.loop.run_async(task, self)
 
-    
+    async def get_form_urlencoded(self, encoding='utf-8'):
+        data = await self.get_data()
+        try: 
+            #decode and unquote all
+            result = {}
+            parsed = parse_qs(b''.join(data), encoding=encoding)
+            has_value = False
+            for key in parsed:
+                has_value = True
+                try:
+                    value = parsed[key]
+                    new_key = key.decode(encoding)
+                    last_value = value[len(value)-1]
+
+                    result[new_key] = unquote_plus(last_value.decode(encoding))
+                except Exception as error:
+                    pass
+            return result if has_value else None
+        except Exception as error:
+            return None #invalid encoding
+
     async def get_text(self, encoding='utf-8'):
         data = await self.get_data()
         try: 
@@ -565,7 +587,7 @@ class AppResponse:
             lib.uws_res_write_header(self.SSL, self.res, key_data, len(key_data),  value_data, len(value_data))
         return self
 
-    def end_without_body(self,  end_connection=False):
+    def end_without_body(self, end_connection=False):
         if not self.aborted:
             if self._write_jar != None:
                 self.write_header("Set-Cookie", self._write_jar.output(header=""))
