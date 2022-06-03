@@ -8,6 +8,7 @@ ffi.cdef("""
 
 typedef void (*socketify_prepare_handler)(void* user_data);
 typedef void (*socketify_timer_handler)(void* user_data);
+typedef void (*socketify_async_handler)(void* user_data);
 
 typedef enum {
   SOCKETIFY_RUN_DEFAULT = 0,
@@ -28,6 +29,12 @@ typedef struct{
     void* user_data;
 } socketify_timer;
 
+typedef struct{
+    void* uv_async_ptr;
+    socketify_async_handler handler;
+    void* user_data;
+} socketify_async;
+
 socketify_loop * socketify_create_loop();
 bool socketify_constructor_failed(socketify_loop* loop);
 bool socketify_on_prepare(socketify_loop* loop, socketify_prepare_handler handler, void* user_data);
@@ -38,9 +45,10 @@ void* socketify_get_native_loop(socketify_loop* loop);
 int socketify_loop_run(socketify_loop* loop, socketify_run_mode mode);
 void socketify_loop_stop(socketify_loop* loop);
 
-socketify_timer* socketify_create_timer(socketify_loop* loop, int64_t timeout, int64_t repeat, socketify_timer_handler handler, void* user_data);
+socketify_timer* socketify_create_timer(socketify_loop* loop, uint64_t timeout, uint64_t repeat, socketify_timer_handler handler, void* user_data);
 void socketify_timer_destroy(socketify_timer* timer);
-
+bool socketify_async_call(socketify_loop* loop, socketify_async_handler handler, void* user_data);
+void socketify_timer_set_repeat(socketify_timer* timer, uint64_t repeat);
 
 """)
 library_path = os.path.join(os.path.dirname(__file__), "libsocketify.so")
@@ -56,17 +64,20 @@ def socketify_generic_handler(data):
 class UVTimer:
     def __init__(self, loop, timeout, repeat, handler, user_data):
         self._handler_data = ffi.new_handle((handler, user_data))
-        self._ptr = lib.socketify_create_timer(loop, ffi.cast("int64_t", timeout), ffi.cast("int64_t", repeat), socketify_generic_handler, self._handler_data)
+        self._ptr = lib.socketify_create_timer(loop, ffi.cast("uint64_t", timeout), ffi.cast("uint64_t", repeat), socketify_generic_handler, self._handler_data)
 
     def stop(self):
         lib.socketify_timer_destroy(self._ptr)
         self._handler_data = None
         self._ptr = ffi.NULL
 
+    def set_repeat(self, repeat):
+        lib.socketify_timer_set_repeat(self._ptr, ffi.cast("uint64_t", repeat))
+        
     def __del__(self):
         if self._ptr != ffi.NULL:
             lib.socketify_timer_destroy(self._ptr)
-            self.self._handler_data = None
+            self._handler_data = None
 
 
 class UVLoop:
@@ -90,7 +101,7 @@ class UVLoop:
 
     def __del__(self):
         lib.socketify_destroy_loop(self._loop)
-        self.self._handler_data = None
+        self._handler_data = None
   
     def run(self):
         return lib.socketify_loop_run(self._loop, lib.SOCKETIFY_RUN_DEFAULT)

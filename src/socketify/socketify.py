@@ -5,7 +5,8 @@ from .status_codes import status_codes
 import json
 import inspect
 import signal
-
+from http import cookies
+from datetime import datetime
 ffi = cffi.FFI()
 ffi.cdef("""
 
@@ -220,7 +221,7 @@ def uws_generic_method_handler(res, req, user_data):
         try:
             if inspect.iscoroutinefunction(handler):
                 response.grab_aborted_handler()
-                app.run_async(handler(response, request), response)
+                response.run_async(handler(response, request))
             else:
                 handler(response, request)
         except Exception as err:
@@ -236,7 +237,7 @@ def uws_generic_ssl_method_handler(res, req, user_data):
         try:
             if inspect.iscoroutinefunction(handler):
                 response.grab_aborted_handler()
-                app.run_async(handler(response, request), response)
+                response.run_async(handler(response, request))
             else:
                 handler(response, request)
         except Exception as err:
@@ -261,46 +262,112 @@ def uws_generic_aborted_handler(response, user_data):
         res = ffi.from_handle(user_data)
         res.trigger_aborted()
 
+@ffi.callback("void(uws_res_t *, const char *, size_t, bool, void*)")
+def uws_generic_on_data_handler(res, chunk, chunk_length, is_end, user_data):
+    if not user_data == ffi.NULL:
+        res = ffi.from_handle(user_data)
+        if chunk == ffi.NULL: 
+            data = None
+        else:
+            data = ffi.unpack(chunk, chunk_length)
+        
+        res.trigger_data_handler(data, bool(is_end))
+
+@ffi.callback("bool(uws_res_t *, uintmax_t, void*)")
+def uws_generic_on_writable_handler(res, offset, user_data):
+    if not user_data == ffi.NULL:
+        res = ffi.from_handle(user_data)        
+        return res.trigger_writable_handler(offset)
+    return False
+
 class AppRequest:
     def __init__(self, request):
         self.req = request
+        self.read_jar = None
+        self.jar_parsed = False
+
+    def get_cookie(self, name):
+        if self.read_jar == None:
+            if self.jar_parsed:
+                return None
+            raw_cookies = self.get_header("cookie")
+            if raw_cookies:
+                self.jar_parsed = True
+                self.read_jar = cookies.SimpleCookie(raw_cookies)
+            else:
+                self.jar_parsed = True
+                return None
+        try:
+            return self.read_jar[name].value
+        except Exception:
+            return None
+
     def get_url(self):
         buffer = ffi.new("char**")
         length = lib.uws_req_get_url(self.req, buffer)   
         buffer_address = ffi.addressof(buffer, 0)[0]
         if buffer_address == ffi.NULL: 
             return None
-        return ffi.unpack(buffer_address, length).decode("utf-8")
+        try:
+            return ffi.unpack(buffer_address, length).decode("utf-8")
+        except Exception: #invalid utf-8
+            return None
     def get_method(self):
         buffer = ffi.new("char**")
         length = lib.uws_req_get_method(self.req, buffer)   
         buffer_address = ffi.addressof(buffer, 0)[0]
         if buffer_address == ffi.NULL: 
             return None
-        return ffi.unpack(buffer_address, length).decode("utf-8")
+        
+        try:
+            return ffi.unpack(buffer_address, length).decode("utf-8")
+        except Exception: #invalid utf-8
+            return None
     def get_header(self, lower_case_header):
+        if isinstance(lower_case_header, str):
+            data = lower_case_header.encode("utf-8")
+        elif isinstance(lower_case_header, bytes):
+            data = lower_case_header
+        else:
+            data = json.dumps(lower_case_header).encode("utf-8")
+
         buffer = ffi.new("char**")
-        data = lower_case_header.encode("utf-8")
         length = lib.uws_req_get_header(self.req, data, len(data), buffer)   
         buffer_address = ffi.addressof(buffer, 0)[0]
         if buffer_address == ffi.NULL: 
             return None
-        return ffi.unpack(buffer_address, length).decode("utf-8")
+        try:
+            return ffi.unpack(buffer_address, length).decode("utf-8")
+        except Exception: #invalid utf-8
+            return None
     def get_query(self, key):
         buffer = ffi.new("char**")
-        data = key.encode("utf-8")
-        length = lib.uws_req_get_query(self.req, data, len(data), buffer)   
+        
+        if isinstance(key, str):
+            key_data = key.encode("utf-8")
+        elif isinstance(key, bytes):
+            key_data = key
+        else:
+            key_data = json.dumps(key).encode("utf-8")
+
+        length = lib.uws_req_get_query(self.req, key_data, len(key_data), buffer)   
         buffer_address = ffi.addressof(buffer, 0)[0]
         if buffer_address == ffi.NULL: 
             return None
-        return ffi.unpack(buffer_address, length).decode("utf-8")
+        try:
+            return ffi.unpack(buffer_address, length).decode("utf-8")
+        except Exception: #invalid utf-8
+            return None
     def get_parameter(self, index):
         buffer = ffi.new("char**")
         length = lib.uws_req_get_parameter(self.req, ffi.cast("unsigned short", index), buffer)   
         buffer_address = ffi.addressof(buffer, 0)[0]
         if buffer_address == ffi.NULL: 
             return None
-        return ffi.unpack(buffer_address, length).decode("utf-8")
+        try:
+            return ffi.unpack(buffer_address, length).decode("utf-8")
+        except Exception: #invalid utf-8
+            return None
     def set_yield(self, has_yield):
         lib.uws_req_set_field(self.req, 1 if has_yield else 0)
     def get_yield(self):
@@ -316,23 +383,105 @@ class AppResponse:
         self.aborted = False
         self._ptr = ffi.NULL
         self.loop = loop
+        self._aborted_handler = None
+        self._writable_handler = None
+        self._data_handler = None
+        self._ptr = ffi.new_handle(self)
+        self._grabed_abort_handler_once = False
+        self._write_jar = None
+
+    def set_cookie(self, name, value, options={}):
+        if self._write_jar == None:
+            self._write_jar = cookies.SimpleCookie()
+        self._write_jar[name] = value
+        if isinstance(options, dict):
+            for key in options:
+                if key == "expires" and isinstance(options[key], datetime):
+                    self._write_jar[name][key] = options[key].strftime("%a, %d %b %Y %H:%M:%S GMT")
+                else:
+                    self._write_jar[name][key] = options[key]
 
     def trigger_aborted(self):
         self.aborted = True
         self.res = ffi.NULL
         self._ptr = ffi.NULL
         if hasattr(self, "_aborted_handler") and hasattr(self._aborted_handler, '__call__'):
-            self._aborted_handler()
+            try:    
+                if inspect.iscoroutinefunction(self._aborted_handler):
+                    self.run_async(self._aborted_handler(self))
+                else:
+                    self._aborted_handler(self)
+            except Exception as err:
+                print("Error on abort handler %s"  % str(err))
         return self
+             
+    def trigger_data_handler(self, data, is_end):
+        if self.aborted:
+            return self
+        if hasattr(self, "_data_handler") and hasattr(self._data_handler, '__call__'):
+            try:
+                if inspect.iscoroutinefunction(self._data_handler):
+                    self.run_async(self._data_handler(self, data, is_end))
+                else:
+                    self._data_handler(self, data, is_end)
+            except Exception as err:
+                print("Error on data handler %s"  % str(err))
+
+        return self
+             
+    def trigger_writable_handler(self, offset):
+        if self.aborted:
+            return False
+        if hasattr(self, "_writable_handler") and hasattr(self._writable_handler, '__call__'):
+            try:
+                if inspect.iscoroutinefunction(self._writable_handler):
+                    raise RuntimeError("AppResponse.on_writable must be synchronous")
+                return self._writable_handler(self, offset)
+            except Exception as err:
+                print("Error on writable handler %s"  % str(err))
+            return False
+        return False
              
     def run_async(self, task):
         self.grab_aborted_handler()
         return self.loop.run_async(task, self)
 
+    
+    async def get_text(self, encoding='utf-8'):
+        data = await self.get_data()
+        try: 
+            return b''.join(data).decode(encoding)
+        except Exception:
+            return None #invalid encoding
+
+    async def get_json(self):
+        data = await self.get_data()
+        try: 
+            return json.loads(b''.join(data).decode('utf-8'))
+        except Exception:
+            return None #invalid json
+
+
+    def get_data(self):
+        future = self.loop.create_future()
+        data = []
+        def is_aborted(res):
+            future.set_result(data)
+
+        def get_chunks(res, chunk, is_end):
+            data.append(chunk)
+            if is_end:
+                future.set_result(data)
+        
+        self.on_aborted(is_aborted)
+        self.on_data(get_chunks)
+        return future
+
+
     def grab_aborted_handler(self):
         #only needed if is async
-        if self._ptr == ffi.NULL and not self.aborted:
-            self._ptr = ffi.new_handle(self)
+        if not self.aborted and not self._grabed_abort_handler_once:
+            self._grabed_abort_handler_once = True
             lib.uws_res_on_aborted(self.SSL, self.res, uws_generic_aborted_handler, self._ptr)
 
     def redirect(self, location, status_code=302):
@@ -342,6 +491,9 @@ class AppResponse:
    
     def end(self, message, end_connection=False):
         if not self.aborted:
+            if self._write_jar != None:
+                self.write_header("Set-Cookie", self._write_jar.output(header=""))
+            
             if isinstance(message, str):
                 data = message.encode("utf-8")
             elif isinstance(message, bytes):
@@ -350,7 +502,7 @@ class AppResponse:
                 self.end_without_body(end_connection)
                 return self
             else:
-                self.write_header("Content-Type", "application/json")
+                self.write_header(b'Content-Type', b'application/json')
                 data = json.dumps(message).encode("utf-8")
             lib.uws_res_end(self.SSL, self.res, data, len(data), 1 if end_connection else 0)
         return self
@@ -370,11 +522,17 @@ class AppResponse:
             lib.uws_res_write_continue(self.SSL, self.res)
         return self
 
+    # /* Try and end the response. Returns [true, true] on success.
+    #  * Starts a timeout in some cases. Returns [ok, hasResponded] */
+    # std::pair<bool, bool> tryEnd(std::string_view data, uintmax_t totalSize = 0) {
+    #     return {internalEnd(data, totalSize, true), hasResponded()};
+    # }
+
     def write_status(self, status_or_status_text):
         if not self.aborted:
             if isinstance(status_or_status_text, int):
                 try:
-                    data = status_codes[status_or_status_text].encode("utf-8")
+                    data = status_codes[status_or_status_text]
                 except: #invalid status
                     raise RuntimeError("\"%d\" Is not an valid Status Code" % status_or_status_text) 
             elif isinstance(status_text, str):
@@ -389,7 +547,13 @@ class AppResponse:
 
     def write_header(self, key, value):
         if not self.aborted:
-            key_data = key.encode("utf-8")
+            if isinstance(key, str):
+                key_data = key.encode("utf-8")
+            elif isinstance(key, bytes):
+                key_data = key
+            else:
+                key_data = json.dumps(key).encode("utf-8")
+
             if isinstance(value, int):
                 lib.uws_res_write_header_int(self.SSL, self.res, key_data, len(key_data),  ffi.cast("uint64_t", value))
             elif isinstance(value, str):
@@ -403,6 +567,8 @@ class AppResponse:
 
     def end_without_body(self,  end_connection=False):
         if not self.aborted:
+            if self._write_jar != None:
+                self.write_header("Set-Cookie", self._write_jar.output(header=""))
             lib.uws_res_end_without_body(self.SSL, self.res, 1 if end_connection else 0)
         return self
 
@@ -437,6 +603,22 @@ class AppResponse:
         if hasattr(handler, '__call__'):
            self.grab_aborted_handler()
            self._aborted_handler = handler
+        return self
+
+    def on_data(self, handler):
+        if not self.aborted:
+            if hasattr(handler, '__call__'):
+                self.grab_aborted_handler()
+                self._data_handler = handler
+                lib.uws_res_on_data(self.SSL, self.res, uws_generic_on_data_handler, self._ptr)
+        return self
+
+    def on_writable(self, handler):
+        if not self.aborted:
+            if hasattr(handler, '__call__'):
+               self.grab_aborted_handler()
+               self._writable_handler = handler
+               lib.uws_res_on_writable(self.SSL, self.res, uws_generic_on_writable_handler, self._ptr)
         return self
 
     def __del__(self):
@@ -546,9 +728,6 @@ class App:
             lib.uws_app_listen_with_config(self.SSL, self.app, options, uws_generic_listen_handler, self._ptr)
 
         return self
-
-    def get_loop():
-        return self.loop.loop
         
     def run_async(self, task, response=None):
         return self.loop.run_async(task, response)
@@ -557,7 +736,6 @@ class App:
         signal.signal(signal.SIGINT, lambda sig, frame: self.close())
         self.loop.start()
         self.loop.run()
-        # lib.uws_app_run(self.SSL, self.app)
         return self
         
     def close(self):

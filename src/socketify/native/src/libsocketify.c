@@ -89,7 +89,7 @@ void socketify_destroy_loop(socketify_loop* loop){
     free(loop);
 }
 
-socketify_timer* socketify_create_timer(socketify_loop* loop, int64_t timeout, int64_t repeat, socketify_timer_handler handler, void* user_data){
+socketify_timer* socketify_create_timer(socketify_loop* loop, uint64_t timeout, uint64_t repeat, socketify_timer_handler handler, void* user_data){
        
     uv_timer_t* uv_timer = malloc(sizeof(uv_timer_t));
     // uv_timer_init(loop->uv_loop, uv_timer);
@@ -108,6 +108,12 @@ socketify_timer* socketify_create_timer(socketify_loop* loop, int64_t timeout, i
 
     return timer;
 }
+
+void socketify_timer_set_repeat(socketify_timer* timer, uint64_t repeat){
+    uv_timer_set_repeat( timer->uv_timer_ptr, repeat);
+}
+
+
 
 //stops and destroy timer info
 void socketify_timer_destroy(socketify_timer* timer){

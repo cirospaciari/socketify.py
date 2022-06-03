@@ -1,7 +1,8 @@
 
 from socketify import App, AppOptions, AppListenOptions
 import asyncio
-
+from datetime import datetime
+from datetime import timedelta
 app = App()
 
 def home(res, req):
@@ -9,6 +10,27 @@ def home(res, req):
 
 def anything(res, req):
      res.end("Any route with method: %s" % req.get_method())
+
+def cookies(res, req):
+    #cookies are writen after end 
+    res.set_cookie("spaciari", "1234567890",{
+        # expires
+        # path
+        # comment
+        # domain
+        # max-age
+        # secure
+        # version
+        # httponly
+        # samesite
+        "path": "/",
+        # "domain": "*.test.com",
+        "httponly": True,
+        "samesite": "None",
+        "secure": True,
+        "expires": datetime.utcnow() + timedelta(minutes=30) 
+    })
+    res.end("Your session_id cookie is: %s" % req.get_cookie('session_id'));
 
 def useragent(res,req):
    res.end("Your user agent is: %s" % req.get_header('user-agent'));
@@ -77,9 +99,11 @@ app.get("/delayed", delayed)
 app.get("/json", json)
 app.get("/sleepy", sleepy_json)
 app.get("/custom_header", custom_header)
+app.get("/cookies", cookies)
 app.get("/send_in_parts", send_in_parts)
 app.get("/redirect", redirect)
 app.get("/redirected", redirected)
+# too see about app.post go to ./upload_or_post.py :D
 # Wildcard at last always :)
 app.any("/*", not_found)
 

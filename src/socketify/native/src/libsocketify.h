@@ -26,6 +26,8 @@ typedef struct{
     void* user_data;
 } socketify_timer;
 
+
+
 socketify_loop * socketify_create_loop();
 bool socketify_constructor_failed(socketify_loop* loop);
 bool socketify_on_prepare(socketify_loop* loop, socketify_prepare_handler handler, void* user_data);
@@ -36,6 +38,8 @@ void* socketify_get_native_loop(socketify_loop* loop);
 int socketify_loop_run(socketify_loop* loop, socketify_run_mode mode);
 void socketify_loop_stop(socketify_loop* loop);
 
-socketify_timer* socketify_create_timer(socketify_loop* loop, int64_t timeout, int64_t repeat, socketify_timer_handler handler, void* user_data);
+socketify_timer* socketify_create_timer(socketify_loop* loop, uint64_t timeout, uint64_t repeat, socketify_timer_handler handler, void* user_data);
 void socketify_timer_destroy(socketify_timer* timer);
+void socketify_timer_set_repeat(socketify_timer* timer, uint64_t repeat);
+
 #endif

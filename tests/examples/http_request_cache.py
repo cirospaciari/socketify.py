@@ -8,8 +8,8 @@ from helpers.twolevel_cache import TwoLevelCache
 redis_pool = redis.ConnectionPool(host='localhost', port=6379, db=0)
 redis_conection = redis.Redis(connection_pool=redis_pool)
 # 2 LEVEL CACHE (Redis to share amoung workers, Memory to be much faster)
-# cache in memory is 5s, cache in redis is 10s duration 
-cache = TwoLevelCache(redis_conection, 5, 10)
+# cache in memory is 30s, cache in redis is 60s duration 
+cache = TwoLevelCache(redis_conection, 30, 60)
 
 ###
 # Model
@@ -19,17 +19,17 @@ async def get_pokemon(number):
     async with aiohttp.ClientSession() as session:
         async with session.get(f'https://pokeapi.co/api/v2/pokemon/{number}') as response:
             pokemon = await response.text()
-            #cache only works with strings/bytes/buffer
+            #cache only works with strings/bytes
             #we will not change nothing here so no needs to parse json
-            return pokemon
+            return pokemon.encode("utf-8")
 
 async def get_original_pokemons():
     async with aiohttp.ClientSession() as session:
         async with session.get(f'https://pokeapi.co/api/v2/pokemon?limit=151') as response:
-            #cache only works with strings/bytes/buffer 
+            #cache only works with strings/bytes 
             #we will not change nothing here so no needs to parse json
             pokemons = await response.text()
-            return pokemons
+            return pokemons.encode("utf-8")
 
 
 ###
