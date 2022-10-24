@@ -8,6 +8,7 @@ import signal
 from http import cookies
 from datetime import datetime
 from urllib.parse import parse_qs, quote_plus, unquote_plus
+from threading import Thread, local, Lock
 
 ffi = cffi.FFI()
 ffi.cdef("""
@@ -148,6 +149,10 @@ typedef struct
     uws_websocket_close_handler close;
 } uws_socket_behavior_t;
 
+typedef struct {
+    bool ok;
+    bool has_responded;
+} uws_try_end_result_t;
 
 typedef void (*uws_listen_handler)(struct us_listen_socket_t *listen_socket, uws_app_listen_config_t config, void *user_data);
 typedef void (*uws_method_handler)(uws_res_t *response, uws_req_t *request, void *user_data);
@@ -198,8 +203,8 @@ void uws_res_on_writable(int ssl, uws_res_t *res, bool (*handler)(uws_res_t *res
 void uws_res_on_aborted(int ssl, uws_res_t *res, void (*handler)(uws_res_t *res, void *opcional_data), void *opcional_data);
 void uws_res_on_data(int ssl, uws_res_t *res, void (*handler)(uws_res_t *res, const char *chunk, size_t chunk_length, bool is_end, void *opcional_data), void *opcional_data);
 void uws_res_upgrade(int ssl, uws_res_t *res, void *data, const char *sec_web_socket_key, size_t sec_web_socket_key_length, const char *sec_web_socket_protocol, size_t sec_web_socket_protocol_length, const char *sec_web_socket_extensions, size_t sec_web_socket_extensions_length, uws_socket_context_t *ws);
-
-
+uws_try_end_result_t uws_res_try_end(int ssl, uws_res_t *res, const char *data, size_t length, uintmax_t total_size);
+void uws_res_cork(int ssl, uws_res_t *res,void(*callback)(uws_res_t *res, void* user_data) ,void* user_data);
 bool uws_req_is_ancient(uws_req_t *res);
 bool uws_req_get_yield(uws_req_t *res);
 void uws_req_set_field(uws_req_t *res, bool yield);
@@ -282,6 +287,20 @@ def uws_generic_on_writable_handler(res, offset, user_data):
         return res.trigger_writable_handler(offset)
     return False
 
+global_lock = Lock()
+@ffi.callback("void(uws_res_t *, void*)")
+def uws_generic_cork_handler(res, user_data):
+    if not user_data == ffi.NULL:
+        response = ffi.from_handle(user_data)  
+        try:
+            if inspect.iscoroutinefunction(response._cork_handler):
+                raise RuntimeError("Calls inside cork must be sync")
+            response._cork_handler(response)
+        except Exception as err:
+            print("Error on cork handler %s"  % str(err))
+            # response.grab_aborted_handler()
+            # app.trigger_error(err, response, request)
+    global_lock.release()
 class AppRequest:
     def __init__(self, request):
         self.req = request
@@ -377,13 +396,11 @@ class AppRequest:
     def is_ancient(self):
         return bool(lib.uws_req_is_ancient(self.req))
 
-
 class AppResponse:
     def __init__(self, response, loop, is_ssl):
         self.res = response
         self.SSL = ffi.cast("int", 1 if is_ssl else 0)
         self.aborted = False
-        self._ptr = ffi.NULL
         self.loop = loop
         self._aborted_handler = None
         self._writable_handler = None
@@ -391,7 +408,15 @@ class AppResponse:
         self._ptr = ffi.new_handle(self)
         self._grabed_abort_handler_once = False
         self._write_jar = None
+        # self.needs_cork = False
+        self._cork_handler = None
 
+    def cork(self, callback):
+        if not self.aborted:
+            global_lock.acquire(True)
+            self._cork_handler = callback
+            lib.uws_res_cork(self.SSL, self.res, uws_generic_cork_handler, self._ptr)
+            
     def set_cookie(self, name, value, options={}):
         if self._write_jar == None:
             self._write_jar = cookies.SimpleCookie()
@@ -405,8 +430,8 @@ class AppResponse:
 
     def trigger_aborted(self):
         self.aborted = True
-        self.res = ffi.NULL
         self._ptr = ffi.NULL
+        self.res = ffi.NULL
         if hasattr(self, "_aborted_handler") and hasattr(self._aborted_handler, '__call__'):
             try:    
                 if inspect.iscoroutinefunction(self._aborted_handler):
@@ -512,22 +537,23 @@ class AppResponse:
         self.end_without_body(False)
    
     def end(self, message, end_connection=False):
-        if not self.aborted:
-            if self._write_jar != None:
-                self.write_header("Set-Cookie", self._write_jar.output(header=""))
-            
-            if isinstance(message, str):
-                data = message.encode("utf-8")
-            elif isinstance(message, bytes):
-                data = message
-            elif message == None:
-                self.end_without_body(end_connection)
-                return self
-            else:
-                self.write_header(b'Content-Type', b'application/json')
-                data = json.dumps(message).encode("utf-8")
-            lib.uws_res_end(self.SSL, self.res, data, len(data), 1 if end_connection else 0)
-        return self
+            if not self.aborted:
+                try:
+                        if self._write_jar != None:
+                            self.write_header("Set-Cookie", self._write_jar.output(header=""))
+                        if isinstance(message, str):
+                            data = message.encode("utf-8")
+                        elif isinstance(message, bytes):
+                            data = message
+                        elif message == None:
+                            self.end_without_body(end_connection)
+                            return self
+                        else:
+                            self.write_header(b'Content-Type', b'application/json')
+                            data = json.dumps(message).encode("utf-8")
+                        lib.uws_res_end(self.SSL, self.res, data, len(data), 1 if end_connection else 0)
+                finally:
+                    return self
 
     def pause(self):
         if not self.aborted:

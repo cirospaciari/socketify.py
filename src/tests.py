@@ -21,19 +21,39 @@
 # for_each_header
 # https://github.com/uNetworking/uWebSockets.js/blob/master/examples/VideoStreamer.js
 from socketify import App
-from datetime import datetime
-from datetime import timedelta
+import os
+import multiprocessing
+import asyncio
 
+def corked(res):
+    res.write("Test ")
+    res.end("Hello, World!")
+    
 async def home(res, req):
-    data = await res.get_form_urlencoded()
-    print(data)
-    res.end(f"DATA! {data}")
+    # res.write_header("Content-Type", "plain/text")
+    await asyncio.sleep(0)
+    res.cork(corked)
+    # res.write("Test ")
+    # res.end("Hello, World!")
+    # res.end("Hello, World!")
+    
+def run_app():
+    app = App()    
+    app.get("/", home)
+    app.listen(3000, lambda config: print("PID %d Listening on port http://localhost:%d now\n" % (os.getpid(), config.port)))
+    app.run()
 
-app = App()
-app.post("/", home)
-app.listen(3000, lambda config: print("Listening on port http://localhost:%d now\n" % config.port))
-app.run()
+def create_fork():
+    n = os.fork()
+    # n greater than 0 means parent process
+    if not n > 0:
+        run_app()
 
+# fork limiting the cpu count - 1
+# for i in range(1, multiprocessing.cpu_count()):
+#     create_fork()
+
+run_app() # run app on the main process too :)
 # from datetime import datetime
 # raw = "_ga=GA1.1.1871393672.1649875681; affclick=null; __udf_j=d31b9af0d332fec181c1a893320322c0cb33ce95d7bdbd21a4cc4ee66d6d8c23817686b4ba59dd0e015cb95e8196157c"
 

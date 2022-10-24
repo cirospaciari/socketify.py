@@ -35,7 +35,6 @@ class Loop:
         asyncio.set_event_loop(self.loop)
         self.started = False
         self.last_defer = False
-        # self.loop_thread = None
 
     def create_future(self):
         return self.loop.create_future()
@@ -43,7 +42,7 @@ class Loop:
     def start(self):
         self.started = True
         #start relaxed until first task
-        self.timer = self.uv_loop.create_timer(0, 100, lambda loop: loop.run_once_asyncio(), self)
+        self.timer = self.uv_loop.create_timer(0, 1, lambda loop: loop.run_once_asyncio(), self)
 
     def run(self):
         self.uv_loop.run()
@@ -55,12 +54,6 @@ class Loop:
         #run only one step
         self.loop.call_soon(self.loop.stop)
         self.loop.run_forever()
-        if self.started:
-            pending = len(asyncio.all_tasks(self.loop))
-            if pending < 1: #relaxed if has no tasks
-                self.timer.set_repeat(100)
-            else: #urge when needs
-                self.timer.set_repeat(1)
 
     def stop(self):
         if(self.started):
@@ -90,6 +83,9 @@ class Loop:
 
         #force asyncio run once to enable req in async functions before first await
         self.run_once_asyncio()
+
+        # if response != None: #set auto cork
+            # response.needs_cork = True
         return future
 
 
