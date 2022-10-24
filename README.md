@@ -3,6 +3,8 @@ Fast WebSocket and Http/Https server using CFFI with C API from [uNetworking/uWe
 
 > This project will adapt the full capi from uNetworking/uWebSockets but for now it's just this.
 
+# UPDATE This project will resume the development in 2023
+
 ### Overly simple hello world app
 ```python
 from socketify import App
