@@ -25,13 +25,15 @@ import os
 import multiprocessing
 import asyncio
 
-def corked(res):
-    res.write("Test ")
-    res.end("Hello, World!")
-    
+
 async def home(res, req):
     # res.write_header("Content-Type", "plain/text")
     await asyncio.sleep(0)
+
+    def corked(res):
+        res.write("Test ")
+        res.end("Hello, World!")
+    
     res.cork(corked)
     # res.write("Test ")
     # res.end("Hello, World!")

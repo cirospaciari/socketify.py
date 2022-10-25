@@ -36,6 +36,9 @@ class Loop:
         self.started = False
         self.last_defer = False
 
+    def set_timeout(self, timeout, callback, user_data):
+        return self.uv_loop.create_timer(timeout, 0, callback, user_data)
+
     def create_future(self):
         return self.loop.create_future()
 

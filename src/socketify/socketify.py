@@ -287,7 +287,7 @@ def uws_generic_on_writable_handler(res, offset, user_data):
         return res.trigger_writable_handler(offset)
     return False
 
-global_lock = Lock()
+
 @ffi.callback("void(uws_res_t *, void*)")
 def uws_generic_cork_handler(res, user_data):
     if not user_data == ffi.NULL:
@@ -300,7 +300,7 @@ def uws_generic_cork_handler(res, user_data):
             print("Error on cork handler %s"  % str(err))
             # response.grab_aborted_handler()
             # app.trigger_error(err, response, request)
-    global_lock.release()
+    
 class AppRequest:
     def __init__(self, request):
         self.req = request
@@ -413,9 +413,9 @@ class AppResponse:
 
     def cork(self, callback):
         if not self.aborted:
-            global_lock.acquire(True)
             self._cork_handler = callback
-            lib.uws_res_cork(self.SSL, self.res, uws_generic_cork_handler, self._ptr)
+            #just add to uv loop in next tick to garantee corking works properly
+            self.loop.set_timeout(0, lambda instance: lib.uws_res_cork(instance.SSL, instance.res, uws_generic_cork_handler, instance._ptr), self)
             
     def set_cookie(self, name, value, options={}):
         if self._write_jar == None:

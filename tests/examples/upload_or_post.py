@@ -10,7 +10,7 @@ def upload(res, req):
     def on_data(res, chunk, is_end):
         print(f"Got chunk of data with length {len(chunk)}, is_end: {is_end}")
         if (is_end):
-            res.end("Thanks for the data!")
+            res.cork(lambda res: res.end("Thanks for the data!"))
 
     res.on_data(on_data)
 
@@ -24,7 +24,7 @@ async def upload_chunks(res, req):
         print(f"Got chunk of data with length {len(chunk)}")
         
     #We respond when we are done
-    res.end("Thanks for the data!")
+    res.cork(lambda res: res.end("Thanks for the data!"))
 
 async def upload_json(res, req):
     print(f"Posted to {req.get_url()}")
@@ -35,7 +35,7 @@ async def upload_json(res, req):
         print(f"First person is named: {people[0]['name']}")
         
     #We respond when we are done
-    res.end("Thanks for the data!")
+    res.cork(lambda res: res.end("Thanks for the data!"))
 
 async def upload_text(res, req):
     print(f"Posted to {req.get_url()}")
@@ -45,7 +45,7 @@ async def upload_text(res, req):
     print(f"Your text is ${text}")
         
     #We respond when we are done
-    res.end("Thanks for the data!")
+    res.cork(lambda res: res.end("Thanks for the data!"))
 
 async def upload_urlencoded(res, req):
     print(f"Posted to {req.get_url()}")
@@ -55,7 +55,7 @@ async def upload_urlencoded(res, req):
     print(f"Your form is ${form}")
         
     #We respond when we are done
-    res.end("Thanks for the data!")
+    res.cork(lambda res: res.end("Thanks for the data!"))
 
     
 async def upload_multiple(res, req):
@@ -72,7 +72,7 @@ async def upload_multiple(res, req):
     print(f"Your data is ${data}")
         
     #We respond when we are done
-    res.end("Thanks for the data!")
+    res.cork(lambda res: res.end("Thanks for the data!"))
 
 
 app = App()
