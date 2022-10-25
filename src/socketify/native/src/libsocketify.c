@@ -15,6 +15,11 @@ void socketify_generic_timer_callback(uv_timer_t *timer){
     loop_data->handler(loop_data->user_data);
 }
 
+void socketify_generic_check_callback(uv_check_t *timer){
+    socketify_timer* loop_data = (socketify_timer*)uv_handle_get_data((uv_handle_t*)timer);
+    loop_data->handler(loop_data->user_data);
+}
+
 
 void* socketify_get_native_loop(socketify_loop* loop){
     return loop->uv_loop;
@@ -104,7 +109,7 @@ socketify_timer* socketify_create_timer(socketify_loop* loop, uint64_t timeout, 
     timer->handler = handler;
 
     uv_handle_set_data((uv_handle_t*)uv_timer, timer);
-    uv_timer_start(uv_timer, socketify_generic_timer_callback, timeout, repeat);
+    uv_timer_start(uv_timer, socketify_generic_timer_callback, timeout, repeat); 
 
     return timer;
 }
@@ -114,10 +119,37 @@ void socketify_timer_set_repeat(socketify_timer* timer, uint64_t repeat){
 }
 
 
-
 //stops and destroy timer info
 void socketify_timer_destroy(socketify_timer* timer){
     uv_timer_stop(timer->uv_timer_ptr);
+    free(timer->uv_timer_ptr);
+    free(timer);
+}
+
+
+
+socketify_timer* socketify_create_check(socketify_loop* loop, socketify_timer_handler handler, void* user_data){
+       
+    uv_check_t* uv_timer = malloc(sizeof(uv_check_t));
+    if(uv_check_init(loop->uv_loop, uv_timer)){
+         free(uv_timer);
+         return NULL;
+    }
+
+    socketify_timer* timer = malloc(sizeof(socketify_timer));
+    timer->uv_timer_ptr = uv_timer;
+    timer->user_data = user_data;
+    timer->handler = handler;
+
+    uv_handle_set_data((uv_handle_t*)uv_timer, timer);
+    uv_check_start(uv_timer, socketify_generic_check_callback); 
+
+    return timer;
+}
+
+//stops and destroy timer info
+void socketify_check_destroy(socketify_timer* timer){
+    uv_check_stop(timer->uv_timer_ptr);
     free(timer->uv_timer_ptr);
     free(timer);
 }

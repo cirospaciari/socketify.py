@@ -2,6 +2,7 @@
 import asyncio
 import threading
 import time
+from queue import Queue
 
 from .native import UVLoop
 
@@ -26,6 +27,8 @@ class Loop:
     def __init__(self, exception_handler=None):
         self.loop = asyncio.new_event_loop()
         self.uv_loop = UVLoop()
+        self.queue = Queue()
+
         if hasattr(exception_handler, '__call__'):
             self.exception_handler = exception_handler
             self.loop.set_exception_handler(lambda loop, context: exception_handler(loop, context, None))
@@ -39,13 +42,25 @@ class Loop:
     def set_timeout(self, timeout, callback, user_data):
         return self.uv_loop.create_timer(timeout, 0, callback, user_data)
 
+    def enqueue(self, callback, user_data):
+        self.queue.put((callback, user_data))
+
     def create_future(self):
         return self.loop.create_future()
 
     def start(self):
         self.started = True
-        #start relaxed until first task
-        self.timer = self.uv_loop.create_timer(0, 1, lambda loop: loop.run_once_asyncio(), self)
+        #run asyncio once per tick
+        def tick(loop):
+            #only call one item of the queue per tick
+            if not loop.queue.empty():
+                (callback, user_data) = loop.queue.get(False)
+                callback(user_data)
+                loop.queue.task_done()
+            #run once asyncio
+            loop.run_once_asyncio()
+        #use check for calling asyncio once per tick
+        self.timer = self.uv_loop.create_check(tick, self)
 
     def run(self):
         self.uv_loop.run()

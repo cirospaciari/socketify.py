@@ -28,7 +28,7 @@ import asyncio
 
 async def home(res, req):
     # res.write_header("Content-Type", "plain/text")
-    # await asyncio.sleep(0)
+    await asyncio.sleep(0)
 
     def corked(res):
         res.write("Test ")

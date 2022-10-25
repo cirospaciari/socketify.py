@@ -42,4 +42,6 @@ socketify_timer* socketify_create_timer(socketify_loop* loop, uint64_t timeout, 
 void socketify_timer_destroy(socketify_timer* timer);
 void socketify_timer_set_repeat(socketify_timer* timer, uint64_t repeat);
 
+socketify_timer* socketify_create_check(socketify_loop* loop, socketify_timer_handler handler, void* user_data);
+void socketify_check_destroy(socketify_timer* timer);
 #endif

@@ -418,10 +418,11 @@ class AppResponse:
     def cork(self, callback):
         if not self.aborted:
             self._cork_handler = callback
-            if is_python:
-                lib.uws_res_cork(self.SSL, self.res, uws_generic_cork_handler, self._ptr)
-            else: #just add to uv loop in next tick to garantee corking works properly in pypy3
+            if is_python: #call is enqueued to garantee corking works properly in python3
+                self.loop.enqueue(lambda instance: lib.uws_res_cork(instance.SSL, instance.res, uws_generic_cork_handler, instance._ptr), self)
+            else: #just add to uvloop in next tick to garantee corking works properly in pypy3
                 self.loop.set_timeout(0, lambda instance: lib.uws_res_cork(instance.SSL, instance.res, uws_generic_cork_handler, instance._ptr), self)
+            
             
     def set_cookie(self, name, value, options={}):
         if self._write_jar == None:
