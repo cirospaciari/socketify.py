@@ -10,6 +10,9 @@ from datetime import datetime
 from urllib.parse import parse_qs, quote_plus, unquote_plus
 from threading import Thread, local, Lock
 
+import platform    
+is_python = platform.python_implementation() == 'CPython'
+
 ffi = cffi.FFI()
 ffi.cdef("""
 
@@ -266,9 +269,11 @@ def uws_generic_listen_handler(listen_socket, config, user_data):
 @ffi.callback("void(uws_res_t *, void*)")
 def uws_generic_aborted_handler(response, user_data):
     if not user_data == ffi.NULL:
-        res = ffi.from_handle(user_data)
-        res.trigger_aborted()
-
+        try:
+            res = ffi.from_handle(user_data)
+            res.trigger_aborted()
+        except:
+            pass
 @ffi.callback("void(uws_res_t *, const char *, size_t, bool, void*)")
 def uws_generic_on_data_handler(res, chunk, chunk_length, is_end, user_data):
     if not user_data == ffi.NULL:
@@ -408,14 +413,15 @@ class AppResponse:
         self._ptr = ffi.new_handle(self)
         self._grabed_abort_handler_once = False
         self._write_jar = None
-        # self.needs_cork = False
         self._cork_handler = None
 
     def cork(self, callback):
         if not self.aborted:
             self._cork_handler = callback
-            #just add to uv loop in next tick to garantee corking works properly
-            self.loop.set_timeout(0, lambda instance: lib.uws_res_cork(instance.SSL, instance.res, uws_generic_cork_handler, instance._ptr), self)
+            if is_python:
+                lib.uws_res_cork(self.SSL, self.res, uws_generic_cork_handler, self._ptr)
+            else: #just add to uv loop in next tick to garantee corking works properly in pypy3
+                self.loop.set_timeout(0, lambda instance: lib.uws_res_cork(instance.SSL, instance.res, uws_generic_cork_handler, instance._ptr), self)
             
     def set_cookie(self, name, value, options={}):
         if self._write_jar == None:

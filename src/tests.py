@@ -28,7 +28,7 @@ import asyncio
 
 async def home(res, req):
     # res.write_header("Content-Type", "plain/text")
-    await asyncio.sleep(0)
+    # await asyncio.sleep(0)
 
     def corked(res):
         res.write("Test ")
@@ -51,7 +51,7 @@ def create_fork():
     if not n > 0:
         run_app()
 
-# fork limiting the cpu count - 1
+# # fork limiting the cpu count - 1
 # for i in range(1, multiprocessing.cpu_count()):
 #     create_fork()
 
