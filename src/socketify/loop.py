@@ -21,7 +21,8 @@ def future_handler(future, loop, exception_handler, response):
                 if response != None:
                     response.write_status(500).end("Internal Error")
             finally:
-                return
+                return None
+        return None
 
 class Loop:
     def __init__(self, exception_handler=None):
@@ -60,7 +61,8 @@ class Loop:
             #run once asyncio
             loop.run_once_asyncio()
         #use check for calling asyncio once per tick
-        self.timer = self.uv_loop.create_check(tick, self)
+        self.timer = self.uv_loop.create_timer(0, 1, tick, self)
+        # self.timer = self.uv_loop.create_check(tick, self)
 
     def run(self):
         self.uv_loop.run()
@@ -69,9 +71,11 @@ class Loop:
         self.uv_loop.run_once()
 
     def run_once_asyncio(self):
+        # with suppress(asyncio.CancelledError):
         #run only one step
         self.loop.call_soon(self.loop.stop)
         self.loop.run_forever()
+            
 
     def stop(self):
         if(self.started):
@@ -98,7 +102,6 @@ class Loop:
 
         #with threads
         future.add_done_callback(lambda f: future_handler(f, self.loop, self.exception_handler, response))
-
         #force asyncio run once to enable req in async functions before first await
         self.run_once_asyncio()
 

@@ -24,20 +24,25 @@ from socketify import App
 import os
 import multiprocessing
 import asyncio
+import aiofiles
 
 
+#need to fix get_data using sel._data etc
 async def home(res, req):
     # res.write_header("Content-Type", "plain/text")
-    await asyncio.sleep(0)
+    # await asyncio.sleep(0)
+    # res.write_header("Content-Type", "audio/mpeg")
+    res.write_header("Content-Type", "application/octet-stream")
 
-    def corked(res):
-        res.write("Test ")
-        res.end("Hello, World!")
+    filename = "./file_example_MP3_5MG.mp3"
+    total = os.stat(filename).st_size
     
-    res.cork(corked)
-    # res.write("Test ")
-    # res.end("Hello, World!")
-    # res.end("Hello, World!")
+    async with aiofiles.open(filename, "rb") as fd:
+        while not res.aborted:
+            buffer = await fd.read(16*1024)
+            (ok, done) = await res.send_chunk(buffer, total)
+            if not ok or done: #if cannot send probably aborted
+                break 
     
 def run_app():
     app = App()    
