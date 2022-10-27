@@ -604,6 +604,9 @@ class AppResponse:
                 return (bool(result.ok), bool(result.has_responded))
             except:
                 return (False, False)
+    
+    def cork_end(self, message, end_connection=False):
+        self.cork(lambda res: res.end(message, end_connection))
 
     def end(self, message, end_connection=False):
             try:

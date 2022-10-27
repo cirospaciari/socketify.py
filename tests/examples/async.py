@@ -5,7 +5,7 @@ app = App()
 
 async def delayed_hello(delay, res):
     await asyncio.sleep(delay) #do something async
-    res.cork(lambda res: res.end("Hello with delay!"))
+    res.cork_end("Hello with delay!")
 
 def home(res, req):
     #request object only lives during the life time of this call
@@ -22,7 +22,8 @@ async def json(res, req):
     user_agent = req.get_header("user-agent")
     #req maybe will not be available in direct attached async functions after await
     await asyncio.sleep(2) #do something async
-    res.cork(lambda res: res.end({ "message": "I'm delayed!", "user-agent": user_agent}))
+    
+    res.cork_end({ "message": "I'm delayed!", "user-agent": user_agent})
 
 def not_found(res, req):
     res.write_status(404).end("Not Found")

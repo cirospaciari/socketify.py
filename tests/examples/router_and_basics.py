@@ -45,7 +45,10 @@ def user(res, req):
 
 async def delayed_hello(delay, res):
     await asyncio.sleep(delay) #do something async
-    res.cork(lambda res: res.end("Hello sorry for the delay!"))
+    res.cork_end("Hello sorry for the delay!")
+    # cork_end is a less verbose way of writing
+    # res.cork(lambda res: res.end("Hello sorry for the delay!"))
+
 
 def delayed(res, req):
     #request object only lives during the life time of this call
@@ -66,7 +69,7 @@ async def sleepy_json(res, req):
     #req maybe will not be available in direct attached async functions after await
     #but if you dont care about req info you can do it
     await asyncio.sleep(2) #do something async
-    res.cork(lambda res: res.end({ "message": "I'm delayed!", "user-agent": user_agent}))
+    res.cork_end({ "message": "I'm delayed!", "user-agent": user_agent})
 
 def custom_header(res, req):
     res.write_header("Content-Type", "application/octet-stream")

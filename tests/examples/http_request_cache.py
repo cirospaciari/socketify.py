@@ -45,7 +45,7 @@ def list_original_pokemons(res, req):
     #get asynchronous from Model
     async def get_originals():
         value = await cache.run_once("original_pokemons", 5, get_original_pokemons)
-        res.cork(lambda res: res.end(value))
+        res.cork_end(value)
 
     res.run_async(get_originals())
 
@@ -70,7 +70,7 @@ def list_pokemon(res, req):
         #sync with redis lock to run only once
         #if more than 1 worker/request try to do this request, only one will call the Model and the others will get from cache
         value = await cache.run_once(cache_key, 5, get_pokemon, number)
-        res.cork(lambda res: res.end(value))
+        res.cork_end(value)
 
     res.run_async(find_pokemon(number, res))
 
