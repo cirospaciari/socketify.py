@@ -1,11 +1,10 @@
+from aiofile import async_open
 import os
 import time
 import mimetypes
 from os import path
 
 mimetypes.init()
-# We have an version of this using aiofile and aiofiles
-# This is an sync version without any dependencies is normally much faster in CPython and PyPy3
 # In production we highly recomend to use CDN like CloudFlare or/and NGINX or similar for static files
 async def send_file(res, req, filename):
     #read headers before the first await
@@ -45,7 +44,7 @@ async def send_file(res, req, filename):
         elif content_type:
             res.write_header(b'Content-Type', content_type)
         
-        with open(filename, "rb") as fd:
+        async with async_open(filename, "rb") as fd:
             #check range and support it
             if start > 0 or not end == -1:
                 if end < 0 or end >= size:
@@ -60,8 +59,9 @@ async def send_file(res, req, filename):
                 res.write_status(200)
             
             #tells the browser that we support range 
-            res.write_header(b'Accept-Ranges', b'bytes') 
-            res.write_header(b'Content-Range', 'bytes %d-%d/%d' % (start, end, total_size))
+            #TODO: FIX BYTE RANGE IN ASYNC
+            # res.write_header(b'Accept-Ranges', b'bytes') 
+            # res.write_header(b'Content-Range', 'bytes %d-%d/%d' % (start, end, total_size))
             
             pending_size = size
             #keep sending until abort or done
@@ -69,7 +69,7 @@ async def send_file(res, req, filename):
                 chunk_size = 16384 #16kb chunks
                 if chunk_size > pending_size:
                     chunk_size = pending_size
-                buffer = fd.read(chunk_size)
+                buffer = await fd.read(chunk_size)
                 pending_size = pending_size - chunk_size
                 (ok, done) = await res.send_chunk(buffer, size)
                 if not ok or done: #if cannot send probably aborted

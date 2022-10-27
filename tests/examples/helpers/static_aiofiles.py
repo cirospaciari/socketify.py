@@ -1,11 +1,10 @@
-import os
+import aiofiles
+from aiofiles import os
 import time
 import mimetypes
 from os import path
 
 mimetypes.init()
-# We have an version of this using aiofile and aiofiles
-# This is an sync version without any dependencies is normally much faster in CPython and PyPy3
 # In production we highly recomend to use CDN like CloudFlare or/and NGINX or similar for static files
 async def send_file(res, req, filename):
     #read headers before the first await
@@ -21,13 +20,13 @@ async def send_file(res, req, filename):
         if bytes_range[1]:
             end = int(bytes_range[1])
     try:
-        exists = path.exists(filename)
+        exists = await os.path.exists(filename)
         #not found
         if not exists:
             return res.write_status(404).end(b'Not Found')
 
         #get size and last modified date
-        stats = os.stat(filename)
+        stats = await os.stat(filename)
         total_size = stats.st_size
         size = total_size
         last_modified = time.strftime('%a, %d %b %Y %H:%M:%S GMT', time.gmtime(stats.st_mtime))
@@ -45,13 +44,13 @@ async def send_file(res, req, filename):
         elif content_type:
             res.write_header(b'Content-Type', content_type)
         
-        with open(filename, "rb") as fd:
+        async with aiofiles.open(filename, "rb") as fd:
             #check range and support it
             if start > 0 or not end == -1:
                 if end < 0 or end >= size:
                     end = size - 1
                 size = end - start + 1
-                fd.seek(start)
+                await fd.seek(start)
                 if start > total_size or size > total_size or size < 0 or start < 0:
                     return res.write_status(416).end_without_body()
                 res.write_status(206)
@@ -60,8 +59,9 @@ async def send_file(res, req, filename):
                 res.write_status(200)
             
             #tells the browser that we support range 
-            res.write_header(b'Accept-Ranges', b'bytes') 
-            res.write_header(b'Content-Range', 'bytes %d-%d/%d' % (start, end, total_size))
+            #TODO: FIX BYTE RANGE IN ASYNC
+            # res.write_header(b'Accept-Ranges', b'bytes') 
+            # res.write_header(b'Content-Range', 'bytes %d-%d/%d' % (start, end, total_size))
             
             pending_size = size
             #keep sending until abort or done
@@ -69,7 +69,7 @@ async def send_file(res, req, filename):
                 chunk_size = 16384 #16kb chunks
                 if chunk_size > pending_size:
                     chunk_size = pending_size
-                buffer = fd.read(chunk_size)
+                buffer = await fd.read(chunk_size)
                 pending_size = pending_size - chunk_size
                 (ok, done) = await res.send_chunk(buffer, size)
                 if not ok or done: #if cannot send probably aborted
