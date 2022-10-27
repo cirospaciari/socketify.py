@@ -552,7 +552,7 @@ class AppResponse:
             return self._chunkFuture
         #failed to send chunk
         self._lastChunkOffset = self.get_write_offset()
-            
+
         return self._chunkFuture
 
     def get_data(self):
