@@ -387,7 +387,13 @@ class AppRequest:
         self._for_each_header_handler = handler
         lib.uws_req_for_each_header(self.req, uws_req_for_each_header_handler, self._ptr)
         
-        
+    def get_headers(self):
+        headers = {}
+        def copy_headers(key, value):
+            headers[key] = value
+        self.for_each_header(copy_headers)
+        return headers
+
     def get_header(self, lower_case_header):
         if isinstance(lower_case_header, str):
             data = lower_case_header.encode("utf-8")

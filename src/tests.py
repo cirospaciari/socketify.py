@@ -18,6 +18,47 @@
 
 
 
+# void uws_res_prepare_for_sendfile(int ssl, uws_res_t *res) {
+#   if (ssl) {
+#     uWS::HttpResponse<true> *uwsRes = (uWS::HttpResponse<true> *)res;
+#     auto pair = uwsRes->getSendBuffer(2);
+#     char *ptr = pair.first;
+#     ptr[0] = '\r';
+#     ptr[1] = '\n';
+#     uwsRes->uncork();
+#   } else {
+#     uWS::HttpResponse<false> *uwsRes = (uWS::HttpResponse<false> *)res;
+#     auto pair = uwsRes->getSendBuffer(2);
+#     char *ptr = pair.first;
+#     ptr[0] = '\r';
+#     ptr[1] = '\n';
+#     uwsRes->uncork();
+#   }
+# }
+
+# int uws_res_state(int ssl, uws_res_t *res) {
+#   if (ssl) {
+#     uWS::HttpResponse<true> *uwsRes = (uWS::HttpResponse<true> *)res;
+#     return uwsRes->getHttpResponseData()->state;
+#   } else {
+#     uWS::HttpResponse<false> *uwsRes = (uWS::HttpResponse<false> *)res;
+#     return uwsRes->getHttpResponseData()->state;
+#   }
+# }
+
+#uws_res_get_native_handle
+
+
+# void *uws_res_get_native_handle(int ssl, uws_res_t *res) {
+#   if (ssl) {
+#     uWS::HttpResponse<true> *uwsRes = (uWS::HttpResponse<true> *)res;
+#     return uwsRes->getNativeHandle();
+#   } else {
+#     uWS::HttpResponse<false> *uwsRes = (uWS::HttpResponse<false> *)res;
+#     return uwsRes->getNativeHandle();
+#   }
+# }
+# }
 # unsigned int uws_num_subscribers(int ssl, uws_app_t *app, const char *topic);
 # bool uws_publish(int ssl, uws_app_t *app, const char *topic, size_t topic_length, const char *message, size_t message_length, uws_opcode_t opcode, bool compress);
 # void *uws_get_native_handle(int ssl, uws_app_t *app);
@@ -42,6 +83,9 @@ async def home(res, req):
     print("normal", req.get_url())
 
     req.for_each_header(lambda key,value: print("Header %s: %s" % (key, value)))
+
+
+    print("All headers", req.get_headers())
     res.end("Test")
 
 def run_app():
