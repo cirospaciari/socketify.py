@@ -66,6 +66,9 @@ def json(res, req):
 async def sleepy_json(res, req):
     #get parameters, query, headers anything you need here before first await :)
     user_agent = req.get_header("user-agent")
+    #get all headers
+    req.for_each_header(lambda key,value: print("Header %s: %s" % (key, value)))
+
     #req maybe will not be available in direct attached async functions after await
     #but if you dont care about req info you can do it
     await asyncio.sleep(2) #do something async

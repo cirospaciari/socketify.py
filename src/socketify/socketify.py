@@ -161,6 +161,9 @@ typedef void (*uws_listen_handler)(struct us_listen_socket_t *listen_socket, uws
 typedef void (*uws_method_handler)(uws_res_t *response, uws_req_t *request, void *user_data);
 typedef void (*uws_filter_handler)(uws_res_t *response, int, void *user_data);
 typedef void (*uws_missing_server_handler)(const char *hostname, void *user_data);
+typedef void (*uws_get_headers_server_handler)(const char *header_name, size_t header_name_size, const char *header_value, size_t header_value_size, void *user_data);
+
+
 uws_app_t *uws_create_app(int ssl, struct us_socket_context_options_t options);
 void uws_app_destroy(int ssl, uws_app_t *app);
 void uws_app_get(int ssl, uws_app_t *app, const char *pattern, uws_method_handler handler, void *user_data);
@@ -179,7 +182,7 @@ void uws_app_run(int ssl, uws_app_t *);
 void uws_app_listen(int ssl, uws_app_t *app, int port, uws_listen_handler handler, void *user_data);
 void uws_app_listen_with_config(int ssl, uws_app_t *app, uws_app_listen_config_t config, uws_listen_handler handler, void *user_data);
 bool uws_constructor_failed(int ssl, uws_app_t *app);
-unsigned int uws_num_subscribers(int ssl, uws_app_t *app, const char *topic);
+unsigned int uws_num_subscribers(int ssl, uws_app_t *app, const char *topic, size_t topic_length);
 bool uws_publish(int ssl, uws_app_t *app, const char *topic, size_t topic_length, const char *message, size_t message_length, uws_opcode_t opcode, bool compress);
 void *uws_get_native_handle(int ssl, uws_app_t *app);
 void uws_remove_server_name(int ssl, uws_app_t *app, const char *hostname_pattern);
@@ -196,6 +199,7 @@ void uws_res_resume(int ssl, uws_res_t *res);
 void uws_res_write_continue(int ssl, uws_res_t *res);
 void uws_res_write_status(int ssl, uws_res_t *res, const char *status, size_t length);
 void uws_res_write_header(int ssl, uws_res_t *res, const char *key, size_t key_length, const char *value, size_t value_length);
+void uws_res_override_write_offset(int ssl, uws_res_t *res, uintmax_t offset);
 
 void uws_res_write_header_int(int ssl, uws_res_t *res, const char *key, size_t key_length, uint64_t value);
 void uws_res_end_without_body(int ssl, uws_res_t *res, bool close_connection);
@@ -206,7 +210,7 @@ void uws_res_on_writable(int ssl, uws_res_t *res, bool (*handler)(uws_res_t *res
 void uws_res_on_aborted(int ssl, uws_res_t *res, void (*handler)(uws_res_t *res, void *opcional_data), void *opcional_data);
 void uws_res_on_data(int ssl, uws_res_t *res, void (*handler)(uws_res_t *res, const char *chunk, size_t chunk_length, bool is_end, void *opcional_data), void *opcional_data);
 void uws_res_upgrade(int ssl, uws_res_t *res, void *data, const char *sec_web_socket_key, size_t sec_web_socket_key_length, const char *sec_web_socket_protocol, size_t sec_web_socket_protocol_length, const char *sec_web_socket_extensions, size_t sec_web_socket_extensions_length, uws_socket_context_t *ws);
-uws_try_end_result_t uws_res_try_end(int ssl, uws_res_t *res, const char *data, size_t length, uintmax_t total_size);
+uws_try_end_result_t uws_res_try_end(int ssl, uws_res_t *res, const char *data, size_t length, uintmax_t total_size, bool close_connection);
 void uws_res_cork(int ssl, uws_res_t *res,void(*callback)(uws_res_t *res, void* user_data) ,void* user_data);
 bool uws_req_is_ancient(uws_req_t *res);
 bool uws_req_get_yield(uws_req_t *res);
@@ -216,11 +220,27 @@ size_t uws_req_get_method(uws_req_t *res, const char **dest);
 size_t uws_req_get_header(uws_req_t *res, const char *lower_case_header, size_t lower_case_header_length, const char **dest);
 size_t uws_req_get_query(uws_req_t *res, const char *key, size_t key_length, const char **dest);
 size_t uws_req_get_parameter(uws_req_t *res, unsigned short index, const char **dest);
+size_t uws_req_get_full_url(uws_req_t *res, const char **dest);
+void uws_req_for_each_header(uws_req_t *res, uws_get_headers_server_handler handler, void *user_data);
+
 """)
 
 library_path = os.path.join(os.path.dirname(__file__), "libuwebsockets.so")
 
 lib = ffi.dlopen(library_path)
+@ffi.callback("void(const char *, size_t, const char *, size_t, void *)")
+def uws_req_for_each_header_handler(header_name, header_name_size, header_value, header_value_size, user_data):
+    if not user_data == ffi.NULL:
+        req = ffi.from_handle(user_data)
+        try:
+            
+            header_name = ffi.unpack(header_name, header_name_size).decode("utf-8")
+            header_value = ffi.unpack(header_value, header_value_size).decode("utf-8")
+            
+            req.trigger_for_each_header_handler(header_name, header_value)
+        except Exception: #invalid utf-8
+            return
+
 
 @ffi.callback("void(uws_res_t *, uws_req_t *, void *)")
 def uws_generic_method_handler(res, req, user_data):
@@ -312,7 +332,10 @@ class AppRequest:
         self.req = request
         self.read_jar = None
         self.jar_parsed = False
+        self._for_each_header_handler = None
+        self._ptr = ffi.new_handle(self)
 
+    
     def get_cookie(self, name):
         if self.read_jar == None:
             if self.jar_parsed:
@@ -339,6 +362,16 @@ class AppRequest:
             return ffi.unpack(buffer_address, length).decode("utf-8")
         except Exception: #invalid utf-8
             return None
+    def get_full_url(self):
+        buffer = ffi.new("char**")
+        length = lib.uws_req_get_full_url(self.req, buffer)   
+        buffer_address = ffi.addressof(buffer, 0)[0]
+        if buffer_address == ffi.NULL: 
+            return None
+        try:
+            return ffi.unpack(buffer_address, length).decode("utf-8")
+        except Exception: #invalid utf-8
+            return None
     def get_method(self):
         buffer = ffi.new("char**")
         length = lib.uws_req_get_method(self.req, buffer)   
@@ -350,6 +383,11 @@ class AppRequest:
             return ffi.unpack(buffer_address, length).decode("utf-8")
         except Exception: #invalid utf-8
             return None
+    def for_each_header(self, handler):
+        self._for_each_header_handler = handler
+        lib.uws_req_for_each_header(self.req, uws_req_for_each_header_handler, self._ptr)
+        
+        
     def get_header(self, lower_case_header):
         if isinstance(lower_case_header, str):
             data = lower_case_header.encode("utf-8")
@@ -401,6 +439,19 @@ class AppRequest:
         return bool(lib.uws_req_get_yield(self.req))
     def is_ancient(self):
         return bool(lib.uws_req_is_ancient(self.req))
+    def trigger_for_each_header_handler(self, key, value):
+        if hasattr(self, "_for_each_header_handler") and hasattr(self._for_each_header_handler, '__call__'):
+            try:
+                if inspect.iscoroutinefunction(self._for_each_header_handler):
+                    raise RuntimeError("AppResponse.for_each_header_handler must be synchronous")
+                self._for_each_header_handler(key, value)
+            except Exception as err:
+                print("Error on data handler %s"  % str(err))
+
+        return self
+    def __del__(self):
+        self.req = ffi.NULL
+        self._ptr = ffi.NULL
 
 class AppResponse:
     def __init__(self, response, loop, is_ssl):
@@ -581,13 +632,19 @@ class AppResponse:
         if not self.aborted and not self._grabed_abort_handler_once:
             self._grabed_abort_handler_once = True
             lib.uws_res_on_aborted(self.SSL, self.res, uws_generic_aborted_handler, self._ptr)
+        return self
 
     def redirect(self, location, status_code=302):
         self.write_status(status_code)
         self.write_header("Location", location)
         self.end_without_body(False)
+        return self
    
-    def try_end(self, message, total_size):
+    def write_offset(self, offset):
+        lib.uws_res_override_write_offset(self.SSL, self.res, ffi.cast("uintmax_t", offset))
+        return self
+
+    def try_end(self, message, total_size, close_connection=False):
             try:
                 if self.aborted:
                     return (False, False) 
@@ -600,13 +657,14 @@ class AppResponse:
                     data = message
                 else:
                     return (False, False)
-                result = lib.uws_res_try_end(self.SSL, self.res, data, len(data),ffi.cast("uintmax_t", total_size))
+                result = lib.uws_res_try_end(self.SSL, self.res, data, len(data),ffi.cast("uintmax_t", total_size), 1 if end_connection else 0)
                 return (bool(result.ok), bool(result.has_responded))
             except:
                 return (False, False)
     
     def cork_end(self, message, end_connection=False):
         self.cork(lambda res: res.end(message, end_connection))
+        return self
 
     def end(self, message, end_connection=False):
             try:

@@ -17,76 +17,32 @@
 #  multipart/form-data 
 
 
-# try_end
-# get_full_url
-# for_each_header
+
+# unsigned int uws_num_subscribers(int ssl, uws_app_t *app, const char *topic);
+# bool uws_publish(int ssl, uws_app_t *app, const char *topic, size_t topic_length, const char *message, size_t message_length, uws_opcode_t opcode, bool compress);
+# void *uws_get_native_handle(int ssl, uws_app_t *app);
+# void uws_remove_server_name(int ssl, uws_app_t *app, const char *hostname_pattern);
+# void uws_add_server_name(int ssl, uws_app_t *app, const char *hostname_pattern);
+# void uws_add_server_name_with_options(int ssl, uws_app_t *app, const char *hostname_pattern, struct us_socket_context_options_t options);
+# void uws_missing_server_name(int ssl, uws_app_t *app, uws_missing_server_handler handler, void *user_data);
+# void uws_filter(int ssl, uws_app_t *app, uws_filter_handler handler, void *user_data);
+
 # https://github.com/uNetworking/uWebSockets.js/blob/master/examples/VideoStreamer.js
 from socketify import App
 # import os
 import multiprocessing
 import asyncio
-import aiofiles
-from aiofiles import os
 import time
 import mimetypes
 mimetypes.init()
 
 #need to fix get_data using sel._data etc
 async def home(res, req):
+    print("full", req.get_full_url())
+    print("normal", req.get_url())
 
-    filename = "./file_example_MP3_5MG.mp3"
-    
-    if_modified_since = req.get_header('if-modified-since')
-    range_header = req.get_header('range')
-    bytes_range = None
-    start = 0
-    end = -1
-    if range_header:
-        bytes_range = range_header.replace("bytes=", '').split('-')
-        start = int(bytes_range[0])
-        if bytes_range[1]:
-            end = int(bytes_range[1])
-    try:
-        exists = await os.path.exists(filename)
-        if not exists:
-            return res.write_status(404).end(b'Not Found')
-        stats = await os.stat(filename)
-        total_size = stats.st_size
-        last_modified = time.strftime('%a, %d %b %Y %H:%M:%S GMT', time.gmtime(stats.st_mtime))
-        if if_modified_since == last_modified:
-            res.write_status(304).end_without_body()
-            return 
-        res.write_header(b'Last-Modified', last_modified)
-
-        (content_type, encoding) = mimetypes.guess_type(filename, strict=True)
-        if content_type and encoding:
-            res.write_header(b'Content-Type', '%s; %s' % (content_type, encoding))
-        elif content_type:
-            res.write_header(b'Content-Type', content_type)
-        
-        async with aiofiles.open(filename, "rb") as fd:
-            if start > 0 or not end == -1:
-                if end < 1 or end >= total_size:
-                    end = total_size
-                total_size = end - start
-                await fd.seek(start)
-                res.write_status(206)
-            else:
-                end = total_size
-                res.write_status(200)
-                
-            #tells the browser that we support ranges
-            res.write_header(b'Accept-Ranges', b'bytes')
-            res.write_header(b'Content-Range', 'bytes %d-%d/%d' % (start, end, total_size))
-
-            while not res.aborted:
-                buffer = await fd.read(16384) #16kb chunks
-                (ok, done) = await res.send_chunk(buffer, total_size)
-                if not ok or done: #if cannot send probably aborted
-                    break 
-    except Exception as error:
-        print(str(error))
-        res.write_status(500).end("Internal Error")
+    req.for_each_header(lambda key,value: print("Header %s: %s" % (key, value)))
+    res.end("Test")
 
 def run_app():
     app = App()    
