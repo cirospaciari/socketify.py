@@ -58,7 +58,6 @@
 #     return uwsRes->getNativeHandle();
 #   }
 # }
-# }
 # unsigned int uws_num_subscribers(int ssl, uws_app_t *app, const char *topic);
 # bool uws_publish(int ssl, uws_app_t *app, const char *topic, size_t topic_length, const char *message, size_t message_length, uws_opcode_t opcode, bool compress);
 # void *uws_get_native_handle(int ssl, uws_app_t *app);
