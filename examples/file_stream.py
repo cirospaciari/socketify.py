@@ -8,8 +8,8 @@ from os import path
 mimetypes.init()
 
 async def home(res, req):
-    #there is also a helper called static with an send_file method see static_files.py for examples of usage
-    #here is an sample implementation, a more complete one is in static.send_file
+    #there is also a helper called static with an sendfile method see static_files.py for examples of usage
+    #here is an sample implementation, a more complete one is in static.sendfile
 
     filename = "./public/media/flower.webm"
     #read headers before the first await

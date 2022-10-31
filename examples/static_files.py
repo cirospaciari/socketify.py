@@ -31,7 +31,7 @@
 
 from socketify import App
 from helpers.static import static_route
-from helpers.static import send_file
+from helpers.static import sendfile
 
 
 app = App()
@@ -40,7 +40,7 @@ app = App()
 #send home page index.html
 async def home(res, req):
     #sends the whole file with 304 and bytes range support
-    await send_file(res, req, "./public/index.html")
+    await sendfile(res, req, "./public/index.html")
     
 app.get("/", home)
 

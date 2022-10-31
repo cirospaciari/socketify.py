@@ -225,7 +225,7 @@ void uws_req_for_each_header(uws_req_t *res, uws_get_headers_server_handler hand
 
 """)
 
-library_path = os.path.join(os.path.dirname(__file__), "libuwebsockets.so")
+library_path = os.path.join(os.path.dirname(__file__), "native", "libuwebsockets.so")
 
 lib = ffi.dlopen(library_path)
 @ffi.callback("void(const char *, size_t, const char *, size_t, void *)")
@@ -583,9 +583,11 @@ class AppResponse:
     def send_chunk(self, buffer, total_size):
         self._chunkFuture = self.loop.create_future()
         self._lastChunkOffset = 0
+        
         def is_aborted(self):
             self.aborted = True
             try:
+                print("aborted!", self._chunkFuture.done())
                 if not self._chunkFuture.done():
                     self._chunkFuture.set_result((False, True)) #if aborted set to done True and ok False
             except:
@@ -650,10 +652,10 @@ class AppResponse:
         lib.uws_res_override_write_offset(self.SSL, self.res, ffi.cast("uintmax_t", offset))
         return self
 
-    def try_end(self, message, total_size, close_connection=False):
+    def try_end(self, message, total_size, end_connection=False):
             try:
                 if self.aborted:
-                    return (False, False) 
+                    return (False, True) 
                 if self._write_jar != None:
                     self.write_header("Set-Cookie", self._write_jar.output(header=""))
                     self._write_jar = None
@@ -662,11 +664,11 @@ class AppResponse:
                 elif isinstance(message, bytes):
                     data = message
                 else:
-                    return (False, False)
+                    return (False, True)
                 result = lib.uws_res_try_end(self.SSL, self.res, data, len(data),ffi.cast("uintmax_t", total_size), 1 if end_connection else 0)
                 return (bool(result.ok), bool(result.has_responded))
             except:
-                return (False, False)
+                return (False, True)
     
     def cork_end(self, message, end_connection=False):
         self.cork(lambda res: res.end(message, end_connection))

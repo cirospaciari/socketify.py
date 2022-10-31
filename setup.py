@@ -18,11 +18,10 @@ import subprocess
 
 _ROOT = pathlib.Path(__file__).parent
 
-UWS_CAPI_DIR = str(_ROOT / "build" / "uWebSockets" / "capi") 
-UWS_LIB_PATH = str(_ROOT / "build" / "uWebSockets" / "capi" / "libuwebsockets.so")
+UWS_LIB_PATH = str(_ROOT / "build" / "native" / "libuwebsockets.so")
 UWS_DIR = str(_ROOT / "src" / "socketify" /"uWebSockets")
 UWS_BUILD_DIR = str(_ROOT / "build" /"uWebSockets")
-UWS_LIB_OUTPUT = str(_ROOT / "src" / "socketify" / "libuwebsockets.so")
+UWS_LIB_OUTPUT = str(_ROOT / "src" / "socketify" / "native" / "libuwebsockets.so")
 
 
 NATIVE_CAPI_DIR = str(_ROOT / "build" / "native") 
@@ -37,7 +36,8 @@ NATIVE_LIB_OUTPUT = str(_ROOT / "src" / "socketify" / "native"/ "libsocketify.so
 class Prepare(sdist):
     def run(self):
         super().run()
-        
+
+
 class Makefile(build_ext):
     def run(self):
         env = os.environ.copy()
@@ -46,16 +46,13 @@ class Makefile(build_ext):
             shutil.rmtree(UWS_BUILD_DIR)
         shutil.copytree(UWS_DIR, UWS_BUILD_DIR)
 
-        subprocess.run(["make", "shared"], cwd=UWS_CAPI_DIR, env=env, check=True)
-        shutil.move(UWS_LIB_PATH, UWS_LIB_OUTPUT)
-
-
         if os.path.exists(NATIVE_CAPI_DIR):
             shutil.rmtree(NATIVE_CAPI_DIR)
         shutil.copytree(NATIVE_DIR, NATIVE_CAPI_DIR)
 
-        subprocess.run(["make"], cwd=NATIVE_CAPI_DIR, env=env, check=True)
+        subprocess.run(["make", "shared"], cwd=NATIVE_CAPI_DIR, env=env, check=True)
         shutil.move(NATIVE_LIB_PATH, NATIVE_LIB_OUTPUT)
+        shutil.move(UWS_LIB_PATH, UWS_LIB_OUTPUT)
         
         super().run()
 
@@ -86,8 +83,8 @@ setuptools.setup(
     package_dir={"": "src"},
     package_data={"": ['./*.so', './uWebSockets/*','./uWebSockets/*/*','./uWebSockets/*/*/*', './native/*','./native/*/*','./native/*/*/*']},
     python_requires=">=3.7",
-    install_requires=["cffi>=1.0.0"],
+    install_requires=["cffi>=1.0.0", "setuptools>=60.0.0"],
     has_ext_modules=lambda: True,
-    cmdclass={'sdist': Prepare,'build_ext': Makefile},
+    cmdclass={'sdist': Prepare, 'build_ext': Makefile},
     include_package_data=True
 )

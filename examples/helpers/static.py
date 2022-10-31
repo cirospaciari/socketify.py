@@ -7,7 +7,7 @@ mimetypes.init()
 # We have an version of this using aiofile and aiofiles
 # This is an sync version without any dependencies is normally much faster in CPython and PyPy3
 # In production we highly recomend to use CDN like CloudFlare or/and NGINX or similar for static files
-async def send_file(res, req, filename):
+async def sendfile(res, req, filename):
     #read headers before the first await
     if_modified_since = req.get_header('if-modified-since')
     range_header = req.get_header('range')
@@ -62,7 +62,6 @@ async def send_file(res, req, filename):
             #tells the browser that we support range 
             res.write_header(b'Accept-Ranges', b'bytes') 
             res.write_header(b'Content-Range', 'bytes %d-%d/%d' % (start, end, total_size))
-            
             pending_size = size
             #keep sending until abort or done
             while not res.aborted:
@@ -95,11 +94,11 @@ def static_route(app, route, directory):
         if url.startswith("/"):
             url = url[1::]
         filename = path.join(path.realpath(directory), url)
-
+        
         if not in_directory(filename, directory):
             res.write_status(404).end_without_body()
             return
-        res.run_async(send_file(res, req, filename))
+        res.run_async(sendfile(res, req, filename))
     if route.startswith("/"):
         route = route[1::]
     app.get("%s/*" % route, route_handler)
