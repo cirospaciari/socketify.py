@@ -27,7 +27,7 @@ windows:
 	cd ../uWebSockets/uSockets/lsquic && cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DBORINGSSL_DIR=../boringssl -DCMAKE_BUILD_TYPE=Release -DLSQUIC_BIN=Off . && msbuild ALL_BUILD.vcxproj
 
 	# build windows
-	cl /MD /W3 /D WIN32_LEAN_AND_MEAN /D \"UWS_WITH_PROXY\" /D \"LIBUS_USE_LIBUV\" /D \"LIBUS_USE_QUIC\" /I ../uWebSockets/uSockets/lsquic/include /I ../uWebSockets/uSockets/lsquic/wincompat /I ../uWebSockets/uSockets/boringssl/include /D \"LIBUS_USE_OPENSSL\" /std:c++17 /I ../uWebSockets/uSockets/src ../uWebSockets/uSockets/src/*.c ../uWebSockets/uSockets/src/crypto/sni_tree.cpp ../uWebSockets/uSockets/src/eventing/*.c ../uWebSockets/uSockets/src/crypto/*.c  /I ../uWebSockets/src /EHsc /Ox /LD /Fe$(LIBRARY_NAME)_windows_amd64.so ./src/$(LIBRARY_NAME).cpp advapi32.lib ../uWebSockets/uSockets/boringssl/amd64/ssl/ssl.lib ../uWebSockets/uSockets/boringssl/amd64/crypto/crypto.lib ../uWebSockets/uSockets/lsquic/src/liblsquic/Debug/lsquic.lib
+	cl /MD /W3 /D WIN32_LEAN_AND_MEAN /D \"UWS_WITH_PROXY\" /D \"LIBUS_USE_LIBUV\" /D \"LIBUS_USE_QUIC\" /I ../uWebSockets/uSockets/lsquic/include /I ../uWebSockets/uSockets/lsquic/wincompat /I ../uWebSockets/uSockets/boringssl/include /D \"LIBUS_USE_OPENSSL\" /std:c++17 /I ../uWebSockets/uSockets/src ../uWebSockets/uSockets/src/*.c ../uWebSockets/uSockets/src/crypto/sni_tree.cpp ../uWebSockets/uSockets/src/eventing/*.c ../uWebSockets/uSockets/src/crypto/*.c  /I ../uWebSockets/src /EHsc /Ox /LD /Fe../$(LIBRARY_NAME)_windows_amd64.so ./src/$(LIBRARY_NAME).cpp advapi32.lib ../uWebSockets/uSockets/boringssl/amd64/ssl/ssl.lib ../uWebSockets/uSockets/boringssl/amd64/crypto/crypto.lib ../uWebSockets/uSockets/lsquic/src/liblsquic/Debug/lsquic.lib
 
 macos:
 	$(MAKE) clean
