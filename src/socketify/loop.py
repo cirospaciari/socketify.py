@@ -4,7 +4,7 @@ import threading
 import time
 from queue import Queue
 
-from .native import UVLoop
+from .uv import UVLoop
 
 
 def future_handler(future, loop, exception_handler, response):
