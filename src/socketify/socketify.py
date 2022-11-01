@@ -227,7 +227,9 @@ void uws_req_for_each_header(uws_req_t *res, uws_get_headers_server_handler hand
 
 """)
 
-library_path = os.path.join(os.path.dirname(__file__), "libsocketify.so")
+library_path = os.path.join(os.path.dirname(__file__), "libsocketify_%s_%s.so" % (platform.system().lower(), "arm64" if "arm" in platform.processor().lower() else "amd64"))
+
+
 
 lib = ffi.dlopen(library_path)
 @ffi.callback("void(const char *, size_t, const char *, size_t, void *)")

@@ -81,6 +81,7 @@ setuptools.setup(
     python_requires=">=3.7",
     install_requires=["cffi>=1.0.0", "setuptools>=60.0.0"],
     has_ext_modules=lambda: True,
-    cmdclass={'sdist': Prepare, 'build_ext': Makefile},
+    cmdclass={'sdist': Prepare}, #cmdclass={'sdist': Prepare, 'build_ext': Makefile},
+
     include_package_data=True
 )

@@ -2,6 +2,4 @@ __pycache__
 /src/socketify.egg-info
 /build
 /dist
-/src/socketify/*.so
-*.so
 *.o

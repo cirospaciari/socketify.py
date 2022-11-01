@@ -1,6 +1,7 @@
 
 import cffi
 import os
+import platform
 
 ffi = cffi.FFI()
 ffi.cdef("""
@@ -54,7 +55,7 @@ void socketify_timer_set_repeat(socketify_timer* timer, uint64_t repeat);
 socketify_timer* socketify_create_check(socketify_loop* loop, socketify_timer_handler handler, void* user_data);
 void socketify_check_destroy(socketify_timer* timer);
 """)
-library_path = os.path.join(os.path.dirname(__file__), "libsocketify.so")
+library_path = os.path.join(os.path.dirname(__file__), "libsocketify_%s_%s.so" % (platform.system().lower(), "arm64" if "arm" in platform.processor().lower() else "amd64"))
 
 lib = ffi.dlopen(library_path)
 
