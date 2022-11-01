@@ -217,6 +217,8 @@ bool uws_req_get_yield(uws_req_t *res);
 void uws_req_set_field(uws_req_t *res, bool yield);
 size_t uws_req_get_url(uws_req_t *res, const char **dest);
 size_t uws_req_get_method(uws_req_t *res, const char **dest);
+size_t uws_req_get_case_sensitive_method(uws_req_t *res, const char **dest);
+
 size_t uws_req_get_header(uws_req_t *res, const char *lower_case_header, size_t lower_case_header_length, const char **dest);
 size_t uws_req_get_query(uws_req_t *res, const char *key, size_t key_length, const char **dest);
 size_t uws_req_get_parameter(uws_req_t *res, unsigned short index, const char **dest);
@@ -225,7 +227,7 @@ void uws_req_for_each_header(uws_req_t *res, uws_get_headers_server_handler hand
 
 """)
 
-library_path = os.path.join(os.path.dirname(__file__), "native", "libuwebsockets.so")
+library_path = os.path.join(os.path.dirname(__file__), "libsocketify.so")
 
 lib = ffi.dlopen(library_path)
 @ffi.callback("void(const char *, size_t, const char *, size_t, void *)")
@@ -372,9 +374,12 @@ class AppRequest:
             return ffi.unpack(buffer_address, length).decode("utf-8")
         except Exception: #invalid utf-8
             return None
+
+    
     def get_method(self):
         buffer = ffi.new("char**")
-        length = lib.uws_req_get_method(self.req, buffer)   
+        #will use uws_req_get_case_sensitive_method until version v21 and switch back to uws_req_get_method for 0 impacts on behavior
+        length = lib.uws_req_get_case_sensitive_method(self.req, buffer)   
         buffer_address = ffi.addressof(buffer, 0)[0]
         if buffer_address == ffi.NULL: 
             return None
@@ -383,6 +388,7 @@ class AppRequest:
             return ffi.unpack(buffer_address, length).decode("utf-8")
         except Exception: #invalid utf-8
             return None
+
     def for_each_header(self, handler):
         self._for_each_header_handler = handler
         lib.uws_req_for_each_header(self.req, uws_req_for_each_header_handler, self._ptr)

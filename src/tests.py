@@ -68,7 +68,9 @@
 # void uws_filter(int ssl, uws_app_t *app, uws_filter_handler handler, void *user_data);
 
 # https://github.com/uNetworking/uWebSockets.js/blob/master/examples/VideoStreamer.js
-from socketify import App
+# from socketify import App
+from socketify import App, AppOptions
+
 # import os
 import multiprocessing
 import asyncio
@@ -80,11 +82,8 @@ mimetypes.init()
 async def home(res, req):
     print("full", req.get_full_url())
     print("normal", req.get_url())
+    print("method", req.get_method())
 
-    req.for_each_header(lambda key,value: print("Header %s: %s" % (key, value)))
-
-
-    print("All headers", req.get_headers())
     res.end("Test")
 
 def run_app():
@@ -99,6 +98,7 @@ def create_fork():
     if not n > 0:
         run_app()
 
+#openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -passout pass:1234 -keyout ./misc/key.pem -out ./misc/cert.pem 
 # # fork limiting the cpu count - 1
 # for i in range(1, multiprocessing.cpu_count()):
 #     create_fork()

@@ -4,6 +4,11 @@
 #include <stdbool.h>
 
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+#include "libuwebsockets.h"
 typedef void (*socketify_prepare_handler)(void* user_data);
 typedef void (*socketify_timer_handler)(void* user_data);
 
@@ -44,4 +49,7 @@ void socketify_timer_set_repeat(socketify_timer* timer, uint64_t repeat);
 
 socketify_timer* socketify_create_check(socketify_loop* loop, socketify_timer_handler handler, void* user_data);
 void socketify_check_destroy(socketify_timer* timer);
+#endif
+#ifdef __cplusplus
+}
 #endif
