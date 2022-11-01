@@ -18,17 +18,14 @@ import subprocess
 
 _ROOT = pathlib.Path(__file__).parent
 
-UWS_LIB_PATH = str(_ROOT / "build" / "native" / "libuwebsockets.so")
 UWS_DIR = str(_ROOT / "src" / "socketify" /"uWebSockets")
 UWS_BUILD_DIR = str(_ROOT / "build" /"uWebSockets")
-UWS_LIB_OUTPUT = str(_ROOT / "src" / "socketify" / "native" / "libuwebsockets.so")
-
 
 NATIVE_CAPI_DIR = str(_ROOT / "build" / "native") 
-NATIVE_LIB_PATH = str(_ROOT / "build" / "native" / "libsocketify.so")
+NATIVE_LIB_PATH = str(_ROOT / "build" / "libsocketify.so")
 NATIVE_DIR = str(_ROOT / "src" / "socketify" /"native")
 NATIVE_BUILD_DIR = str(_ROOT / "build" /"native")
-NATIVE_LIB_OUTPUT = str(_ROOT / "src" / "socketify" / "native"/ "libsocketify.so")
+NATIVE_LIB_OUTPUT = str(_ROOT / "src" / "socketify" / "libsocketify.so")
 
 
 
@@ -52,7 +49,6 @@ class Makefile(build_ext):
 
         subprocess.run(["make", "shared"], cwd=NATIVE_CAPI_DIR, env=env, check=True)
         shutil.move(NATIVE_LIB_PATH, NATIVE_LIB_OUTPUT)
-        shutil.move(UWS_LIB_PATH, UWS_LIB_OUTPUT)
         
         super().run()
 
