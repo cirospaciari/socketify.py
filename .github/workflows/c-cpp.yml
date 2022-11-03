@@ -15,10 +15,6 @@ jobs:
           $Env:LDFLAGS='-L C:/vcpkg/packages/libuv_x64-windows/lib'
           $Env:CC='clang'
           $Env:CXX='clang++'
-          $Env:WITH_LIBUV='1'
-          $Env:EXEC_SUFFIX='.exe'
-          $Env:WITH_ZLIB='0'
-          $Env:WITH_LTO='0'
           
           git clone -b workflows-test --recursive https://github.com/cirospaciari/socketify.py.git
           cd socketify.py\src\socketify\native
@@ -34,6 +30,12 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=Release -GNinja .. && ninja crypto ssl
           cd ../../lsquic
          
+          $ErrorActionPreference = 'SilentlyContinue'
+          $Env:CFLAGS='-D WIN32_LEAN_AND_MEAN -I C:/vcpkg/packages/libuv_x64-windows/include'
+          $Env:LDFLAGS='-L C:/vcpkg/packages/libuv_x64-windows/lib'
+          $Env:CC='clang'
+          $Env:CXX='clang++'
+          
           cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DBORINGSSL_DIR=../boringssl -DCMAKE_BUILD_TYPE=Release -DLSQUIC_BIN=Off . && msbuild ALL_BUILD.vcxproj
           cd ../../../native
 
