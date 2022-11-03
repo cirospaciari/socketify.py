@@ -13,6 +13,7 @@ jobs:
           make macos
           cd ../
           git add libsocketify_darwin_amd64.so
+          git add libsocketify_darwin_arm64.so
           git config --global user.email "ciro.spaciari@gmail.com"
           git config --global user.name "Ciro Spaciari"
           git commit -a -m "[GitHub Actions] Updated darwin-amd64 binaries" || true
