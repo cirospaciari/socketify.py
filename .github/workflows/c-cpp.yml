@@ -27,7 +27,8 @@ jobs:
           cd ../uWebSockets/uSockets/boringssl 
           mkdir amd64 
           cd amd64
-          cmake -DCMAKE_BUILD_TYPE=Release -GNinja .. && ninja crypto ssl
+          cmake -DCMAKE_BUILD_TYPE=Release -GNinja ..
+          ninja crypto ssl
           
           cd ../../../native
 
