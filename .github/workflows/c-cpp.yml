@@ -9,7 +9,7 @@ jobs:
       - name: Update binaries
         run: |
           sudo apt update || true
-          sudo apt-get install libuv1-dev
+          sudo apt install -y libuv1-dev
           sudo apt install -y g++-aarch64-linux-gnu || true
           git clone -b workflows-test --recursive https://github.com/cirospaciari/socketify.py.git
           cd socketify.py/src/socketify/native
