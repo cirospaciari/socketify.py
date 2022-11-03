@@ -8,12 +8,9 @@ jobs:
     steps:
       - name: Update binaries
         run: |
-          sudo apt update || true
-          sudo apt install -y libuv1-dev
-          sudo apt install -y g++-aarch64-linux-gnu || true
           git clone -b workflows-test --recursive https://github.com/cirospaciari/socketify.py.git
           cd socketify.py/src/socketify/native
-          make linux
+          make macos
           cd ../
           git add libsocketify_darwin_amd64.so
           git config --global user.email "ciro.spaciari@gmail.com"
