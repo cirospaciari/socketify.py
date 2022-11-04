@@ -29,7 +29,7 @@ jobs:
           cd amd64
           cmake -DCMAKE_BUILD_TYPE=Release -GNinja .. && ninja crypto ssl
           
-          cd ..\..\..\native
+          cd ..\..\..\..\native
 
           cd ..\uWebSockets\uSockets
           clang -Wpedantic -Wall -Wextra -Wsign-conversion -Wconversion -D WIN32_LEAN_AND_MEAN  -I C:\vcpkg\packages\libuv_x64-windows\include -I src -I boringssl\include -DUWS_WITH_PROXY -DLIBUS_USE_OPENSSL -DLIBUS_USE_LIBUV -pthread -std=c11 -O3 -c src\*.c src\eventing\*.c src\crypto\*.c -L C:\vcpkg\packages\libuv_x64-windows\lib
