@@ -17,6 +17,7 @@ jobs:
           git clone -b workflows-test --recursive https://github.com/cirospaciari/socketify.py.git
           cd socketify.py\src\socketify\native
           vcpkg install libuv:x64-windows
+          vcpkg install zlib:x64-windows-static-md
           vcpkg integrate install
           cp C:\vcpkg\installed\x64-windows\bin\uv.dll ..\uv.dll
          
@@ -31,8 +32,8 @@ jobs:
           clang -DUWS_NO_ZLIB -D_DLL -Wpedantic -Wall -Wextra -Wsign-conversion -Wconversion -D WIN32_LEAN_AND_MEAN  -I C:\vcpkg\packages\libuv_x64-windows\include -I src -I boringssl\include -DUWS_WITH_PROXY -DLIBUS_USE_OPENSSL -DLIBUS_USE_LIBUV -pthread -std=c11 -O3 -c src\*.c src\eventing\*.c src\crypto\*.c
           clang++ -DUWS_NO_ZLIB -D_DLL -Wpedantic -Wall -Wextra -Wsign-conversion -Wconversion -D WIN32_LEAN_AND_MEAN  -I C:\vcpkg\packages\libuv_x64-windows\include -I boringssl\include -DUWS_WITH_PROXY -DLIBUS_USE_OPENSSL -DLIBUS_USE_LIBUV -pthread -std=c++2a -O3 -c src\crypto\*.cpp
           cd ..\..\native
-          clang++ -DUWS_NO_ZLIB -D_DLL -Wpedantic -Wall -Wextra -Wsign-conversion -Wconversion -D WIN32_LEAN_AND_MEAN -I C:\vcpkg\packages\libuv_x64-windows\include -I .\src -I ..\uWebSockets\src -I ..\uWebSockets\uSockets\src -I ..\uWebSockets\capi -I ..\uWebSockets\uSockets\boringssl\include -pthread -std=c++2a -c -O3 .\src\libsocketify.cpp 
-          clang++ -DUWS_NO_ZLIB -D_DLL -Wpedantic -Wall -Wextra -Wsign-conversion -Wconversion -shared -o ..\libsocketify_windows_amd64.dll  libsocketify.o ..\uWebSockets\uSockets\*.o ..\uWebSockets\uSockets\boringssl\amd64\ssl\ssl.lib ..\uWebSockets\uSockets\boringssl\amd64\crypto\crypto.lib -luv -L C:\vcpkg\packages\libuv_x64-windows\lib -nodefaultlibs -lmsvcrt -lvcruntime -lucrt -ladvapi32
+          clang++ -D_DLL -Wpedantic -Wall -Wextra -Wsign-conversion -Wconversion -D WIN32_LEAN_AND_MEAN -I C:\vcpkg\packages\libuv_x64-windows\include -I .\src -I ..\uWebSockets\src -I ..\uWebSockets\uSockets\src -I ..\uWebSockets\capi -I C:\vcpkg\packages\zlib_x64-windows-static-md\include -I ..\uWebSockets\uSockets\boringssl\include -pthread -std=c++2a -c -O3 .\src\libsocketify.cpp 
+          clang++ -D_DLL -Wpedantic -Wall -Wextra -Wsign-conversion -Wconversion -shared -o ..\libsocketify_windows_amd64.dll  libsocketify.o ..\uWebSockets\uSockets\*.o ..\uWebSockets\uSockets\boringssl\amd64\ssl\ssl.lib ..\uWebSockets\uSockets\boringssl\amd64\crypto\crypto.lib C:\vcpkg\packages\zlib_x64-windows-static-md\lib\zlib.lib -luv -L C:\vcpkg\packages\libuv_x64-windows\lib -nodefaultlibs -lmsvcrt -lvcruntime -lucrt -ladvapi32
           
           cd ..\
           git add libsocketify_windows_amd64.dll
