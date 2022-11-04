@@ -2,13 +2,12 @@
 #define SOCKETIFY_CAPI_HEADER
 #include "uv.h"
 #include <stdbool.h>
-
+#include "libuwebsockets.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-#include "libuwebsockets.h"
 typedef void (*socketify_prepare_handler)(void* user_data);
 typedef void (*socketify_timer_handler)(void* user_data);
 
