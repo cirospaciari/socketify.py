@@ -30,7 +30,7 @@ jobs:
           git add libsocketify_windows_amd64.dll
           git config --global user.email "ciro.spaciari@gmail.com"
           git config --global user.name "Ciro Spaciari"
-          git commit -a -m "[GitHub Actions] Updated windows-amd64 binaries"
+          git commit -m "[GitHub Actions] Updated windows-amd64 binaries"
           git push "https://cirospaciari:${{ secrets.BUILDTOKEN }}@github.com/cirospaciari/socketify.py.git"
 
  build-macos:
@@ -47,8 +47,9 @@ jobs:
           git add libsocketify_darwin_arm64.so
           git config --global user.email "ciro.spaciari@gmail.com"
           git config --global user.name "Ciro Spaciari"
-          git commit -a -m "[GitHub Actions] Updated darwin-amd64 + darwin-arm64 binaries" || true
+          git commit -m "[GitHub Actions] Updated darwin-amd64 + darwin-arm64 binaries" || true
           git push "https://cirospaciari:${{ secrets.BUILDTOKEN }}@github.com/cirospaciari/socketify.py.git"
+          
  build-linux:
     runs-on: ubuntu-latest
     name: Build on linux-amd64
@@ -65,5 +66,5 @@ jobs:
           git add libsocketify_linux_amd64.so
           git config --global user.email "ciro.spaciari@gmail.com"
           git config --global user.name "Ciro Spaciari"
-          git commit -a -m "[GitHub Actions] Updated linux-amd64 binaries" || true
+          git commit -m "[GitHub Actions] Updated linux-amd64 binaries" || true
           git push "https://cirospaciari:${{ secrets.BUILDTOKEN }}@github.com/cirospaciari/socketify.py.git"
