@@ -30,5 +30,5 @@ jobs:
           git add libsocketify_windows_amd64.dll
           git config --global user.email "ciro.spaciari@gmail.com"
           git config --global user.name "Ciro Spaciari"
-          git commit -a -m "[GitHub Actions] Updated windows-amd64 binaries" || true
+          git commit -a -m "[GitHub Actions] Updated windows-amd64 binaries"
           git push "https://cirospaciari:${{ secrets.BUILDTOKEN }}@github.com/cirospaciari/socketify.py.git" workflows-test
