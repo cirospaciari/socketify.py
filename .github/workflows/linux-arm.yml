@@ -1,0 +1,24 @@
+name: Linux Build
+on: workflow_dispatch
+jobs:
+  build-arm:
+    runs-on: ubuntu-latest
+    name: Build on linux-arm64
+    steps:
+      - uses: uraimo/run-on-arch-action@v2.1.1
+        with:
+          arch: aarch64
+          distro: ubuntu20.04
+          install: |
+            apt-get update -q -y
+            apt-get install -q -y build-essential cmake libz-dev golang libuv1-dev
+          run: |
+            git clone --recursive https://github.com/cirospaciari/socketify.py.git
+            cd socketify.py/src/socketify/native
+            make linux
+            cd ../
+            git add libsocketify_linux_arm64.so
+            git config --global user.email "ciro.spaciari@gmail.com"
+            git config --global user.name "Ciro Spaciari"
+            git commit -m "[GitHub Actions] Updated linux-arm64 binaries" || true
+            git push "https://cirospaciari:${{ secrets.BUILDTOKEN }}@github.com/cirospaciari/socketify.py.git"
