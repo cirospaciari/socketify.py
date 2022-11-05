@@ -11,7 +11,7 @@ jobs:
           distro: ubuntu20.04
           install: |
             apt-get update -q -y
-            apt-get install -q -y build-essential cmake libz-dev golang libuv1-dev
+            apt-get install -q -y build-essential cmake libz-dev golang libuv1-dev git
           run: |
             git clone --recursive https://github.com/cirospaciari/socketify.py.git
             cd socketify.py/src/socketify/native
