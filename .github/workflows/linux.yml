@@ -1,5 +1,6 @@
 name: Linux Build
 on: workflow_dispatch
+jobs:
  build-linux:
     runs-on: ubuntu-latest
     name: Build on linux-amd64
