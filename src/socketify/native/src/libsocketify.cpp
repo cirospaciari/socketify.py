@@ -2,7 +2,6 @@
 #include "libsocketify.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include "libuwebsockets.h"
 #include "libuwebsockets.cpp" //include symbols
 
 extern "C"

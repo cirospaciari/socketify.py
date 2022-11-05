@@ -19,9 +19,9 @@ app.run()
 ### pip install
 
 ```bash
-pip install git+https://github.com/cirospaciari/socketify.py.git --global-option=build_ext
+pip install git+https://github.com/cirospaciari/socketify.py.git
 #or specify PyPy3
-pypy3 -m pip install git+https://github.com/cirospaciari/socketify.py.git --global-option=build_ext
+pypy3 -m pip install git+https://github.com/cirospaciari/socketify.py.git
 #or in editable mode
 pypy3 -m pip install -e git+https://github.com/cirospaciari/socketify.py.git@main#egg=socketify
 ```
@@ -30,7 +30,7 @@ pypy3 -m pip install -e git+https://github.com/cirospaciari/socketify.py.git@mai
 
 requirements.txt file content
 ```text
-git+https://github.com/cirospaciari/socketify.py.git@main#socketify --global-option="build_ext"
+git+https://github.com/cirospaciari/socketify.py.git@main#socketify
 ```
 
 install command
@@ -57,7 +57,7 @@ git clone https://github.com/cirospaciari/socketify.py.git
 cd ./socketify.py
 git submodule update --init --recursive --remote
 #install local pip
-pypy3 -m pip install . --global-option=build_ext #--no-cache-dir is an option
+pypy3 -m pip install .
 #install in editable mode
 pypy3 -m pip install -e .
 #if you want to remove
