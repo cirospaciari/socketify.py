@@ -7,6 +7,9 @@ ARCH := amd64
 ifeq ($(PLATFORM), arm64)
 	ARCH := arm64
 endif
+ifeq ($(PLATFORM), aarch64)
+	ARCH := arm64
+endif
 ifeq ($(PLATFORM), arm)
 	ARCH := arm64
 endif
@@ -53,7 +56,7 @@ linux:
 	$(MAKE) clean
 
 	# build boringssl
-	cd ../uWebSockets/uSockets/boringssl && mkdir -p ${ARCH} && cd ${ARCH} && cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_BUILD_TYPE=Release .. && make crypto ssl
+	cd ../uWebSockets/uSockets/boringssl && mkdir -p $(ARCH) && cd $(ARCH) && cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_BUILD_TYPE=Release .. && make crypto ssl
 
 	# build lsquic
 	cd ../uWebSockets/uSockets/lsquic && cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DBORINGSSL_DIR=../boringssl -DCMAKE_BUILD_TYPE=Release -DLSQUIC_BIN=Off . && make lsquic
@@ -65,4 +68,4 @@ linux:
 
 	# build CAPI + libsocketify
 	$(CXX) -I ./src -I ../uWebSockets/src -I ../uWebSockets/uSockets/src -I ../uWebSockets/capi -I ../uWebSockets/uSockets/lsquic/include -I ../uWebSockets/uSockets/boringssl/include -pthread -fPIC -std=c++17 -c -O3 ./src/$(LIBRARY_NAME).cpp
-	$(CXX) -shared -static-libstdc++ -static-libgcc -s -o ../$(LIBRARY_NAME)_linux_amd64.so  $(LIBRARY_NAME).o ../uWebSockets/uSockets/uSockets_linux_$(ARCH).a ../uWebSockets/uSockets/boringssl/$(ARCH)/ssl/libssl.a ../uWebSockets/uSockets/boringssl/$(ARCH)/crypto/libcrypto.a ../uWebSockets/uSockets/lsquic/src/liblsquic/liblsquic.a -flto  -fPIC -lz -luv
+	$(CXX) -shared -static-libstdc++ -static-libgcc -s -o ../$(LIBRARY_NAME)_linux_$(ARCH).so  $(LIBRARY_NAME).o ../uWebSockets/uSockets/uSockets_linux_$(ARCH).a ../uWebSockets/uSockets/boringssl/$(ARCH)/ssl/libssl.a ../uWebSockets/uSockets/boringssl/$(ARCH)/crypto/libcrypto.a ../uWebSockets/uSockets/lsquic/src/liblsquic/liblsquic.a -flto  -fPIC -lz -luv
