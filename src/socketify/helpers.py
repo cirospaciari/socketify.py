@@ -4,6 +4,7 @@ import mimetypes
 from os import path
 
 mimetypes.init()
+
 # We have an version of this using aiofile and aiofiles
 # This is an sync version without any dependencies is normally much faster in CPython and PyPy3
 # In production we highly recomend to use CDN like CloudFlare or/and NGINX or similar for static files
@@ -76,6 +77,7 @@ async def sendfile(res, req, filename):
 
     except Exception as error:
         res.write_status(500).end("Internal Error") 
+
 
 def in_directory(file, directory):
     #make both absolute    

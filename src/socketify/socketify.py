@@ -1,16 +1,24 @@
 import cffi
+from datetime import datetime
+from http import cookies
+import inspect
+import json
+import mimetypes
 import os
+from os import path
+import platform   
+import signal
+from threading import Thread, local, Lock
+import time
+from urllib.parse import parse_qs, quote_plus, unquote_plus
+
 from .loop import Loop
 from .status_codes import status_codes
-import json
-import inspect
-import signal
-from http import cookies
-from datetime import datetime
-from urllib.parse import parse_qs, quote_plus, unquote_plus
-from threading import Thread, local, Lock
+from .helpers import static_route
 
-import platform    
+mimetypes.init()
+
+ 
 is_python = platform.python_implementation() == 'CPython'
 
 ffi = cffi.FFI()
@@ -848,6 +856,10 @@ class App:
 
         self.handlers = []
         self.error_handler = None
+
+    def static(self, route, directory):
+        static_route(self, route, directory)
+        return self
 
     def get(self, path, handler):
         user_data = ffi.new_handle((handler, self))

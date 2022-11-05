@@ -7,9 +7,9 @@
 
 # nginx     - try_files                 -  77630.15 req/s
 # pypy3     - socketify static          -  10245.82 req/s
+# python3   - socketify static          -   8273.71 req/s
 # node.js   - @fastify/static           -   5437.16 req/s
 # node.js   - express.static            -   4077.49 req/s
-# python3   - socketify static          -   2438.06 req/s
 # python3   - socketify static_aiofile  -   2390.96 req/s
 # python3   - socketify static_aiofiles -   1615.12 req/s
 # python3   - scarlette static uvicorn  -   1335.56 req/s
@@ -29,9 +29,7 @@
 # Express production recommendations: https://expressjs.com/en/advanced/best-practice-performance.html
 # Fastify production recommendations: https://www.fastify.io/docs/latest/Guides/Recommendations/
 
-from socketify import App
-from helpers.static import static_route
-from helpers.static import sendfile
+from socketify import App, sendfile
 
 
 app = App()
@@ -44,8 +42,8 @@ async def home(res, req):
     
 app.get("/", home)
 
-#serve all files in public folder under / route (main route but can be like /assets)
-static_route(app, "/", "./public")
+#serve all files in public folder under /* route (you can use any route like /assets)
+app.static("/", "./public")
 
 app.listen(3000, lambda config: print("Listening on port http://localhost:%d now\n" % config.port))
 app.run()
