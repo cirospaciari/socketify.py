@@ -1,4 +1,8 @@
 # socketify.py
+[![MacOS Build](https://github.com/cirospaciari/socketify.py/actions/workflows/macos.yml/badge.svg)](https://github.com/cirospaciari/socketify.py/actions/workflows/macos.yml)
+[![Linux Build](https://github.com/cirospaciari/socketify.py/actions/workflows/linux.yml/badge.svg)](https://github.com/cirospaciari/socketify.py/actions/workflows/linux.yml)
+[![Windows Build](https://github.com/cirospaciari/socketify.py/actions/workflows/windows.yml/badge.svg)](https://github.com/cirospaciari/socketify.py/actions/workflows/windows.yml)
+
 Fast WebSocket and Http/Https server using CFFI with C API from [uNetworking/uWebSockets](https://github.com/uNetworking/uWebSockets)
 
 This project aims at High Performance PyPy3 Web Development and WebSockets
