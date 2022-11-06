@@ -595,8 +595,6 @@ class AppResponse:
             return None #invalid json
 
 
-
-
     def send_chunk(self, buffer, total_size):
         self._chunkFuture = self.loop.create_future()
         self._lastChunkOffset = 0
@@ -604,7 +602,6 @@ class AppResponse:
         def is_aborted(self):
             self.aborted = True
             try:
-                print("aborted!", self._chunkFuture.done())
                 if not self._chunkFuture.done():
                     self._chunkFuture.set_result((False, True)) #if aborted set to done True and ok False
             except:

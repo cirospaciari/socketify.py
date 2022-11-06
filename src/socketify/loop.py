@@ -39,6 +39,7 @@ class Loop:
         asyncio.set_event_loop(self.loop)
         self.started = False
         self.last_defer = False
+        self.last_run = 0
 
     def set_timeout(self, timeout, callback, user_data):
         return self.uv_loop.create_timer(timeout, 0, callback, user_data)
@@ -58,8 +59,11 @@ class Loop:
                 (callback, user_data) = loop.queue.get(False)
                 callback(user_data)
                 loop.queue.task_done()
-            #run once asyncio
-            loop.run_once_asyncio()
+            #run once asyncio if has some current task running or relax CPU
+            if not asyncio.current_task(loop.loop) is None or self.last_run >= 100:
+                loop.run_once_asyncio()
+                self.last_run = 0
+            self.last_run = self.last_run + 1
         #use check for calling asyncio once per tick
         self.timer = self.uv_loop.create_timer(0, 1, tick, self)
         # self.timer = self.uv_loop.create_check(tick, self)
