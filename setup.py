@@ -79,7 +79,7 @@ setuptools.setup(
     package_dir={"": "src"},
     package_data={"": ['./*.so', './uWebSockets/*','./uWebSockets/*/*','./uWebSockets/*/*/*', './native/*','./native/*/*','./native/*/*/*']},
     python_requires=">=3.7",
-    install_requires=["cffi>=1.0.0", "setuptools>=60.0.0"],
+    install_requires=["cffi>=1.0.0", "setuptools>=58.1.0"],
     has_ext_modules=lambda: True,
     cmdclass={}, #cmdclass={'sdist': Prepare, 'build_ext': Makefile},
 
