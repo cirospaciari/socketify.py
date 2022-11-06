@@ -65,7 +65,7 @@ class Loop:
                 loop.last_run = 0
             loop.last_run = loop.last_run + 1
         #use check for calling asyncio once per tick
-        self.timer = self.uv_loop.create_timer(0, 1, tick, self)
+        self.timer = self.uv_loop.create_timer(1, 0, tick, self)
         # self.timer = self.uv_loop.create_check(tick, self)
 
     def run(self):
