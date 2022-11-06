@@ -60,12 +60,12 @@ class Loop:
                 callback(user_data)
                 loop.queue.task_done()
             #run once asyncio if has some current task running or relax CPU
-            if not asyncio.current_task(loop.loop) is None or loop.last_run >= 100:
+            if not asyncio.current_task(loop.loop) is None or loop.last_run >= 10:
                 loop.run_once_asyncio()
                 loop.last_run = 0
             loop.last_run = loop.last_run + 1
         #use check for calling asyncio once per tick
-        self.timer = self.uv_loop.create_timer(1, 0, tick, self)
+        self.timer = self.uv_loop.create_timer(0, 1, tick, self)
         # self.timer = self.uv_loop.create_check(tick, self)
 
     def run(self):
