@@ -60,6 +60,8 @@ app.run()
 git clone https://github.com/cirospaciari/socketify.py.git
 cd ./socketify.py
 git submodule update --init --recursive --remote
+#you can use make linux, make macos or call Make.bat from Visual Studio Development Prompt to build
+cd ./src/socketify/native/ && make linux && cd ../../../
 #install local pip
 pypy3 -m pip install .
 #install in editable mode
