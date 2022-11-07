@@ -601,29 +601,35 @@ class WebSocket:
     def get_user_data_uuid(self):
         if self.got_socket_data:
             return self.socket_data_id
-        user_data = lib.uws_ws_get_user_data(self.SSL, self._ptr)
+        user_data = lib.uws_ws_get_user_data(self.SSL, self.ws)
         if user_data == ffi.NULL:
             return None
-        (data, socket_data_id) = ffi.from_handle(user_data)
-        self.socket_data_id = socket_data_id
-        self.socket_data = data
-        self.got_socket_data = True
-        return socket_data_id
+        try:
+            (data, socket_data_id) = ffi.from_handle(user_data)
+            self.socket_data_id = socket_data_id
+            self.socket_data = data
+            self.got_socket_data = True
+            return socket_data_id
+        except:
+            return None
 
     def get_user_data(self):
         if self.got_socket_data:
             return self.socket_data
-        user_data = lib.uws_ws_get_user_data(self.SSL, self._ptr)
+        user_data = lib.uws_ws_get_user_data(self.SSL, self.ws)
         if user_data == ffi.NULL:
             return None
-        (data, socket_data_id) = ffi.from_handle(user_data)
-        self.socket_data_id = socket_data_id
-        self.socket_data = data
-        self.got_socket_data = True
-        return data
+        try:
+            (data, socket_data_id) = ffi.from_handle(user_data)
+            self.socket_data_id = socket_data_id
+            self.socket_data = data
+            self.got_socket_data = True
+            return data
+        except:
+            return None
     
     def get_buffered_amount(self):
-        return int(lib.uws_ws_get_buffered_amount(self.SSL, self._ptr))
+        return int(lib.uws_ws_get_buffered_amount(self.SSL, self.ws))
 
     def subscribe(self, topic):
         try:
