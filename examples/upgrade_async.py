@@ -1,16 +1,3 @@
-# https://github.com/Tinche/aiofiles
-# https://github.com/uNetworking/uWebSockets/issues/1426
-
-# import os.path
-
-# DLL_EXPORT typedef void (*uws_listen_domain_handler)(struct us_listen_socket_t *listen_socket, const char* domain, size_t domain_length, int options, void *user_data);
-    
-# DLL_EXPORT void uws_app_listen_domain(int ssl, uws_app_t *app, const char *domain,size_t server_name_length,_listen_domain_handler handler, void *user_data);
-# DLL_EXPORT void uws_app_listen_domain_with_options(int ssl, uws_app_t *app, const char *domain,size_t servere_length, int options, uws_listen_domain_handler handler, void *user_data);
-# DLL_EXPORT void uws_app_domain(int ssl, uws_app_t *app, const char* server_name, size_t server_name_length);
-# DLL_EXPORT void uws_filter(int ssl, uws_app_t *app, uws_filter_handler handler, void *user_data);
-
-
 from socketify import App, AppOptions, OpCode, CompressOptions
 import asyncio
 

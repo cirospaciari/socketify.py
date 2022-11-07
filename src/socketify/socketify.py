@@ -255,11 +255,13 @@ library_path = os.path.join(os.path.dirname(__file__), "libsocketify_%s_%s.%s" %
 
 lib = ffi.dlopen(library_path)
 
-@ffi.callback("void(const char *, size_t, void *)")
+
+
+@ffi.callback("void(const char*, size_t, void*)")
 def uws_missing_server_name(hostname, hostname_length, user_data):
     if not user_data == ffi.NULL:
-        app = ffi.from_handle(user_data)
         try:
+            app = ffi.from_handle(user_data)
             if hostname == ffi.NULL: 
                 data = None
             else:
@@ -274,12 +276,12 @@ def uws_missing_server_name(hostname, hostname_length, user_data):
         except Exception as err:
             print("Uncaught Exception: %s" % str(err)) #just log in console the error to call attention
 
-@ffi.callback("void(uws_websocket_t *, void *)")
+@ffi.callback("void(uws_websocket_t*, void*)")
 def uws_websocket_drain_handler(ws, user_data):
     if not user_data == ffi.NULL:
-        (handlers, app) = ffi.from_handle(user_data)
-        ws = WebSocket(ws, app.SSL, app.loop)
         try:
+            (handlers, app) = ffi.from_handle(user_data)
+            ws = WebSocket(ws, app.SSL, app.loop)
             handler = handlers.drain
             if inspect.iscoroutinefunction(handler):
                 response.grab_aborted_handler()
@@ -289,12 +291,13 @@ def uws_websocket_drain_handler(ws, user_data):
         except Exception as err:
             print("Uncaught Exception: %s" % str(err)) #just log in console the error to call attention
 
-@ffi.callback("void(uws_websocket_t *, void *)")
+@ffi.callback("void(uws_websocket_t*, void*)")
 def uws_websocket_open_handler(ws, user_data):
-    if not user_data == ffi.NULL:
-        (handlers, app) = ffi.from_handle(user_data)
-        ws = WebSocket(ws, app.SSL, app.loop)
+    
+    if not user_data == ffi.NULL:        
         try:
+            (handlers, app) = ffi.from_handle(user_data)
+            ws = WebSocket(ws, app.SSL, app.loop)
             handler = handlers.open
             if inspect.iscoroutinefunction(handler):
                 response.grab_aborted_handler()
@@ -304,13 +307,13 @@ def uws_websocket_open_handler(ws, user_data):
         except Exception as err:
             print("Uncaught Exception: %s" % str(err)) #just log in console the error to call attention
 
-@ffi.callback("void(uws_websocket_t*, const char *,size_t, uws_opcode_t, void*)")
+@ffi.callback("void(uws_websocket_t*, const char*, size_t, uws_opcode_t, void*)")
 def uws_websocket_message_handler(ws, message, length, opcode, user_data):
     if not user_data == ffi.NULL:
-        (handlers, app) = ffi.from_handle(user_data)
-        ws = WebSocket(ws, app.SSL, app.loop)
-        
         try:
+            (handlers, app) = ffi.from_handle(user_data)
+            ws = WebSocket(ws, app.SSL, app.loop)
+        
             if message == ffi.NULL: 
                 data = None
             else:
@@ -332,10 +335,9 @@ def uws_websocket_message_handler(ws, message, length, opcode, user_data):
 @ffi.callback("void(uws_websocket_t*, const char*, size_t, void*)")
 def uws_websocket_pong_handler(ws, message, length, user_data):
     if not user_data == ffi.NULL:
-        (handlers, app) = ffi.from_handle(user_data)
-        ws = WebSocket(ws, app.SSL, app.loop)
-        
         try:
+            (handlers, app) = ffi.from_handle(user_data)
+            ws = WebSocket(ws, app.SSL, app.loop)
             if message == ffi.NULL: 
                 data = None
             else:
@@ -354,10 +356,10 @@ def uws_websocket_pong_handler(ws, message, length, user_data):
 @ffi.callback("void(uws_websocket_t*, const char*, size_t, void*)")
 def uws_websocket_ping_handler(ws, message,length, user_data):
     if not user_data == ffi.NULL:
-        (handlers, app) = ffi.from_handle(user_data)
-        ws = WebSocket(ws, app.SSL, app.loop)
-        
         try:
+            (handlers, app) = ffi.from_handle(user_data)
+            ws = WebSocket(ws, app.SSL, app.loop)
+        
             if message == ffi.NULL: 
                 data = None
             else:
@@ -377,11 +379,11 @@ def uws_websocket_ping_handler(ws, message,length, user_data):
 @ffi.callback("void(uws_websocket_t*, int, const char*, size_t, void*)")
 def uws_websocket_close_handler(ws, code, message, length, user_data):
     if not user_data == ffi.NULL:
-        (handlers, app) = ffi.from_handle(user_data)
-        #pass to free data on WebSocket if needed
-        ws = WebSocket(ws, app.SSL, app.loop, True)
-
         try:
+            (handlers, app) = ffi.from_handle(user_data)
+            #pass to free data on WebSocket if needed
+            ws = WebSocket(ws, app.SSL, app.loop, True)
+
             if message == ffi.NULL: 
                 data = None
             else:
@@ -404,10 +406,10 @@ def uws_websocket_close_handler(ws, code, message, length, user_data):
 @ffi.callback("void(uws_res_t*, uws_req_t*, uws_socket_context_t*, void*)")
 def uws_websocket_upgrade_handler(res, req, context, user_data):
     if not user_data == ffi.NULL:
-        (handlers, app) = ffi.from_handle(user_data)
-        response = AppResponse(res, app.loop, app.SSL)
-        request = AppRequest(req)   
         try:    
+            (handlers, app) = ffi.from_handle(user_data)
+            response = AppResponse(res, app.loop, app.SSL)
+            request = AppRequest(req)   
             handler = handlers.upgrade
             if inspect.iscoroutinefunction(handler):
                 response.grab_aborted_handler()
@@ -419,22 +421,21 @@ def uws_websocket_upgrade_handler(res, req, context, user_data):
             print("Uncaught Exception: %s" % str(err)) #just log in console the error to call attention
 
 
-@ffi.callback("void(const char *topic, size_t length, void *user_data)")
+@ffi.callback("void(const char*, size_t, void*)")
 def uws_req_for_each_topic_handler(topic, topic_size, user_data):
     if not user_data == ffi.NULL:
-        ws = ffi.from_handle(user_data)
         try:
+            ws = ffi.from_handle(user_data)
             header_name = ffi.unpack(topic, topic_size).decode("utf-8")
             ws.trigger_for_each_topic_handler(header_name, header_value)
         except Exception: #invalid utf-8
             return
 
-@ffi.callback("void(const char *, size_t, const char *, size_t, void *)")
+@ffi.callback("void(const char*, size_t, const char*, size_t, void*)")
 def uws_req_for_each_header_handler(header_name, header_name_size, header_value, header_value_size, user_data):
     if not user_data == ffi.NULL:
-        req = ffi.from_handle(user_data)
         try:
-            
+            req = ffi.from_handle(user_data)    
             header_name = ffi.unpack(header_name, header_name_size).decode("utf-8")
             header_value = ffi.unpack(header_value, header_value_size).decode("utf-8")
             
@@ -443,13 +444,13 @@ def uws_req_for_each_header_handler(header_name, header_name_size, header_value,
             return
 
 
-@ffi.callback("void(uws_res_t *, uws_req_t *, void *)")
+@ffi.callback("void(uws_res_t*, uws_req_t*, void*)")
 def uws_generic_method_handler(res, req, user_data):
     if not user_data == ffi.NULL:
-        (handler, app) = ffi.from_handle(user_data)
-        response = AppResponse(res, app.loop, app.SSL)
-        request = AppRequest(req)
         try:
+            (handler, app) = ffi.from_handle(user_data)
+            response = AppResponse(res, app.loop, app.SSL)
+            request = AppRequest(req)
             if inspect.iscoroutinefunction(handler):
                 response.grab_aborted_handler()
                 response.run_async(handler(response, request))
@@ -460,7 +461,7 @@ def uws_generic_method_handler(res, req, user_data):
             app.trigger_error(err, response, request)
 
 
-@ffi.callback("void(struct us_listen_socket_t *, uws_app_listen_config_t, void *)")
+@ffi.callback("void(struct us_listen_socket_t*, uws_app_listen_config_t, void*)")
 def uws_generic_listen_handler(listen_socket, config, user_data):
     if listen_socket == ffi.NULL:
         raise RuntimeError("Failed to listen on port %d" % int(config.port))
@@ -472,7 +473,7 @@ def uws_generic_listen_handler(listen_socket, config, user_data):
             app.socket = listen_socket
             app._listen_handler(None if config == ffi.NULL else AppListenOptions(port=int(config.port),host=None if config.host == ffi.NULL else ffi.string(config.host).decode("utf-8"), options=int(config.options)))
 
-@ffi.callback("void(uws_res_t *, void*)")
+@ffi.callback("void(uws_res_t*, void*)")
 def uws_generic_aborted_handler(response, user_data):
     if not user_data == ffi.NULL:
         try:
@@ -480,7 +481,7 @@ def uws_generic_aborted_handler(response, user_data):
             res.trigger_aborted()
         except:
             pass
-@ffi.callback("void(uws_res_t *, const char *, size_t, bool, void*)")
+@ffi.callback("void(uws_res_t*, const char*, size_t, bool, void*)")
 def uws_generic_on_data_handler(res, chunk, chunk_length, is_end, user_data):
     if not user_data == ffi.NULL:
         res = ffi.from_handle(user_data)
@@ -491,7 +492,7 @@ def uws_generic_on_data_handler(res, chunk, chunk_length, is_end, user_data):
         
         res.trigger_data_handler(data, bool(is_end))
 
-@ffi.callback("bool(uws_res_t *, uintmax_t, void*)")
+@ffi.callback("bool(uws_res_t*, uintmax_t, void*)")
 def uws_generic_on_writable_handler(res, offset, user_data):
     if not user_data == ffi.NULL:
         res = ffi.from_handle(user_data)        
@@ -500,7 +501,7 @@ def uws_generic_on_writable_handler(res, offset, user_data):
     return False
 
 
-@ffi.callback("void(uws_res_t *, void*)")
+@ffi.callback("void(uws_res_t*, void*)")
 def uws_generic_cork_handler(res, user_data):
     if not user_data == ffi.NULL:
         response = ffi.from_handle(user_data)  
@@ -523,6 +524,38 @@ def uws_ws_cork_handler(user_data):
         except Exception as err:
             print("Error on cork handler %s"  % str(err))
     
+
+# Compressor mode is 8 lowest bits where HIGH4(windowBits), LOW4(memLevel).
+# Decompressor mode is 8 highest bits LOW4(windowBits).
+# If compressor or decompressor bits are 1, then they are shared.
+# If everything is just simply 0, then everything is disabled.
+class CompressOptions(IntEnum):
+        #Disabled, shared, shared are "special" values
+        DISABLED = lib.DISABLED
+        SHARED_COMPRESSOR = lib.SHARED_COMPRESSOR
+        SHARED_DECOMPRESSOR = lib.SHARED_DECOMPRESSOR
+        #Highest 4 bits describe decompressor 
+        DEDICATED_DECOMPRESSOR_32KB = lib.DEDICATED_DECOMPRESSOR_32KB
+        DEDICATED_DECOMPRESSOR_16KB = lib.DEDICATED_DECOMPRESSOR_16KB
+        DEDICATED_DECOMPRESSOR_8KB = lib.DEDICATED_DECOMPRESSOR_8KB
+        DEDICATED_DECOMPRESSOR_4KB = lib.DEDICATED_DECOMPRESSOR_4KB
+        DEDICATED_DECOMPRESSOR_2KB = lib.DEDICATED_DECOMPRESSOR_2KB
+        DEDICATED_DECOMPRESSOR_1KB = lib.DEDICATED_DECOMPRESSOR_1KB
+        DEDICATED_DECOMPRESSOR_512B = lib.DEDICATED_DECOMPRESSOR_512B
+        #Same as 32kb
+        DEDICATED_DECOMPRESSOR = lib.DEDICATED_DECOMPRESSOR,
+
+        #Lowest 8 bit describe compressor
+        DEDICATED_COMPRESSOR_3KB = lib.DEDICATED_COMPRESSOR_3KB
+        DEDICATED_COMPRESSOR_4KB = lib.DEDICATED_COMPRESSOR_4KB
+        DEDICATED_COMPRESSOR_8KB = lib.DEDICATED_COMPRESSOR_8KB
+        DEDICATED_COMPRESSOR_16KB = lib.DEDICATED_COMPRESSOR_16KB
+        DEDICATED_COMPRESSOR_32KB = lib.DEDICATED_COMPRESSOR_32KB
+        DEDICATED_COMPRESSOR_64KB = lib.DEDICATED_COMPRESSOR_64KB
+        DEDICATED_COMPRESSOR_128KB = lib.DEDICATED_COMPRESSOR_128KB
+        DEDICATED_COMPRESSOR_256KB = lib.DEDICATED_COMPRESSOR_256KB
+        #Same as 256kb
+        DEDICATED_COMPRESSOR = lib.DEDICATED_COMPRESSOR
 
 
 class OpCode(IntEnum):
@@ -1275,27 +1308,26 @@ class AppResponse:
         if self.aborted:
             return False
 
-        
         if isinstance(sec_web_socket_key, str):
             sec_web_socket_key_data = sec_web_socket_key.encode('utf-8')
         elif isinstance(sec_web_socket_key, bytes):
             sec_web_socket_key_data = sec_web_socket_key
         else:
-            raise RuntimeError("sec_web_socket_key need to be an String or Bytes")
+            sec_web_socket_key_data = b''
 
         if isinstance(sec_web_socket_protocol, str):
             sec_web_socket_protocol_data = sec_web_socket_protocol.encode('utf-8')
         elif isinstance(sec_web_socket_protocol, bytes):
             sec_web_socket_protocol_data = sec_web_socket_protocol
         else:
-            raise RuntimeError("sec_web_socket_protocol need to be an String or Bytes")            
+            sec_web_socket_protocol_data = b''
         
         if isinstance(sec_web_socket_extensions, str):
             sec_web_socket_extensions_data = sec_web_socket_extensions.encode('utf-8')
         elif isinstance(sec_web_socket_extensions, bytes):
             sec_web_socket_extensions_data = sec_web_socket_extensions
         else:
-            raise RuntimeError("sec_web_socket_protocol need to be an String or Bytes") 
+            sec_web_socket_extensions_data = b''
         
         user_data_ptr = ffi.NULL
         if not user_data is None:
@@ -1305,7 +1337,7 @@ class AppResponse:
             SocketRefs[_id] = user_data_ptr
             
         lib.uws_res_upgrade(self.SSL, self.res, user_data_ptr, sec_web_socket_key_data, len(sec_web_socket_key_data),sec_web_socket_protocol_data, len(sec_web_socket_protocol_data),sec_web_socket_extensions_data, len(sec_web_socket_extensions_data), socket_context)
-
+        return True
 
     def on_writable(self, handler):
         if not self.aborted:
