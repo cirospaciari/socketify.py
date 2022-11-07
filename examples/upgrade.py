@@ -1,5 +1,4 @@
 from socketify import App, AppOptions, OpCode, CompressOptions
-import asyncio
 
 def ws_open(ws):
     print('A WebSocket got connected!')
