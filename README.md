@@ -117,3 +117,10 @@ pypy3 -m pip install -e .
 #if you want to remove
 pypy3 -m pip uninstall socketify
 ```
+
+## Commercially supported
+We are a Brazilian consulting & contracting company dealing with anything development, support and customer success.
+
+Don't hesitate sending a mail if you're building something large, in need of advice or having other business inquiries in mind. We'll figure out what's best for both parties and make sure you're not stepping into one of the many common pitfalls.
+
+Special thank's to [uNetworking AB](https://github.com/uNetworking) to develop [uWebSockets](https://github.com/uNetworking/uWebSockets), [uSockets](https://github.com/uNetworking/uSockets) and allow us to bring this features and performance to Python and PyPy
