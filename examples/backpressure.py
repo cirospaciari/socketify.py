@@ -34,6 +34,6 @@ app.ws("/*", {
     'open': ws_open,
     'drain': ws_drain
 })
-app.any("/", lambda res,req: res.end("Nothing to see here!'"))
+app.any("/", lambda res,req: res.end("Nothing to see here!"))
 app.listen(3000, lambda config: print("Listening on port http://localhost:%d now\n" % (config.port)))
 app.run()
