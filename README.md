@@ -28,17 +28,8 @@ This project aims to bring high performance PyPy3 web development and will bring
 We created and adapt the full C API from [uNetworking/uWebSockets](https://github.com/uNetworking/uWebSockets) and integrate libuv powered fetch and file IO, this same C API is used by [Bun](https://bun.sh/)
 
 
-Overly simple hello world app [click here](https://github.com/cirospaciari/socketify.py/tree/main/examples) for more examples
-```python
-from socketify import App
-
-app = App()
-app.get("/", lambda res, req: res.end("Hello World socketify from Python!"))
-app.listen(3000, lambda config: print("Listening on port http://localhost:%d now\n" % config.port))
-app.run()
-```
-
-pip install
+## Install
+For macOS x64 & Silicon, Linux x64, Windows
 
 ```bash
 pip install git+https://github.com/cirospaciari/socketify.py.git
@@ -48,17 +39,26 @@ pypy3 -m pip install git+https://github.com/cirospaciari/socketify.py.git
 pypy3 -m pip install -e git+https://github.com/cirospaciari/socketify.py.git@main#egg=socketify
 ```
 
-requirements.txt
-
+Using install via requirements.txt
 ```text
 git+https://github.com/cirospaciari/socketify.py.git@main#socketify
 ```
-
-install via requirements.txt
 ```bash
 pip install -r ./requirements.txt 
 #or specify PyPy3
 pypy3 -m pip install -r ./requirements.txt 
+```
+
+## Examples
+
+Hello world app
+```python
+from socketify import App
+
+app = App()
+app.get("/", lambda res, req: res.end("Hello World socketify from Python!"))
+app.listen(3000, lambda config: print("Listening on port http://localhost:%d now\n" % config.port))
+app.run()
 ```
 
 SSL version sample
@@ -71,7 +71,9 @@ app.listen(3000, lambda config: print("Listening on port http://localhost:%d now
 app.run()
 ```
 
-Build local from source
+We have more than 20 examples [click here](https://github.com/cirospaciari/socketify.py/tree/main/examples) for more
+
+## Build local from source
 ```bash
 #clone and update submodules
 git clone https://github.com/cirospaciari/socketify.py.git
