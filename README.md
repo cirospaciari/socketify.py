@@ -30,7 +30,7 @@ We created and adapt the full C API from [uNetworking/uWebSockets](https://githu
 ## Benchmark
 HTTP requests per second (Linux x64)
 
-| Framework | Requests/s | Runtime |
+| Framework | Req/s | Runtime |
 | ------------- | -------------: | :-------------: |
 | socketify.py  | 124,943  | PyPy3  |
 | socketify.py  | 70,877  | Python3  |
