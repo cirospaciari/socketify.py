@@ -45,11 +45,11 @@ macos:
 	cd ../uWebSockets/uSockets && $(AR) rvs uSockets_darwin_arm64.a *.o
 
 	# build CAPI + libsocketify
-	$(CXX) -stdlib=libc++ -mmacosx-version-min=10.14 -I ./src -I ../uWebSockets/src -I ../uWebSockets/uSockets/src -I ../uWebSockets/capi -I ../uWebSockets/uSockets/lsquic/include -I ../uWebSockets/uSockets/boringssl/include -pthread -fPIC -std=c++17 -c -O3 ./src/$(LIBRARY_NAME).cpp
+	$(CXX) -stdlib=libc++ -mmacosx-version-min=10.14 -I ./src -I ../uWebSockets/src -I ../uWebSockets/uSockets/src -I ../uWebSockets/capi -I ../uWebSockets/uSockets/lsquic/include -I ../uWebSockets/uSockets/boringssl/include -DUWS_WITH_PROXY -pthread -fPIC -std=c++17 -c -O3 ./src/$(LIBRARY_NAME).cpp
 	$(CXX) -stdlib=libc++ -mmacosx-version-min=10.14 -shared -undefined dynamic_lookup -o ../$(LIBRARY_NAME)_darwin_amd64.so  $(LIBRARY_NAME).o ../uWebSockets/uSockets/uSockets_darwin_amd64.a ../uWebSockets/uSockets/boringssl/amd64/ssl/libssl.a ../uWebSockets/uSockets/boringssl/amd64/crypto/libcrypto.a ../uWebSockets/uSockets/lsquic/src/liblsquic/liblsquic.a -flto  -fPIC -lz -luv
 
 	# build CAPI + libsocketify for arm64 (cross compile)
-	$(CXX) -stdlib=libc++ -target arm64-apple-macos11 -I ./src -I ../uWebSockets/src -I ../uWebSockets/uSockets/src -I ../uWebSockets/capi -I ../uWebSockets/uSockets/lsquic/include -I ../uWebSockets/uSockets/boringssl/include -pthread -fPIC -std=c++17 -c -O3 ./src/$(LIBRARY_NAME).cpp
+	$(CXX) -stdlib=libc++ -target arm64-apple-macos11 -I ./src -I ../uWebSockets/src -I ../uWebSockets/uSockets/src -I ../uWebSockets/capi -I ../uWebSockets/uSockets/lsquic/include -I ../uWebSockets/uSockets/boringssl/include -DUWS_WITH_PROXY -pthread -fPIC -std=c++17 -c -O3 ./src/$(LIBRARY_NAME).cpp
 	$(CXX) -stdlib=libc++ -target arm64-apple-macos11 -shared -undefined dynamic_lookup -o ../$(LIBRARY_NAME)_darwin_arm64.so  $(LIBRARY_NAME).o ../uWebSockets/uSockets/uSockets_darwin_amd64.a ../uWebSockets/uSockets/boringssl/amd64/ssl/libssl.a ../uWebSockets/uSockets/boringssl/amd64/crypto/libcrypto.a ../uWebSockets/uSockets/lsquic/src/liblsquic/liblsquic.a -flto  -fPIC -lz -luv
 
 linux:
@@ -67,5 +67,5 @@ linux:
 	cd ../uWebSockets/uSockets && $(AR) rvs uSockets_linux_$(ARCH).a *.o
 
 	# build CAPI + libsocketify
-	$(CXX) -I ./src -I ../uWebSockets/src -I ../uWebSockets/uSockets/src -I ../uWebSockets/capi -I ../uWebSockets/uSockets/lsquic/include -I ../uWebSockets/uSockets/boringssl/include -pthread -fPIC -std=c++17 -c -O3 ./src/$(LIBRARY_NAME).cpp
+	$(CXX) -I ./src -I ../uWebSockets/src -I ../uWebSockets/uSockets/src -I ../uWebSockets/capi -I ../uWebSockets/uSockets/lsquic/include -I ../uWebSockets/uSockets/boringssl/include -DUWS_WITH_PROXY -pthread -fPIC -std=c++17 -c -O3 ./src/$(LIBRARY_NAME).cpp
 	$(CXX) -shared -static-libstdc++ -static-libgcc -s -o ../$(LIBRARY_NAME)_linux_$(ARCH).so  $(LIBRARY_NAME).o ../uWebSockets/uSockets/uSockets_linux_$(ARCH).a ../uWebSockets/uSockets/boringssl/$(ARCH)/ssl/libssl.a ../uWebSockets/uSockets/boringssl/$(ARCH)/crypto/libcrypto.a ../uWebSockets/uSockets/lsquic/src/liblsquic/liblsquic.a -flto  -fPIC -lz -luv

@@ -221,6 +221,11 @@ void uws_res_on_data(int ssl, uws_res_t *res, void (*handler)(uws_res_t *res, co
 void uws_res_upgrade(int ssl, uws_res_t *res, void *data, const char *sec_web_socket_key, size_t sec_web_socket_key_length, const char *sec_web_socket_protocol, size_t sec_web_socket_protocol_length, const char *sec_web_socket_extensions, size_t sec_web_socket_extensions_length, uws_socket_context_t *ws);
 uws_try_end_result_t uws_res_try_end(int ssl, uws_res_t *res, const char *data, size_t length, uintmax_t total_size, bool close_connection);
 void uws_res_cork(int ssl, uws_res_t *res,void(*callback)(uws_res_t *res, void* user_data) ,void* user_data);
+size_t uws_res_get_remote_address(int ssl, uws_res_t *res, const char **dest);
+size_t uws_res_get_remote_address_as_text(int ssl, uws_res_t *res, const char **dest);
+size_t uws_res_get_proxied_remote_address(int ssl, uws_res_t *res, const char **dest);
+size_t uws_res_get_proxied_remote_address_as_text(int ssl, uws_res_t *res, const char **dest);
+
 bool uws_req_is_ancient(uws_req_t *res);
 bool uws_req_get_yield(uws_req_t *res);
 void uws_req_set_field(uws_req_t *res, bool yield);
@@ -246,6 +251,15 @@ uws_sendstatus_t uws_ws_send_last_fragment(int ssl, uws_websocket_t *ws, const c
 void uws_ws_end(int ssl, uws_websocket_t *ws, int code, const char *message, size_t length);
 void uws_ws_cork(int ssl, uws_websocket_t *ws, void (*handler)(void *user_data), void *user_data);
 
+bool uws_ws_subscribe(int ssl, uws_websocket_t *ws, const char *topic, size_t length);
+bool uws_ws_unsubscribe(int ssl, uws_websocket_t *ws, const char *topic, size_t length);
+bool uws_ws_is_subscribed(int ssl, uws_websocket_t *ws, const char *topic, size_t length);
+void uws_ws_iterate_topics(int ssl, uws_websocket_t *ws, void (*callback)(const char *topic, size_t length, void *user_data), void *user_data);
+bool uws_ws_publish(int ssl, uws_websocket_t *ws, const char *topic, size_t topic_length, const char *message, size_t message_length);
+bool uws_ws_publish_with_options(int ssl, uws_websocket_t *ws, const char *topic, size_t topic_length, const char *message, size_t message_length, uws_opcode_t opcode, bool compress);
+int uws_ws_get_buffered_amount(int ssl, uws_websocket_t *ws);
+size_t uws_ws_get_remote_address(int ssl, uws_websocket_t *ws, const char **dest);
+size_t uws_ws_get_remote_address_as_text(int ssl, uws_websocket_t *ws, const char **dest);
 """)
 
 library_extension = "dll" if platform.system().lower() == "windows" else "so"
@@ -1194,6 +1208,49 @@ class AppResponse:
         self.cork(lambda res: res.end(message, end_connection))
         return self
 
+    def get_remote_address_bytes(self):
+        buffer = ffi.new("char**")
+        length = lib.uws_res_get_remote_address(self.SSL, self.res, buffer)   
+        buffer_address = ffi.addressof(buffer, 0)[0]
+        if buffer_address == ffi.NULL: 
+            return None
+        try:
+            return ffi.unpack(buffer_address, length)
+        except Exception: #invalid
+            return None
+
+    def get_remote_address(self):
+        buffer = ffi.new("char**")
+        length = lib.uws_res_get_remote_address_as_text(self.SSL, self.res, buffer)   
+        buffer_address = ffi.addressof(buffer, 0)[0]
+        if buffer_address == ffi.NULL: 
+            return None
+        try:
+            return ffi.unpack(buffer_address, length).decode("utf-8")
+        except Exception: #invalid utf-8
+            return None
+
+    def get_proxied_remote_address_bytes(self):
+        buffer = ffi.new("char**")
+        length = lib.uws_res_get_proxied_remote_address(self.SSL, self.res, buffer)   
+        buffer_address = ffi.addressof(buffer, 0)[0]
+        if buffer_address == ffi.NULL: 
+            return None
+        try:
+            return ffi.unpack(buffer_address, length)
+        except Exception: #invalid
+            return None
+
+    def get_proxied_remote_address(self):
+        buffer = ffi.new("char**")
+        length = lib.uws_res_get_proxied_remote_address_as_text(self.SSL, self.res, buffer)   
+        buffer_address = ffi.addressof(buffer, 0)[0]
+        if buffer_address == ffi.NULL: 
+            return None
+        try:
+            return ffi.unpack(buffer_address, length).decode("utf-8")
+        except Exception: #invalid utf-8
+            return None
     def end(self, message, end_connection=False):
             try:
                 if self.aborted:
