@@ -25,12 +25,21 @@ This project aims to bring high performance PyPy3 web development and will bring
 - Async file IO powered by libuv
 - Full asyncio integration with libuv
 - Full Http3 support
+- [`HPy`](https://hpyproject.org/) integration to better support [`CPython`](https://github.com/python/cpython), [`PyPy`](https://www.pypy.org/) and [`GraalPython`](https://github.com/oracle/graalpython)
 
 We created and adapt the full C API from [uNetworking/uWebSockets](https://github.com/uNetworking/uWebSockets) and integrate libuv powered fetch and file IO, this same C API is used by [Bun](https://bun.sh/)
 
 ## socketify.py vs japronto
 
-People really want to compare with japronto, but this projects are not really comparable. Socketify is an active project and will be maintained over time with security updates and new features, japronto don't get any github updates since 2020 and don't get any src update since 2018, japronto don't support SSL, WebSockets, PyPy3, Windows or macOS Silicon, socketify will support Http3 and a lot more features. We don't use uvloop, because uvloop don't support Windows and PyPy3 at this moment, this can change in the future, but right now we want to implement our own libuv + asyncio solution, and a lot more. And yes we can be faster than japronto when all our features and goals are achieved, and we are probably faster than any current maintained solution out there.
+People really want to compare with japronto, but this projects are not really comparable. Socketify is an active project and will be maintained over time with security updates and new features, japronto don't get any github updates since 2020 and don't get any src update since 2018, japronto don't support SSL, WebSockets, [`PyPy3`](https://www.pypy.org/), Windows or macOS Silicon, socketify will support Http3 and a lot more features. 
+
+And yes, we can be faster than japronto when all our features and goals are achieved, and we are probably faster than any current maintained solution out there.
+
+## uvloop
+We don't use uvloop, because uvloop don't support Windows and PyPy3 at this moment, this can change in the future, but right now we want to implement our own libuv + asyncio solution, and a lot more.
+
+## CFFI vs Cython vs HPy
+Cython performs really well on Python3 but really bad on PyPy3, CFFI are choosen for better support PyPy3 until we got our hands on an stable [`HPy`](https://hpyproject.org/) integration.
 
 ## Benchmarks
 HTTP requests per second (Linux x64)
