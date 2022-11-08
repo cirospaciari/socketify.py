@@ -25,7 +25,7 @@ This project aims to bring high performance PyPy3 web development and will bring
 - async file IO powered by libuv
 - full asyncio integration with libuv
 
-We adapt the full C API from uNetworking/uWebSockets and integrate libuv powered fetch and file IO, this same C API is used by [Bun](https://bun.sh/)
+We created and adapt the full C API from [uNetworking/uWebSockets](https://github.com/uNetworking/uWebSockets) and integrate libuv powered fetch and file IO, this same C API is used by [Bun](https://bun.sh/)
 
 
 Overly simple hello world app [click here](https://github.com/cirospaciari/socketify.py/tree/main/examples) for more examples
