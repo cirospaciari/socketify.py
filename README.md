@@ -29,6 +29,8 @@ This project aims to bring high performance PyPy3 web development and will bring
 
 We created and adapt the full C API from [uNetworking/uWebSockets](https://github.com/uNetworking/uWebSockets) and will integrate libuv powered fetch and file IO, this same C API is used by [Bun](https://bun.sh/)
 
+**socketify is experimental software at the moment, but quickly heading towards its first release**. Join Github Discussions for help and have a look at things that don’t work yet.
+
 ## socketify.py vs japronto
 
 People really want to compare with japronto, but this projects are not really comparable. Socketify is an active project and will be maintained over time with security updates and new features, japronto don't get any github updates since 2020 and don't get any src update since 2018, japronto don't support SSL, WebSockets, [`PyPy3`](https://www.pypy.org/), Windows or macOS Silicon, socketify will support Http3 and a lot more features. 
