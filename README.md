@@ -41,7 +41,7 @@ Runtime versions: PyPy3 7.3.9 and Python 3.10.7<br/>
 Framework versions: gunicorn 20.1.0 + uvicorn 0.19.0, socketify alpha<br/>
 Tested with ./http_load_test 40 127.0.0.1 8000 from [uSockets](https://github.com/uNetworking/uSockets)
 Source code in [bench](https://github.com/cirospaciari/socketify.py/tree/main/bench)
-> Today we have about 30% to 50% performance drop due to workarounds until we implement full integration with asyncio + libuv, so we will got even faster more info in [this issue](https://github.com/cirospaciari/socketify.py/issues/18)
+> Today socketify have about 30% to 50% performance hit (depending on the benchmark) due to workarounds between asyncio + libuv, so we will got even faster! See more info in [this issue](https://github.com/cirospaciari/socketify.py/issues/18), in PyPy3 we can get about 186,760 req/s and 77,774 req/s in Python3 without these workarounds and almost double of the scores with PyPy3 in TechEmPower plaintext, Python3 performance will improve when we migrate to [HPy](https://github.com/cirospaciari/socketify.py/issues/16). In TechEmPower benchmarks we are faster than japronto in plaintext (about 1,300k req/s using PyPy3 without workaround and about 770k req/s with the current state vs 582k from japronto you can follow details in [this discussion](https://github.com/cirospaciari/socketify.py/discussions/10)
 
 ## Install
 For macOS x64 & Silicon, Linux x64, Windows
