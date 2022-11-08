@@ -27,7 +27,7 @@ This project aims to bring high performance PyPy3 web development and will bring
 - Full Http3 support
 - [`HPy`](https://hpyproject.org/) integration to better support [`CPython`](https://github.com/python/cpython), [`PyPy`](https://www.pypy.org/) and [`GraalPython`](https://github.com/oracle/graalpython)
 
-We created and adapt the full C API from [uNetworking/uWebSockets](https://github.com/uNetworking/uWebSockets) and integrate libuv powered fetch and file IO, this same C API is used by [Bun](https://bun.sh/)
+We created and adapt the full C API from [uNetworking/uWebSockets](https://github.com/uNetworking/uWebSockets) and will integrate libuv powered fetch and file IO, this same C API is used by [Bun](https://bun.sh/)
 
 ## socketify.py vs japronto
 
