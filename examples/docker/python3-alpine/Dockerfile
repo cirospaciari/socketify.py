@@ -2,11 +2,13 @@ FROM python:3.11-alpine
 
 WORKDIR /usr/src/app
 
-COPY requirements.txt ./
+RUN apk add --no-cache libuv-dev git zlib-dev openssl-dev libffi-dev build-base make cmake perl go python3-dev libstdc++ gcompat libc6-compat bsd-compat-headers clang musl-dev lld compiler-rt compiler-rt-static
+RUN git clone https://github.com/cirospaciari/socketify.py.git
+RUN cd ./socketify.py && git submodule update --init --recursive --remote
 
-RUN apk add --no-cache libuv-dev git openssl-dev libffi-dev build-base python3-dev libstdc++ gcompat
-
-RUN pip install --no-cache-dir -r requirements.txt
+COPY Makefile ./socketify.py/src/socketify/native/Makefile
+RUN cd ./socketify.py/src/socketify/native/ && make alpine
+RUN cd ./socketify.py && pip install .
 
 COPY . .
 
