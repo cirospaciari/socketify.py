@@ -19,7 +19,3 @@ for i in range(1, multiprocessing.cpu_count()):
     create_fork()
 
 run_app() # run app on the main process too :)
-
-
-
-

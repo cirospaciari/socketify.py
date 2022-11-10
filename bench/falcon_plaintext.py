@@ -21,4 +21,9 @@ if __name__ == '__main__':
         # Serve until process is killed
         httpd.serve_forever()
 
-#pypy3 -m gunicorn falcon_plaintext:app -w 1 
+#pypy3 -m gunicorn falcon_plaintext:app -w 4 --worker-class=gevent #recomended for pypy3
+#python3 -m gunicorn falcon_plaintext:app -w 4 #without Cython
+#pypy3 -m gunicorn falcon_plaintext:app -w 4 #without gevent
+#python3 -m gunicorn falcon_plaintext:app -w 4 --worker-class="egg:meinheld#gunicorn_worker" #with Cython
+#meinheld is buggy -> greenlet.c:566:10: error: no member named 'use_tracing' in 'struct _ts'
+#so using pip3 install git+https://github.com/idot/meinheld.git@2bfe452d6608c92688d92337c87b1dd6448f4ccb
