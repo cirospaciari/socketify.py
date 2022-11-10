@@ -1,13 +1,25 @@
 from socketify import App
+import os
+import multiprocessing
 
-app = App()
-app.get("/", lambda res, req: res.end("Hello World!"))
-app.listen(8000, lambda config: print("Listening on port http://localhost:%d now\n" % config.port))
-app.run()
+def run_app():
+    app = App()
+    app.get("/", lambda res, req: res.end("Hello, World!"))
+    app.listen(8000, lambda config: print("PID %d Listening on port http://localhost:%d now\n" % (os.getpid(), config.port)))
+    app.run()
 
-# 124943.00 req/s socketify.py - PyPy3 7.3.9 
-# 70877.75 req/s socketify.py - Python 3.10.7
-# 30173.75 req/s gunicorn 20.1.0 + uvicorn 0.19.0 - Python 3.10.7
-# 17580.25 req/s gunicorn 20.1.0 + uvicorn 0.19.0 - PyPy3 7.3.9 
-#  8044.50 req/s flask 2.1.2 PyPy 7.3.9 
-#  1957.50 req/s flask 2.1.2 Python 3.10.7
+def create_fork():
+    n = os.fork()
+    # n greater than 0 means parent process
+    if not n > 0:
+        run_app()
+
+# fork limiting the cpu count - 1
+for i in range(1, multiprocessing.cpu_count()):
+    create_fork()
+
+run_app() # run app on the main process too :)
+
+
+
+
