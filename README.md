@@ -50,7 +50,7 @@ HTTP requests per second (Linux x64)
 ![image](https://raw.githubusercontent.com/cirospaciari/socketify.py/main/misc/bench-bar-graph.svg)
 
 Runtime versions: PyPy3 7.3.9 and Python 3.10.7<br/>
-Framework versions: gunicorn 20.1.0 + uvicorn 0.19.0, socketify alpha, gunicorn 20.1.0 + falcon 3.1.0<br/>
+Framework versions: gunicorn 20.1.0 + uvicorn 0.19.0, socketify alpha, gunicorn 20.1.0 + falcon 3.1.0, robyn 0.18.3<br/>
 Tested with oha -c 40 -z 5s http://localhost:8000/ (1 run for warmup and 3 runs average for testing)<br/>
 Source code in [bench](https://github.com/cirospaciari/socketify.py/tree/main/bench)<br/>
 Machine OS: Debian GNU/Linux bookworm/sid x86_64 Kernel: 6.0.0-2-amd64 CPU: Intel i7-7700HQ (8) @ 3.800GHz Memory: 32066MiB 
