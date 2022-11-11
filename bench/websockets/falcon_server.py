@@ -6,14 +6,11 @@ clients = set([])
 remaining_clients = 16
 
 async def broadcast(message):
-    
+    # some clients got disconnected if we tried to to all async :/
     # tasks = [ws.send_text(message) for ws in client]
     # return await asyncio.wait(tasks, return_when=ALL_COMPLETED)
     for ws in clients:
         await ws.send_text(message)
-    # # for ws in clients:
-    # #     tasks.append(ws.send_text(message))
-    # await asyncio.wait(tasks, return_when=ALL_COMPLETED)
     
 
 class SomeResource:
