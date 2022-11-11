@@ -54,8 +54,7 @@ WebSocket messages per second (Linux x64)
 ![image](https://raw.githubusercontent.com/cirospaciari/socketify.py/main/misc/ws-bar-graph.svg)
 
 
-We got almost 900k messages/s with PyPy3 and 860k with Python3 the same performance as [Bun](https://bun.sh) with also uses uWebSockets,
-with Falcon 35k messages/s and with Falcon with PyPy3 56k messages/s, node.js manages 192k.
+We got almost 900k messages/s with PyPy3 and 860k with Python3 the same performance as [Bun](https://bun.sh) that also uses uWebSockets and Falcon at 35k messages/s and Falcon with PyPy3 improves into 56k messages/s, node.js manages 192k.
 
 Runtime versions: PyPy3 7.3.9, Python 3.10.7, node v16.17.0, bun v0.2.2<br/>
 Framework versions: gunicorn 20.1.0 + uvicorn 0.19.0, socketify alpha, gunicorn 20.1.0 + falcon 3.1.0, robyn 0.18.3<br/>
