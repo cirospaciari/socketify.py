@@ -54,7 +54,7 @@ Machine OS: Debian GNU/Linux bookworm/sid x86_64 Kernel: 6.0.0-2-amd64 CPU: Inte
 
 > Today socketify have about 30% performance hit due to workarounds between asyncio + libuv, so we will got even faster! See more info in [this issue](https://github.com/cirospaciari/socketify.py/issues/18), Python3 and PyPy3 performance will improve when we migrate to [HPy](https://github.com/cirospaciari/socketify.py/issues/16). In TechEmPower benchmarks we are faster than japronto in plaintext (about 1,300k req/s using PyPy3 without workaround and about 770k req/s with the current state vs 582k from japronto you can follow details in [this discussion](https://github.com/cirospaciari/socketify.py/discussions/10)
 
-## 📦 Install
+## 📦 Installation
 For macOS x64 & Silicon, Linux x64, Windows
 
 ```bash
@@ -75,7 +75,7 @@ pip install -r ./requirements.txt
 pypy3 -m pip install -r ./requirements.txt 
 ```
 
-## 🤔 Examples
+## 🤔 Usage
 
 Hello world app
 ```python
@@ -126,7 +126,7 @@ app.run()
 
 We have more than 20 examples [click here](https://github.com/cirospaciari/socketify.py/tree/main/examples) for more
 
-## :hammer: Build local from source
+## :hammer: Building from source
 ```bash
 #clone and update submodules
 git clone https://github.com/cirospaciari/socketify.py.git
