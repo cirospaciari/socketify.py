@@ -49,10 +49,20 @@ HTTP requests per second (Linux x64)
 
 ![image](https://raw.githubusercontent.com/cirospaciari/socketify.py/main/misc/bench-bar-graph.svg)
 
-Runtime versions: PyPy3 7.3.9 and Python 3.10.7<br/>
+WebSocket messages per second (Linux x64)
+
+![image](https://raw.githubusercontent.com/cirospaciari/socketify.py/main/misc/ws-bar-graph.svg)
+
+
+We got almost 900k messages/s with PyPy3 and 860k with Python3 the same performance as [Bun] with also uses uWebSockets,
+with Falcon 35k messages/s and with Falcon with PyPy3 56k messages/s, node.js manages 192k.
+
+Runtime versions: PyPy3 7.3.9, Python 3.10.7, node v16.17.0, bun v0.2.2<br/>
 Framework versions: gunicorn 20.1.0 + uvicorn 0.19.0, socketify alpha, gunicorn 20.1.0 + falcon 3.1.0, robyn 0.18.3<br/>
-Tested with oha -c 40 -z 5s http://localhost:8000/ (1 run for warmup and 3 runs average for testing)<br/>
+Http tested with oha -c 40 -z 5s http://localhost:8000/ (1 run for warmup and 3 runs average for testing)<br/>
+WebSocket tested with [Bun.sh](https://bun.sh) bench chat-client <br/>
 Source code in [bench](https://github.com/cirospaciari/socketify.py/tree/main/bench)<br/>
+
 Machine OS: Debian GNU/Linux bookworm/sid x86_64 Kernel: 6.0.0-2-amd64 CPU: Intel i7-7700HQ (8) @ 3.800GHz Memory: 32066MiB 
 
 > Today socketify have about 30% performance hit due to workarounds between asyncio + libuv, so we will got even faster! See more info in [this issue](https://github.com/cirospaciari/socketify.py/issues/18), Python3 and PyPy3 performance will improve when we migrate to [HPy](https://github.com/cirospaciari/socketify.py/issues/16). In TechEmPower benchmarks we are faster than japronto in plaintext (about 1,300k req/s using PyPy3 without workaround and about 770k req/s with the current state vs 582k from japronto you can follow details in [this discussion](https://github.com/cirospaciari/socketify.py/discussions/10)
