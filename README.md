@@ -21,7 +21,7 @@
 - Support for [`PyPy3`](https://www.pypy.org/) and [`CPython`](https://github.com/python/cpython)
 - Dynamic URL Routing with Wildcard & Parameter support
 - Sync and Async Function Support
-- Really Simple to API
+- Really Simple API
 - Fast and Encrypted TLS 1.3 quicker than most alternative servers can do even unencrypted, cleartext messaging
 - Per-SNI HttpRouter Support
 - Proxy Protocol v2
