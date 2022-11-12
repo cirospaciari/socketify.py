@@ -42,3 +42,4 @@ class SomeResource:
 app = falcon.asgi.App()
 app.add_route('/', SomeResource())
 # python3 -m gunicorn falcon_server:app -b 127.0.0.1:4001 -w 1 -k uvicorn.workers.UvicornWorker
+# pypy3 -m gunicorn falcon_server:app -b 127.0.0.1:4001 -w 1 -k uvicorn.workers.UvicornH11Worker
