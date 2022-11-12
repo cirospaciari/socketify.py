@@ -19,7 +19,16 @@
 - Fast and realiable Http/Https
 - Support for Windows, Linux and macOS Silicon & x64
 - Support for [`PyPy3`](https://www.pypy.org/) and [`CPython`](https://github.com/python/cpython)
-    
+- Dynamic URL Routing with Wildcard & Parameter support
+- Sync and Async Function Support
+- Really Simple to API
+- Fast and Encrypted TLS 1.3 quicker than most alternative servers can do even unencrypted, cleartext messaging
+- Per-SNI HttpRouter Support
+- Proxy Protocol v2
+- Shared or Dedicated Compression Support
+- Max Backpressure, Max Timeout, Max Payload and Idle Timeout Support
+- Automatic Ping / Pong Support
+- Per Socket Data
 
 ## :mag_right: Upcoming Features
 - Fetch like API powered by libuv
@@ -27,6 +36,7 @@
 - Full asyncio integration with libuv
 - Full Http3 support
 - [`HPy`](https://hpyproject.org/) integration to better support [`CPython`](https://github.com/python/cpython), [`PyPy`](https://www.pypy.org/) and [`GraalPython`](https://github.com/oracle/graalpython)
+- Hot Reloading
 
 We created and adapt the full C API from [uNetworking/uWebSockets](https://github.com/uNetworking/uWebSockets) and will integrate libuv powered fetch and file IO, this same C API is used by [Bun](https://bun.sh/)
 
