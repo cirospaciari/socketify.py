@@ -84,6 +84,19 @@ pip install -r ./requirements.txt
 pypy3 -m pip install -r ./requirements.txt 
 ```
 
+If you are using linux or macOS, you may need to install libuv and zlib in your system
+
+macOS
+```bash
+brew install libuv
+brew install zlib
+```
+
+Linux
+```bash
+apt install libuv1 zlib1g
+```
+
 ## 🤔 Usage
 
 Hello world app
