@@ -869,6 +869,7 @@ class AppRequest:
         self._ptr = ffi.new_handle(self)
         self._headers = None
         self._params = None
+        self._query = None
 
     
     def get_cookie(self, name):
@@ -958,7 +959,25 @@ class AppRequest:
             return ffi.unpack(buffer_address, length).decode("utf-8")
         except Exception: #invalid utf-8
             return None
+    
+    def get_queries(self):
+        try:
+            if self._query:
+                return self._query
+
+            url = self.get_url()
+            query = self.get_full_url()[len(url):]
+            if full_url.startswith("?"):
+                query = query[1:]
+            self._query = parse_qs(query, encoding="utf-8")
+            return self._query
+        except:
+            self._query = {}
+            return None
+
     def get_query(self, key):
+        if self._query:
+            return self._query.get(key, None)
         buffer = ffi.new("char**")
         
         if isinstance(key, str):

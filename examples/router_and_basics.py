@@ -39,6 +39,9 @@ def user(res, req):
     try:
         if int(req.get_parameter(0)) == 1:
             return res.end("Hello user with id 1!")
+        # get_parameters returns an array of parameters
+        # params = req.get_parameters()
+
     finally:
         # invalid user tells to go, to the next route valid route (not found)
         req.set_yield(1) 
@@ -55,6 +58,10 @@ def delayed(res, req):
     #get parameters, query, headers anything you need here
     delay = req.get_query("delay")
     delay = 1 if delay == None else float(delay)
+
+    #get queries returns an dict with all query string
+    # queries = req.get_queries()
+
     #tell response to run this in the event loop
     #abort handler is grabed here, so responses only will be send if res.aborted == False
     res.run_async(delayed_hello(delay, res))
