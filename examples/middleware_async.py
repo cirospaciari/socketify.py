@@ -7,7 +7,7 @@ async def get_user(authorization):
         return { 'greeting': 'Hello, World' }
     return None
 
-def auth(home, queries=[]):
+def auth(route, queries=[]):
     #in async query string, arguments and headers are only valid until the first await
     async def auth_middleware(res, req):
         #get_headers will preserve headers (and cookies) after await
@@ -24,7 +24,7 @@ def auth(home, queries=[]):
 
         user = await get_user(headers.get('authorization', None))
         if user:
-            return home(res, req, user, query_data) 
+            return route(res, req, user, query_data) 
         
         return res.write_status(403).cork_end("not authorized")
     
