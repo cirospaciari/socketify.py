@@ -867,13 +867,20 @@ class AppRequest:
         self.jar_parsed = False
         self._for_each_header_handler = None
         self._ptr = ffi.new_handle(self)
+        self._headers = None
+        self._params = None
 
     
     def get_cookie(self, name):
         if self.read_jar == None:
             if self.jar_parsed:
                 return None
-            raw_cookies = self.get_header("cookie")
+            
+            if self._headers:
+                raw_cookies = self._headers.get("cookie", None)
+            else:
+                raw_cookies = self.get_header("cookie")
+
             if raw_cookies:
                 self.jar_parsed = True
                 self.read_jar = cookies.SimpleCookie(raw_cookies)
@@ -925,11 +932,14 @@ class AppRequest:
         lib.uws_req_for_each_header(self.req, uws_req_for_each_header_handler, self._ptr)
         
     def get_headers(self):
-        headers = {}
+        if not self._headers is None:
+            return self._headers
+            
+        self._headers = {}
         def copy_headers(key, value):
-            headers[key] = value
+            self._headers[key] = value
         self.for_each_header(copy_headers)
-        return headers
+        return self._headers
 
     def get_header(self, lower_case_header):
         if isinstance(lower_case_header, str):
@@ -966,7 +976,28 @@ class AppRequest:
             return ffi.unpack(buffer_address, length).decode("utf-8")
         except Exception: #invalid utf-8
             return None
+
+    def get_parameters(self):
+        if self._params:
+            return self._params
+        self._params = []
+        i = 0
+        while True:
+            value = self.get_parameter(i)
+            if value:
+                self._params.append(value)
+            else:
+                break
+            i = i + 1
+        return self._params
+
     def get_parameter(self, index):
+        if self._params:
+            try:
+                return self._params[index]
+            except:
+                return None
+
         buffer = ffi.new("char**")
         length = lib.uws_req_get_parameter(self.req, ffi.cast("unsigned short", index), buffer)   
         buffer_address = ffi.addressof(buffer, 0)[0]
@@ -1350,9 +1381,9 @@ class AppResponse:
         return 0
 
     def has_responded(self):
-        if not self.aborted:
+        if self.aborted:
             return False
-        return bool(lib.uws_res_has_responded(self.SSL, self.res, data, len(data)))
+        return bool(lib.uws_res_has_responded(self.SSL, self.res))
 
     def on_aborted(self, handler):
         if hasattr(handler, '__call__'):
