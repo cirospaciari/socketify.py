@@ -62,8 +62,7 @@ Source code in [bench](https://github.com/cirospaciari/socketify.py/tree/main/be
 
 Machine OS: Debian GNU/Linux bookworm/sid x86_64 Kernel: 6.0.0-2-amd64 CPU: Intel i7-7700HQ (8) @ 3.800GHz Memory: 32066MiB 
 
-> Today socketify has get 30% performance hit due to workarounds between asyncio + libuv, so we will got even faster! See more info in [this issue](https://github.com/cirospaciari/socketify.py/issues/18), Python3 and PyPy3 performance will improve when we migrate to [HPy](https://github.com/cirospaciari/socketify.py/issues/16). In TechEmPower benchmarks we are faster than japronto in plaintext (about 1,300k req/s using PyPy3 without workaround and about 770k req/s with the current state vs 582k from japronto you can follow details in [this discussion](https://github.com/cirospaciari/socketify.py/discussions/10)
-
+> Today socketify has get 30% performance hit due to workarounds between asyncio + libuv, so we will got even faster! See more info in [this issue](https://github.com/cirospaciari/socketify.py/issues/18), Python3 and PyPy3 performance will improve when we migrate to [HPy](https://github.com/cirospaciari/socketify.py/issues/16). In TechEmPower paintext benchmarks we are the fastest in active web framework for Python/PyPy with more than 2 millions of req/s, followed by [Robyn](https://github.com/sansyrox/robyn) with almost 1.2 million req/s and [Falcon](https://github.com/falconry/falcon/tree/master/falcon) using meinheld with about 560k req/s.
 ## 📦 Installation
 For macOS x64 & Silicon, Linux x64, Windows
 
@@ -83,6 +82,19 @@ git+https://github.com/cirospaciari/socketify.py.git@main#socketify
 pip install -r ./requirements.txt 
 #or specify PyPy3
 pypy3 -m pip install -r ./requirements.txt 
+```
+
+If you are using linux or macOS, you may need to install libuv and zlib in your system
+
+macOS
+```bash
+brew install libuv
+brew install zlib
+```
+
+Linux
+```bash
+apt install libuv1 zlib1g
 ```
 
 ## 🤔 Usage
