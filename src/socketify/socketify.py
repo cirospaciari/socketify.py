@@ -1499,7 +1499,7 @@ class App:
 
     
         
-    def static(self, route, dire1ctory):
+    def static(self, route, directory):
         static_route(self, route, directory)
         return self
 
