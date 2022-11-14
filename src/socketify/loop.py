@@ -114,7 +114,7 @@ class Loop:
 #         asyncio.run(main())
 
 
-#https://github.com/SpaceBlocks/uWebSockets.py/blob/master/src/Selector.h
+#see ./native/uv_selector.txt
 # class UVSelector(asyncio.SelectorEventLoop):
 #     def tick(self):
 #         pass
