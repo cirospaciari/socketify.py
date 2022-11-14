@@ -2,9 +2,11 @@
 import asyncio
 import threading
 import time
-from queue import Queue
 
 from .uv import UVLoop
+
+import asyncio
+import uwebsocketspy
 
 
 def future_handler(future, loop, exception_handler, response):
@@ -28,7 +30,6 @@ class Loop:
     def __init__(self, exception_handler=None):
         self.loop = asyncio.new_event_loop()
         self.uv_loop = UVLoop()
-        self.queue = Queue()
 
         if hasattr(exception_handler, '__call__'):
             self.exception_handler = exception_handler
@@ -43,8 +44,6 @@ class Loop:
     def set_timeout(self, timeout, callback, user_data):
         return self.uv_loop.create_timer(timeout, 0, callback, user_data)
 
-    def enqueue(self, callback, user_data):
-        self.queue.put((callback, user_data))
 
     def create_future(self):
         return self.loop.create_future()
@@ -53,11 +52,6 @@ class Loop:
         self.started = True
         #run asyncio once per tick
         def tick(loop):
-            #only call one item of the queue per tick
-            if not loop.queue.empty():
-                (callback, user_data) = loop.queue.get(False)
-                callback(user_data)
-                loop.queue.task_done()
             #run once asyncio
             loop.run_once_asyncio()
             
@@ -118,3 +112,24 @@ class Loop:
 #     else:
 #         uvloop.install()
 #         asyncio.run(main())
+
+
+#https://github.com/SpaceBlocks/uWebSockets.py/blob/master/src/Selector.h
+# class UVSelector(asyncio.SelectorEventLoop):
+#     def tick(self):
+#         pass
+
+# # We expose our own event loop for use with asyncio
+# class AsyncioUVLoop(asyncio.SelectorEventLoop):
+# 	def __init__(self):
+# 		self.selector = UVSelector()
+# 		super().__init__(self.selector)
+# 	def call_soon(self, *args, **kwargs):
+# 		self.selector.tick()
+# 		return super().call_soon(*args, **kwargs)
+# 	def call_at(self, *args, **kwargs):
+# 		self.selector.tick()
+# 		return super().call_at(*args, **kwargs)
+
+# asyncio.set_event_loop(uws.Loop())
+# asyncio.get_event_loop().run_forever()

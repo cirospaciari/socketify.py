@@ -835,11 +835,8 @@ class WebSocket:
 
     def cork(self, callback):
         self._cork_handler = callback
-        if is_python: #call is enqueued to garantee corking works properly in python3
-            self.loop.enqueue(lambda instance: lib.uws_ws_cork(instance.SSL, instance.ws, uws_ws_cork_handler, instance._ptr), self)
-        else: #just add to uvloop in next tick to garantee corking works properly in pypy3
-            self.loop.set_timeout(0, lambda instance: lib.uws_ws_cork(instance.SSL, instance.ws, uws_ws_cork_handler, instance._ptr), self)
-            
+        lib.uws_ws_cork(self.SSL, self.ws, uws_ws_cork_handler, self._ptr)
+
     def __del__(self):
         #free SocketRefs when if needed
         if self.free_socket_data:
@@ -1068,10 +1065,7 @@ class AppResponse:
         if not self.aborted:
             self.grab_aborted_handler()
             self._cork_handler = callback
-            if is_python: #call is enqueued to garantee corking works properly in python3
-                self.loop.enqueue(lambda instance: lib.uws_res_cork(instance.SSL, instance.res, uws_generic_cork_handler, instance._ptr), self)
-            else: #just add to uvloop in next tick to garantee corking works properly in pypy3
-                self.loop.set_timeout(0, lambda instance: lib.uws_res_cork(instance.SSL, instance.res, uws_generic_cork_handler, instance._ptr), self)
+            lib.uws_res_cork(self.SSL, self.res, uws_generic_cork_handler, self._ptr)
             
             
     def set_cookie(self, name, value, options={}):
