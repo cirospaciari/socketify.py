@@ -6,7 +6,6 @@ import time
 from .uv import UVLoop
 
 import asyncio
-import uwebsocketspy
 
 
 def future_handler(future, loop, exception_handler, response):

@@ -29,7 +29,9 @@
 # Express production recommendations: https://expressjs.com/en/advanced/best-practice-performance.html
 # Fastify production recommendations: https://www.fastify.io/docs/latest/Guides/Recommendations/
 
-from socketify import App, sendfile
+# from socketify import App, sendfile
+from socketify import App
+from helpers.static_aiofile import static_route, sendfile
 
 
 app = App()
@@ -43,8 +45,8 @@ async def home(res, req):
 app.get("/", home)
 
 #serve all files in public folder under /* route (you can use any route like /assets)
-app.static("/", "./public")
-
+# app.static("/", "./public")
+static_route(app, "/", "./public")
 app.listen(3000, lambda config: print("Listening on port http://localhost:%d now\n" % config.port))
 app.run()
 
