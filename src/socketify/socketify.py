@@ -1016,6 +1016,7 @@ class AppResponse:
 
     def cork(self, callback):
         if not self.aborted:
+            self.grab_aborted_handler()
             self._cork_handler = callback
             if is_python: #call is enqueued to garantee corking works properly in python3
                 self.loop.enqueue(lambda instance: lib.uws_res_cork(instance.SSL, instance.res, uws_generic_cork_handler, instance._ptr), self)
