@@ -29,7 +29,7 @@
 - Max Backpressure, Max Timeout, Max Payload and Idle Timeout Support
 - Automatic Ping / Pong Support
 - Per Socket Data
-
+- Middlewares
 ## :mag_right: Upcoming Features
 - Fetch like API powered by libuv
 - Async file IO powered by libuv
