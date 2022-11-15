@@ -1,8 +1,11 @@
 import strawberry
 import strawberry.utils.graphiql
 
-def graphiql_from(Query):
-    schema = strawberry.Schema(Query)
+def graphiql_from(Query, Mutation=None):
+    if Mutation:
+        schema = strawberry.Schema(query=Query, mutation=Mutation)
+    else:
+        schema = strawberry.Schema(Query)
 
     async def post(res, req):
         # we can pass whatever we want to context, query, headers or params, cookies etc
