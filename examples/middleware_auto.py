@@ -23,9 +23,9 @@ def middleware(*functions):
             else:
                 #call middlewares
                 data = function(res, req, data)
-                #stops if returns Falsy
-                if not data:
-                    break
+            #stops if returns Falsy
+            if not data:
+                break
 
     return middleware_route
     
