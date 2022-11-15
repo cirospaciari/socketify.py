@@ -114,7 +114,16 @@ class Loop:
 
 
 #see ./native/uv_selector.txt
+# will only work on linux and macos
 # class UVSelector(asyncio.SelectorEventLoop):
+#     def register(self, fileobj, events, data=None):
+#         fd = fileobj.fileno()
+#         if fd == -1:
+#             return None
+#         mask = int(events)
+#         selector_key = (fs, mask, data)
+#         pass
+
 #     def tick(self):
 #         pass
 
