@@ -9,7 +9,6 @@ def middleware(*functions):
         for function in functions:
             #detect if is coroutine or not
             if inspect.iscoroutinefunction(function):
-                data = await function(res, req, data)
                 #in async query string, arguments and headers are only valid until the first await
                 if not some_async_as_run:
                      #get_headers will preserve headers (and cookies) inside req, after await
@@ -20,6 +19,7 @@ def middleware(*functions):
                     queries = req.get_queries()
                     #mark to only grab header, params and queries one time
                     some_async_as_run = True 
+                data = await function(res, req, data)
             else:
                 #call middlewares
                 data = function(res, req, data)
@@ -55,6 +55,6 @@ def home(res, req, user=None):
     res.end(user.get('greeting', None))
 
 app = App()
-app.get("/", middleware(auth, another_midie, home))
+app.get("/", middleware(auth, another_middie, home))
 app.listen(3000, lambda config: print("Listening on port http://localhost:%d now\n" % config.port))
 app.run()
