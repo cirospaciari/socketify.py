@@ -1,5 +1,6 @@
 from socketify import App
 
+#this is just an example of implementation you can just import using from socketify import middleware for an more complete version
 
 async def get_user(authorization):
     if authorization:

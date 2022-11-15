@@ -1,5 +1,6 @@
 from socketify import App
 
+#this is just an example of implementation you can just import using from socketify import middleware for an more complete version
 
 def middleware(*functions):
     def middleware_route(res, req):
