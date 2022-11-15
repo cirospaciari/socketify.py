@@ -52,7 +52,7 @@ def another_middie(res, req, data=None):
     return data
 
 def home(res, req, user=None):
-    res.end(user.get('greeting', None))
+    res.cork_end(user.get('greeting', None))
 
 app = App()
 app.get("/", middleware(auth, another_middie, home))
