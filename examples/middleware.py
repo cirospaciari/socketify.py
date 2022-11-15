@@ -11,6 +11,7 @@ async def auth(res, req, data=None):
     user = await get_user(req.get_header('authorization'))
     if not user: 
         res.write_status(403).end("not authorized")
+        #returning Falsy in middlewares just stop the execution of the next middleware
         return False
 
     #returns extra data
