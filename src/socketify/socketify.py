@@ -422,7 +422,7 @@ def uws_websocket_upgrade_handler(res, req, context, user_data):
     if not user_data == ffi.NULL:
         try:    
             (handlers, app) = ffi.from_handle(user_data)
-            response = AppResponse(res, app.loop, app.SSL)
+            response = AppResponse(res, app.loop, app.SSL, app._template)
             request = AppRequest(req)   
             handler = handlers.upgrade
             if inspect.iscoroutinefunction(handler):
@@ -463,7 +463,7 @@ def uws_generic_method_handler(res, req, user_data):
     if not user_data == ffi.NULL:
         try:
             (handler, app) = ffi.from_handle(user_data)
-            response = AppResponse(res, app.loop, app.SSL)
+            response = AppResponse(res, app.loop, app.SSL, app._template)
             request = AppRequest(req)
             if inspect.iscoroutinefunction(handler):
                 response.grab_aborted_handler()
@@ -1044,7 +1044,7 @@ class AppRequest:
         self._ptr = ffi.NULL
 
 class AppResponse:
-    def __init__(self, response, loop, ssl):
+    def __init__(self, response, loop, ssl, render=None):
         self.res = response
         self.SSL = ssl
         self.aborted = False
@@ -1060,6 +1060,7 @@ class AppResponse:
         self._chunkFuture = None
         self._dataFuture = None
         self._data = None
+        self._render = render
 
     def cork(self, callback):
         if not self.aborted:
@@ -1252,6 +1253,12 @@ class AppResponse:
     def cork_end(self, message, end_connection=False):
         self.cork(lambda res: res.end(message, end_connection))
         return self
+
+    def render(self, *args, **kwargs):
+        if self._render:
+            self.cork_end(self._render.render(*args, **kwargs))
+            return self
+        raise RuntimeError("No registered templated engine")
 
     def get_remote_address_bytes(self):
         buffer = ffi.new("char**")
@@ -1467,6 +1474,7 @@ class App:
         socket_options_ptr = ffi.new("struct us_socket_context_options_t *")
         socket_options = socket_options_ptr[0]
         self.options = options
+        self._template = None
         if options != None:
             self.is_ssl = True
             self.SSL = ffi.cast("int", 1)
@@ -1498,7 +1506,9 @@ class App:
         self._missing_server_handler = None
 
     
-        
+    def template(self, template_engine):
+        self._template = template_engine
+
     def static(self, route, directory):
         static_route(self, route, directory)
         return self
