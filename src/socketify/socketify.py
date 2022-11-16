@@ -1825,31 +1825,3 @@ class AppOptions:
         self.ca_file_name = ca_file_name
         self.ssl_ciphers = ssl_ciphers
         self.ssl_prefer_low_memory_usage = ssl_prefer_low_memory_usage
-
-def middleware(*functions):
-    async def middleware_route(res, req):
-        data = None
-        some_async_as_run = False
-        #cicle to all middlewares
-        for function in functions:
-            #detect if is coroutine or not
-            if inspect.iscoroutinefunction(function):
-                #in async query string, arguments and headers are only valid until the first await
-                if not some_async_as_run:
-                     #get_headers will preserve headers (and cookies) inside req, after await
-                    headers = req.get_headers() 
-                    #get_parameters will preserve all params inside req after await 
-                    params = req.get_parameters()
-                    #get queries will preserve all queries inside req after await 
-                    queries = req.get_queries()
-                    #mark to only grab header, params and queries one time
-                    some_async_as_run = True 
-                data = await function(res, req, data)
-            else:
-                #call middlewares
-                data = function(res, req, data)
-            #stops if returns Falsy
-            if not data:
-                break
-
-    return middleware_route

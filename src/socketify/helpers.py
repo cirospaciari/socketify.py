@@ -1,6 +1,7 @@
 import os
 import time
 import mimetypes
+import inspect
 from os import path
 
 mimetypes.init()
@@ -104,3 +105,91 @@ def static_route(app, route, directory):
     if route.startswith("/"):
         route = route[1::]
     app.get("%s/*" % route, route_handler)
+
+
+
+def middleware(*functions):
+    #we use Optional data=None at the end so you can use and middleware inside a middleware
+    async def middleware_route(res, req, data=None):
+        some_async_as_run = False
+        #cicle to all middlewares
+        for function in functions:
+            #detect if is coroutine or not
+            if inspect.iscoroutinefunction(function):
+                #in async query string, arguments and headers are only valid until the first await
+                if not some_async_as_run:
+                     #get_headers will preserve headers (and cookies) inside req, after await
+                    headers = req.get_headers() 
+                    #get_parameters will preserve all params inside req after await 
+                    params = req.get_parameters()
+                    #get queries will preserve all queries inside req after await 
+                    queries = req.get_queries()
+                    #mark to only grab header, params and queries one time
+                    some_async_as_run = True 
+                data = await function(res, req, data)
+            else:
+                #call middlewares
+                data = function(res, req, data)
+            #stops if returns Falsy
+            if not data:
+                break
+
+    return middleware_route
+
+
+class MiddlewareRouter():
+    def __init__(self, app, *middlewares):
+        self.app = app
+        self.middlewares = middlewares
+
+    def get(self, path, handler):
+        middies = list(self.middlewares)
+        middies.append(handler)
+        self.app.get(path, middleware(*middies))
+        return self
+
+    def post(self, path, handler):
+        middies = list(self.middlewares)
+        middies.append(handler)
+        self.app.post(path, middleware(*middies))
+        return self
+    def options(self, path, handler):
+        middies = list(self.middlewares)
+        middies.append(handler)
+        self.app.options(path, middleware(*middies))
+        return self
+    def delete(self, path, handler):
+        middies = list(self.middlewares)
+        middies.append(handler)
+        self.app.delete(path, middleware(*middies))
+        return self
+    def patch(self, path, handler):
+        middies = list(self.middlewares)
+        middies.append(handler)
+        self.app.patch(path, middleware(*middies))
+        return self
+    def put(self, path, handler):
+        middies = list(self.middlewares)
+        middies.append(handler)
+        self.app.put(path, middleware(*middies))
+        return self
+    def head(self, path, handler):
+        middies = list(self.middlewares)
+        middies.append(handler)
+        self.app.head(path, middleware(*middies))
+        return self
+    def connect(self, path, handler):
+        middies = list(self.middlewares)
+        middies.append(handler)
+        self.app.connect(path, middleware(*middies))
+        return self
+    def trace(self, path, handler):
+        middies = list(self.middlewares)
+        middies.append(handler)
+        self.app.trace(path, middleware(*middies))
+        return self
+    def any(self, path, handler):
+        middies = list(self.middlewares)
+        middies.append(handler)
+        self.app.any(path, middleware(*middies))
+        return self

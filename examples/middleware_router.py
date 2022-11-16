@@ -1,5 +1,6 @@
-from socketify import App, middleware
+from socketify import App, MiddlewareRouter, middleware
     
+
 async def get_user(authorization):
     if authorization:
         #you can do something async here
@@ -26,9 +27,20 @@ def another_middie(res, req, data=None):
 def home(res, req, user=None):
     res.cork_end(user.get('greeting', None))
 
+
+
 app = App()
-app.get("/", middleware(auth, another_middie, home))
+
+#you can use an Middleware router to add middlewares to every route you set
+auth_router = MiddlewareRouter(app, auth)
+auth_router.get("/", home)
+#you can also mix middleware() with MiddlewareRouter
+auth_router.get("/another", middleware(another_middie, home))
+
+#you can also pass multiple middlewares on the MiddlewareRouter
+other_router = MiddlewareRouter(app, auth, another_middie)
+other_router.get("/another_way", home)
+
+
 app.listen(3000, lambda config: print("Listening on port http://localhost:%d now\n" % config.port))
 app.run()
-
-#You can also take a loop on MiddlewareRouter in middleware_router.py ;)
