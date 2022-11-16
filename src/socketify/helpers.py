@@ -128,6 +128,7 @@ def middleware(*functions):
             #stops if returns Falsy
             if not data:
                 break
+        return data
 
     return middleware_route
 
