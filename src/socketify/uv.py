@@ -1,10 +1,10 @@
-
 import cffi
 import os
 import platform
 
 ffi = cffi.FFI()
-ffi.cdef("""
+ffi.cdef(
+    """
 
 
 typedef void (*socketify_prepare_handler)(void* user_data);
@@ -54,23 +54,36 @@ void socketify_timer_set_repeat(socketify_timer* timer, uint64_t repeat);
 
 socketify_timer* socketify_create_check(socketify_loop* loop, socketify_timer_handler handler, void* user_data);
 void socketify_check_destroy(socketify_timer* timer);
-""")
+"""
+)
 library_extension = "dll" if platform.system().lower() == "windows" else "so"
-library_path = os.path.join(os.path.dirname(__file__), "libsocketify_%s_%s.%s" % (platform.system().lower(), "arm64" if "arm" in platform.processor().lower() else "amd64", library_extension))
+library_path = os.path.join(
+    os.path.dirname(__file__),
+    "libsocketify_%s_%s.%s"
+    % (
+        platform.system().lower(),
+        "arm64" if "arm" in platform.processor().lower() else "amd64",
+        library_extension,
+    ),
+)
 
 lib = ffi.dlopen(library_path)
+
 
 @ffi.callback("void(void *)")
 def socketify_generic_handler(data):
     if not data == ffi.NULL:
         (handler, user_data) = ffi.from_handle(data)
         handler(user_data)
-        
+
 
 class UVCheck:
     def __init__(self, loop, handler, user_data):
         self._handler_data = ffi.new_handle((handler, user_data))
-        self._ptr = lib.socketify_create_check(loop, socketify_generic_handler, self._handler_data)
+        self._ptr = lib.socketify_create_check(
+            loop, socketify_generic_handler, self._handler_data
+        )
+
     def stop(self):
         lib.socketify_check_destroy(self._ptr)
         self._handler_data = None
@@ -81,10 +94,18 @@ class UVCheck:
             lib.socketify_check_destroy(self._ptr)
             self._handler_data = None
 
+
 class UVTimer:
     def __init__(self, loop, timeout, repeat, handler, user_data):
         self._handler_data = ffi.new_handle((handler, user_data))
-        self._ptr = lib.socketify_create_timer(loop, ffi.cast("uint64_t", timeout), ffi.cast("uint64_t", repeat), socketify_generic_handler, self._handler_data)
+        self._ptr = lib.socketify_create_timer(
+            loop,
+            ffi.cast("uint64_t", timeout),
+            ffi.cast("uint64_t", repeat),
+            socketify_generic_handler,
+            self._handler_data,
+        )
+
     def stop(self):
         lib.socketify_timer_destroy(self._ptr)
         self._handler_data = None
@@ -92,7 +113,7 @@ class UVTimer:
 
     def set_repeat(self, repeat):
         lib.socketify_timer_set_repeat(self._ptr, ffi.cast("uint64_t", repeat))
-        
+
     def __del__(self):
         if self._ptr != ffi.NULL:
             lib.socketify_timer_destroy(self._ptr)
@@ -107,14 +128,16 @@ class UVLoop:
 
     def on_prepare(self, handler, user_data):
         self._handler_data = ffi.new_handle((handler, user_data))
-        lib.socketify_on_prepare(self._loop, socketify_generic_handler, self._handler_data)
+        lib.socketify_on_prepare(
+            self._loop, socketify_generic_handler, self._handler_data
+        )
 
     def create_timer(self, timeout, repeat, handler, user_data):
         return UVTimer(self._loop, timeout, repeat, handler, user_data)
 
     def create_check(self, handler, user_data):
         return UVCheck(self._loop, handler, user_data)
-        
+
     def prepare_unbind(self):
         lib.socketify_prepare_unbind(self._loop)
 
@@ -124,7 +147,7 @@ class UVLoop:
     def __del__(self):
         lib.socketify_destroy_loop(self._loop)
         self._handler_data = None
-  
+
     def run(self):
         return lib.socketify_loop_run(self._loop, lib.SOCKETIFY_RUN_DEFAULT)
 

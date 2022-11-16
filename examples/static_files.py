@@ -17,9 +17,9 @@
 # pypy3     - socketify static_aiofile  -    639.70 req/s
 # pypy3     - socketify static_aiofiles -    637.55 req/s
 # pypy3     - fastapi static gunicorn   -    253.31 req/s
-# pypy3     - scarlette static uvicorn  -    279.45 req/s   
+# pypy3     - scarlette static uvicorn  -    279.45 req/s
 
-# Conclusions: 
+# Conclusions:
 # With PyPy3 only static is really usable gunicorn/uvicorn, aiofiles and aiofile are realy slow on PyPy3 maybe this changes with HPy
 # Python3 with any option will be faster than gunicorn/uvicorn but with PyPy3 with static we got 2x (or almost this in case of fastify) performance of node.js
 # But even PyPy3 + socketify static is 7x+ slower than NGINX
@@ -35,16 +35,19 @@ from socketify import App, sendfile
 app = App()
 
 
-#send home page index.html
+# send home page index.html
 async def home(res, req):
-    #sends the whole file with 304 and bytes range support
+    # sends the whole file with 304 and bytes range support
     await sendfile(res, req, "./public/index.html")
-    
+
+
 app.get("/", home)
 
-#serve all files in public folder under /* route (you can use any route like /assets)
+# serve all files in public folder under /* route (you can use any route like /assets)
 app.static("/", "./public")
 
-app.listen(3000, lambda config: print("Listening on port http://localhost:%d now\n" % config.port))
+app.listen(
+    3000,
+    lambda config: print("Listening on port http://localhost:%d now\n" % config.port),
+)
 app.run()
-

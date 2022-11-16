@@ -1,6 +1,7 @@
 import strawberry
 import strawberry.utils.graphiql
 
+
 def graphiql_from(Query, Mutation=None):
     if Mutation:
         schema = strawberry.Schema(query=Query, mutation=Mutation)
@@ -9,10 +10,10 @@ def graphiql_from(Query, Mutation=None):
 
     async def post(res, req):
         # we can pass whatever we want to context, query, headers or params, cookies etc
-        context_value = { 
-            "query": req.get_queries(), 
-            "headers": req.get_headers(), 
-            "params": req.get_parameters() 
+        context_value = {
+            "query": req.get_queries(),
+            "headers": req.get_headers(),
+            "params": req.get_parameters(),
         }
 
         # get all incomming data and parses as json
@@ -31,9 +32,12 @@ def graphiql_from(Query, Mutation=None):
             operation_name,
         )
 
-        res.cork_end({
-            "data": ( data.data ),
-            **({"errors": data.errors} if data.errors else {}),
-            **({"extensions": data.extensions} if data.extensions else {})
-        })
+        res.cork_end(
+            {
+                "data": (data.data),
+                **({"errors": data.errors} if data.errors else {}),
+                **({"extensions": data.extensions} if data.extensions else {}),
+            }
+        )
+
     return post

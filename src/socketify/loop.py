@@ -1,4 +1,3 @@
-
 import asyncio
 import threading
 import time
@@ -13,11 +12,11 @@ def future_handler(future, loop, exception_handler, response):
         future.result()
         return None
     except Exception as error:
-        if hasattr(exception_handler, '__call__'):
+        if hasattr(exception_handler, "__call__"):
             exception_handler(loop, error, response)
         else:
             try:
-                 #just log in console the error to call attention
+                # just log in console the error to call attention
                 print("Uncaught Exception: %s" % str(error))
                 if response != None:
                     response.write_status(500).end("Internal Error")
@@ -25,14 +24,17 @@ def future_handler(future, loop, exception_handler, response):
                 return None
         return None
 
+
 class Loop:
     def __init__(self, exception_handler=None):
         self.loop = asyncio.new_event_loop()
         self.uv_loop = UVLoop()
 
-        if hasattr(exception_handler, '__call__'):
+        if hasattr(exception_handler, "__call__"):
             self.exception_handler = exception_handler
-            self.loop.set_exception_handler(lambda loop, context: exception_handler(loop, context, None))
+            self.loop.set_exception_handler(
+                lambda loop, context: exception_handler(loop, context, None)
+            )
         else:
             self.exception_handler = None
 
@@ -43,18 +45,17 @@ class Loop:
     def set_timeout(self, timeout, callback, user_data):
         return self.uv_loop.create_timer(timeout, 0, callback, user_data)
 
-
     def create_future(self):
         return self.loop.create_future()
 
     def start(self):
         self.started = True
-        #run asyncio once per tick
+        # run asyncio once per tick
         def tick(loop):
-            #run once asyncio
+            # run once asyncio
             loop.run_once_asyncio()
-            
-        #use check for calling asyncio once per tick
+
+        # use check for calling asyncio once per tick
         self.timer = self.uv_loop.create_timer(0, 1, tick, self)
         # self.timer = self.uv_loop.create_check(tick, self)
 
@@ -66,18 +67,17 @@ class Loop:
 
     def run_once_asyncio(self):
         # with suppress(asyncio.CancelledError):
-        #run only one step
+        # run only one step
         self.loop.call_soon(self.loop.stop)
         self.loop.run_forever()
-            
 
     def stop(self):
-        if(self.started):
+        if self.started:
             self.timer.stop()
             self.started = False
-        #unbind run_once 
-        #if is still running stops
-        if self.loop.is_running(): 
+        # unbind run_once
+        # if is still running stops
+        if self.loop.is_running():
             self.loop.stop()
 
         self.last_defer = None
@@ -85,24 +85,25 @@ class Loop:
         pending = asyncio.all_tasks(self.loop)
         # Run loop until tasks done
         self.loop.run_until_complete(asyncio.gather(*pending))
-        
-    #Exposes native loop for uWS
+
+    # Exposes native loop for uWS
     def get_native_loop(self):
         return self.uv_loop.get_native_loop()
 
     def run_async(self, task, response=None):
-        #with run_once
+        # with run_once
         future = asyncio.ensure_future(task, loop=self.loop)
 
-        #with threads
-        future.add_done_callback(lambda f: future_handler(f, self.loop, self.exception_handler, response))
-        #force asyncio run once to enable req in async functions before first await
+        # with threads
+        future.add_done_callback(
+            lambda f: future_handler(f, self.loop, self.exception_handler, response)
+        )
+        # force asyncio run once to enable req in async functions before first await
         self.run_once_asyncio()
 
-        #if response != None: #set auto cork
-         #   response.needs_cork = True
+        # if response != None: #set auto cork
+        #   response.needs_cork = True
         return future
-
 
 
 #  if sys.version_info >= (3, 11)
@@ -113,7 +114,7 @@ class Loop:
 #         asyncio.run(main())
 
 
-#see ./native/uv_selector.txt
+# see ./native/uv_selector.txt
 # will only work on linux and macos
 # class UVSelector(asyncio.SelectorEventLoop):
 #     def register(self, fileobj, events, data=None):
