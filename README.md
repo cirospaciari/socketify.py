@@ -30,7 +30,7 @@
 - Automatic Ping / Pong Support
 - Per Socket Data
 - Middlewares
-- Templates Support (examples with [Mako](https://github.com/cirospaciari/socketify.py/tree/main/examples/template_mako.py) and [Jinja2)](https://github.com/cirospaciari/socketify.py/tree/main/examples/template_jinja2.py)
+- Templates Support (examples with [Mako](https://github.com/cirospaciari/socketify.py/tree/main/examples/template_mako.py) and [Jinja2](https://github.com/cirospaciari/socketify.py/tree/main/examples/template_jinja2.py))
 ## :mag_right: Upcoming Features
 - Fetch like API powered by libuv
 - Async file IO powered by libuv
