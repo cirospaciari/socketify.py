@@ -15,8 +15,7 @@ class User:
 class Query:
     @strawberry.field
     def user(self) -> Optional[User]:
-        # self.context is an dict with headers, query, and params properties
-        # headers and query are dict and params an array with route parameters
+        # self.context is the AppRequest
         return User(name="Hello")
 
 

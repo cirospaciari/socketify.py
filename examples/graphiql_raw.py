@@ -22,12 +22,8 @@ schema = strawberry.Schema(Query)
 
 async def graphiql_post(res, req):
     # we can pass whatever we want to context, query, headers or params, cookies etc
-    context_value = { 
-        "query": req.get_queries(), 
-        "headers": req.get_headers(), 
-        "params": req.get_parameters() 
-    }
-
+    context_value = req.preserve()
+    
     # get all incomming data and parses as json
     body = await res.get_json()
     

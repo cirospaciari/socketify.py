@@ -867,6 +867,9 @@ class AppRequest:
         self._headers = None
         self._params = None
         self._query = None
+        self._url = None
+        self._full_url = None
+        self._method = None
 
     
     def get_cookie(self, name):
@@ -891,28 +894,37 @@ class AppRequest:
             return None
 
     def get_url(self):
+        if self._url:
+            return self._url
         buffer = ffi.new("char**")
         length = lib.uws_req_get_url(self.req, buffer)   
         buffer_address = ffi.addressof(buffer, 0)[0]
         if buffer_address == ffi.NULL: 
             return None
         try:
-            return ffi.unpack(buffer_address, length).decode("utf-8")
+            self._url = ffi.unpack(buffer_address, length).decode("utf-8")
+            return self._url
         except Exception: #invalid utf-8
             return None
+
     def get_full_url(self):
+        if self._full_url:
+            return self._full_url
         buffer = ffi.new("char**")
         length = lib.uws_req_get_full_url(self.req, buffer)   
         buffer_address = ffi.addressof(buffer, 0)[0]
         if buffer_address == ffi.NULL: 
             return None
         try:
-            return ffi.unpack(buffer_address, length).decode("utf-8")
+            self._full_url = ffi.unpack(buffer_address, length).decode("utf-8")
+            return self._full_url
         except Exception: #invalid utf-8
             return None
 
     
     def get_method(self):
+        if self._method:
+            return self._method
         buffer = ffi.new("char**")
         #will use uws_req_get_case_sensitive_method until version v21 and switch back to uws_req_get_method for 0 impacts on behavior
         length = lib.uws_req_get_case_sensitive_method(self.req, buffer)   
@@ -921,7 +933,8 @@ class AppRequest:
             return None
         
         try:
-            return ffi.unpack(buffer_address, length).decode("utf-8")
+            self._method = ffi.unpack(buffer_address, length).decode("utf-8")
+            return self._method
         except Exception: #invalid utf-8
             return None
 
@@ -1023,6 +1036,14 @@ class AppRequest:
             return ffi.unpack(buffer_address, length).decode("utf-8")
         except Exception: #invalid utf-8
             return None
+    def preserve(self):
+        #preserve queries, headers, parameters, method, url and full url
+        self.get_queries() #queries calls url and full_url so its preserved
+        self.get_headers()
+        self.get_parameters()
+        self.get_method()
+        return self
+
     def set_yield(self, has_yield):
         lib.uws_req_set_field(self.req, 1 if has_yield else 0)
     def get_yield(self):
