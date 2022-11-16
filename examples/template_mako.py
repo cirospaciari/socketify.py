@@ -6,7 +6,7 @@ from helpers.templates import MakoTemplate
 app = App()
 app.template(MakoTemplate(directories=['./templates'], output_encoding='utf-8', encoding_errors='replace'))
 
-async def home(res, req):
+def home(res, req):
     res.render("mako_home.html", message="Hello, World")
 
 app.get("/", home)

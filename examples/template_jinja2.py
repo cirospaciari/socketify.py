@@ -6,7 +6,7 @@ from helpers.templates import Jinja2Template
 app = App()
 app.template(Jinja2Template("./templates", encoding='utf-8', followlinks=False))
 
-async def home(res, req):
+def home(res, req):
     res.render("jinja2_home.html", title="Hello", message="Hello, World")
 
 app.get("/", home)
