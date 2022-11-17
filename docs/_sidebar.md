@@ -1,0 +1,16 @@
+<!-- docs/_sidebar.md -->
+
+- [Installation](installation.md)
+- [Getting Started](getting-started.md)
+- [Corking Concept](corking.md)
+- [Routes](routes.md)
+- [Middlewares](middlewares.md)
+- [Basics](basics.md)
+- [Upload and Post](upload-post.md)
+- [Streaming Data](streaming-data.md)
+- [Send File and Static Files](static-files.md)
+- [Templates](templates.md)
+- [GraphiQL](graphiQL.md)
+- [WebSockets and Backpressure](websockets-backpressure.md)
+- [SSL](ssl.md)
+- [API Reference](api.md)
