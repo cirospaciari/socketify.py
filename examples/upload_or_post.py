@@ -21,10 +21,8 @@ async def upload_chunks(res, req):
     # await all the data, returns received chunks if fail (most likely fail is aborted requests)
     data = await res.get_data()
 
-    print(f"Got {len(data)} chunks of data!")
-    for chunk in data:
-        print(f"Got chunk of data with length {len(chunk)}")
-
+    print(f"Got chunks {len(data)} of data!")
+    
     # We respond when we are done
     res.cork_end("Thanks for the data!")
 
@@ -32,11 +30,10 @@ async def upload_chunks(res, req):
 async def upload_json(res, req):
     print(f"Posted to {req.get_url()}")
     # await all the data and parses as json, returns None if fail
-    people = await res.get_json()
+    info = await res.get_json()
 
-    if isinstance(people, list) and isinstance(people[0], dict):
-        print(f"First person is named: {people[0]['name']}")
-
+    print(info)
+    
     # We respond when we are done
     res.cork_end("Thanks for the data!")
 
@@ -46,7 +43,7 @@ async def upload_text(res, req):
     # await all the data and decode as text, returns None if fail
     text = await res.get_text()  # first parameter is the encoding (default utf-8)
 
-    print(f"Your text is ${text}")
+    print(f"Your text is {text}")
 
     # We respond when we are done
     res.cork_end("Thanks for the data!")
@@ -59,7 +56,7 @@ async def upload_urlencoded(res, req):
         await res.get_form_urlencoded()
     )  # first parameter is the encoding (default utf-8)
 
-    print(f"Your form is ${form}")
+    print(f"Your form is {form}")
 
     # We respond when we are done
     res.cork_end("Thanks for the data!")
@@ -76,7 +73,7 @@ async def upload_multiple(res, req):
     else:
         data = await res.get_text()
 
-    print(f"Your data is ${data}")
+    print(f"Your data is {data}")
 
     # We respond when we are done
     res.cork_end("Thanks for the data!")

@@ -143,6 +143,7 @@ function format_message(message, user){
         message.name = 'You';
         message_element.classList.add('chat-message-right');
     }else{
+        message.name = message.name || message.login;
         message_element.classList.add('chat-message-left'); 
     }
     
