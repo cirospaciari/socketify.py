@@ -73,4 +73,4 @@ app.run()
 
 ```
 
-### Next [GraphiQL](graphiQL.md)
+### Next [GraphiQL](graphiql.md)

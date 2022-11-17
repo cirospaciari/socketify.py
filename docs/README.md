@@ -30,4 +30,4 @@ With no precedents websocket performance and an really fast HTTP server that can
 - [GraphiQL](graphiql.md)
 - [WebSockets and Backpressure](websockets-backpressure.md)
 - [SSL](ssl.md)
-- [API Reference](ssl.md)
+- [API Reference](api.md)
