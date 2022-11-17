@@ -190,3 +190,9 @@ function format_message(message, user){
 
     return message_element;
 }
+
+get_user().then((is_logged_in)=>{
+    if(is_logged_in){
+         open_room("general");
+    }
+ }); 
