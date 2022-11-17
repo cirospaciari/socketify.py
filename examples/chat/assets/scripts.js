@@ -106,6 +106,8 @@ async function send_message(event){
 
 async function open_room(name){
     last_room_name = name;
+    current_room?.close()
+    
     const user = await get_user();
     if(!user){
         return request_login();
