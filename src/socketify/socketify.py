@@ -10,7 +10,7 @@ from os import path
 import platform
 import signal
 from threading import Thread, local, Lock
-import time
+import uuid
 from urllib.parse import parse_qs, quote_plus, unquote_plus
 
 from .loop import Loop
@@ -775,7 +775,7 @@ class WebSocket:
         topics = []
 
         def copy_topics(topic):
-            topics.append(value)
+            topics.append(topic)
 
         self.for_each_topic(copy_topics)
         return topics
@@ -1062,7 +1062,7 @@ class AppRequest:
 
             url = self.get_url()
             query = self.get_full_url()[len(url) :]
-            if full_url.startswith("?"):
+            if query.startswith("?"):
                 query = query[1:]
             self._query = parse_qs(query, encoding="utf-8")
             return self._query
@@ -1612,7 +1612,7 @@ class AppResponse:
         user_data_ptr = ffi.NULL
         if not user_data is None:
             _id = uuid.uuid4()
-            user_data_ptr = (ffi.new_handle(user_data), _id)
+            user_data_ptr = ffi.new_handle((user_data, _id))
             # keep alive data
             SocketRefs[_id] = user_data_ptr
 

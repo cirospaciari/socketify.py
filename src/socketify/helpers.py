@@ -97,18 +97,23 @@ def static_route(app, route, directory):
     def route_handler(res, req):
         url = req.get_url()
         res.grab_aborted_handler()
-        url = url[len(route) : :]
-        if url.startswith("/"):
-            url = url[1::]
-        filename = path.join(path.realpath(directory), url)
+        url = url[len(route)::]
+        if url.endswith("/"):
+            if url.startswith("/"):   
+                url = url[1:-1]
+            else:
+                url = url[:-1]
+        elif url.startswith("/"):
+            url = url[1:]
 
+        filename = path.join(path.realpath(directory), url)
         if not in_directory(filename, directory):
             res.write_status(404).end_without_body()
             return
         res.run_async(sendfile(res, req, filename))
 
-    if route.startswith("/"):
-        route = route[1::]
+    if route.endswith("/"):
+        route = route[:-1]
     app.get("%s/*" % route, route_handler)
 
 

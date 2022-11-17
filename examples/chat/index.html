@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <!--  This file has been downloaded from bootdey.com @bootdey on twitter -->
+    <!--  All snippets are MIT license http://bootdey.com/license -->
+    <title>socketify.py | chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link href="/assets/styles.css" rel="stylesheet">
+
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+	<script defer src="/assets/scripts.js"></script>
+	
+</head>
+<body>
+<main class="content">
+    <div class="container p-0">
+
+		<h1 class="h3 mb-3"> Socketify.py Chat</h1>
+
+		<div class="card">
+			<div class="row g-0">
+				<div class="col-12 col-lg-5 col-xl-3 border-right">
+					<div class="px-4 d-md-block">
+						<div class="d-flex align-items-center">
+							<div class="flex-grow-1">
+								<br/>
+								Chat Rooms
+							</div>
+						</div>
+					</div>
+					<a href="#" class="list-group-item list-group-item-action border-0">
+						<div class="d-flex align-items-start">
+							<div class="flex-grow-1 ml-3" onclick="open_room('general')">
+								#general
+								<div class="small"><span class="fas fa-circle chat-online"></span> Be nice with everyone</div>
+							</div>
+						</div>
+					</a>
+					<a href="#" class="list-group-item list-group-item-action border-0">
+						<div class="d-flex align-items-start">
+							<div class="flex-grow-1 ml-3" onclick="open_room('open-source')">
+								#open-source
+								<div class="small"><span class="fas fa-circle chat-online"></span> Talk about open source</div>
+							</div>
+						</div>
+					</a>
+					<a href="#" class="list-group-item list-group-item-action border-0">
+						<div class="d-flex align-items-start">
+							<div class="flex-grow-1 ml-3" onclick="open_room('reddit')">
+								#reddit
+								<div class="small"><span class="fas fa-circle chat-online"></span> Tell about your reddit experience</div>
+							</div>
+						</div>
+					</a>
+				
+					<hr class="d-block d-lg-none mt-1 mb-0">
+				</div>
+				<div class="col-12 col-lg-7 col-xl-9">
+					<div class="position-relative">
+						<div class="chat-messages p-4">
+							Please select a chat room
+						</div>
+					</div>
+
+					<div class="flex-grow-0 py-3 px-4 border-top">
+						<div class="input-group">
+							<input maxlength="1024" id="chat-message" type="text" class="form-control" placeholder="Type your message, you can use markdown ;)" onkeyup="send_message(event)">
+							<button class="btn btn-primary" onclick="send_message()">Send</button>
+						</div>
+					</div>
+
+				</div>
+			</div>
+		</div>
+	</div>
+</main>
+</body>
+</html>
