@@ -28,3 +28,5 @@ app.listen(
 app.run()
 
 ```
+
+### Next [Templates](templates.md)

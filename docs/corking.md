@@ -37,3 +37,5 @@ async def home(res, req):
 > You cannot use async inside cork but, you can cork only when you need to send the response after all the async happens
 
 For convinience we have `res.cork_end()`, `ws.cork_send()` that will cork and call end for you, and also `res.render()` that will always response using `res.cork_end()` to send your HTML / Data
+
+### Next [Routes](routes.md)

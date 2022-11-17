@@ -90,3 +90,5 @@ async def upload_multiple(res, req):
     # We respond when we are done
     res.cork_end("Thanks for the data!")
 ```
+
+### Next [Streaming Data](streaming-data.md)

@@ -49,3 +49,5 @@ Compressing using shared means that every WebSocket message is an isolated compr
 You probably want shared compressor if dealing with larger JSON messages, or 4kb dedicated compressor if dealing with smaller JSON messages and if doing binary messaging you probably want to disable it completely.
 
 idle_timeout is roughly the amount of seconds that may pass between messages. Being idle for more than this, and the connection is severed. This means you should make your clients send small ping messages every now and then, to keep the connection alive. The server will automatically send pings in case it needs to.
+
+### Next [SSL](ssl.md)

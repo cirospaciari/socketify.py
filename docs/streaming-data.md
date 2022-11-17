@@ -62,3 +62,5 @@ def send_chunk(self, buffer, total_size):
 
         return self._chunkFuture
 ```
+
+### Next [Send File and Static Files](static-files.md)

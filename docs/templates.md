@@ -72,3 +72,5 @@ app.listen(
 app.run()
 
 ```
+
+### Next [GraphiQL](graphiQL.md)
