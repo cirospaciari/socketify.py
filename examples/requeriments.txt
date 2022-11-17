@@ -4,4 +4,5 @@ aiofile
 redis
 strawberry-graphql 
 mako
+jinja2
 git+https://github.com/cirospaciari/socketify.py.git@main#socketify
