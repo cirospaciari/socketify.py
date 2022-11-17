@@ -41,7 +41,7 @@
 
 We created and adapted the full C API from [uNetworking/uWebSockets](https://github.com/uNetworking/uWebSockets) and will integrate libuv powered fetch and file IO, this same C API is used by [Bun](https://bun.sh/)
 
-Join Github [`Discussions`](https://github.com/cirospaciari/socketify.py/discussions) or [`Discord`](https://discord.gg/sRUPx7F7XJ) for help and have a look at the development progress.
+Join Github [`Discussions`](https://github.com/cirospaciari/socketify.py/discussions) or [`Discord`](https://discord.socketify.dev/) for help and have a look at the development progress.
 
 ## :zap: Benchmarks
 HTTP requests per second (Linux x64)
