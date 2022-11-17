@@ -27,7 +27,7 @@ With no precedents websocket performance and an really fast HTTP server that can
 - [Streaming Data](streaming-data.md)
 - [Send File and Static Files](static-files.md)
 - [Templates](templates.md)
-- [GraphiQL](graphiQL.md)
+- [GraphiQL](graphiql.md)
 - [WebSockets and Backpressure](websockets-backpressure.md)
 - [SSL](ssl.md)
 - [API Reference](ssl.md)
