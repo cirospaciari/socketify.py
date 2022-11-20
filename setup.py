@@ -79,6 +79,7 @@ setuptools.setup(
     package_data={
         "": [
             "./*.so",
+            "./*.dll",
             "./uWebSockets/*",
             "./uWebSockets/*/*",
             "./uWebSockets/*/*/*",
