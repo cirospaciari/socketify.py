@@ -13,4 +13,13 @@ jobs:
           sh autogen.sh
           ./configure --build=x86_64-apple-darwin --host=arm64-apple-macos11 
           make
-          ls .libs/*
+          cd ../
+          git clone --recursive https://github.com/cirospaciari/socketify.py.git
+          cd socketify.py/src/socketify/native
+          make macos-arm64-libuv-static
+          cd ../
+          git add libsocketify_darwin_arm64.so
+          git config --global user.email "ciro.spaciari@gmail.com"
+          git config --global user.name "Ciro Spaciari"
+          git commit -m "[GitHub Actions] Updated darwin-arm64 binaries" || true
+          git push "https://cirospaciari:${{ secrets.BUILDTOKEN }}@github.com/cirospaciari/socketify.py.git"
