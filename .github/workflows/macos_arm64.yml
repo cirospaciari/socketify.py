@@ -7,9 +7,15 @@ jobs:
     steps:
       - name: Update binaries
         run: |
+          brew install autoconf automake libtool cmake
+          git clone --branch v1.44.2 --recursive https://github.com/libuv/libuv.git
+          cd libuv
+          cmake . -DCMAKE_OSX_ARCHITECTURES=arm64
+          cmake --build .
+          cd ../
           git clone --recursive https://github.com/cirospaciari/socketify.py.git
           cd socketify.py/src/socketify/native
-          make macos-arm64
+          make macos-arm64-libuv-static-cmake
           cd ../
           git add libsocketify_darwin_arm64.so
           git config --global user.email "ciro.spaciari@gmail.com"
