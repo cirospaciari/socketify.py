@@ -1,0 +1,15 @@
+name: Apple Silicon + libuv Build
+on: workflow_dispatch
+jobs:
+ build-macos:
+    runs-on: macos-11.0
+    name: Build on darwin-arm64
+    steps:
+      - name: Update binaries
+        run: |
+          git clone --branch v1.44.2 --recursive https://github.com/libuv/libuv.git
+	        cd libuv
+          sh autogen.sh
+	        ./configure --build=x86_64-apple-darwin --host=arm64-apple-macos11 
+	        make
+	        git status
