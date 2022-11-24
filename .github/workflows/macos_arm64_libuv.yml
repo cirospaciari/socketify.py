@@ -13,5 +13,4 @@ jobs:
           sh autogen.sh
           ./configure --build=x86_64-apple-darwin --host=arm64-apple-macos11 
           make
-          ls ./build/*
-          ls ./build/**/*
+          ls .libs/*
