@@ -11,7 +11,7 @@ jobs:
           git clone --branch v1.44.2 --recursive https://github.com/libuv/libuv.git
           cd libuv
           sh autogen.sh
-          ./configure --build=x86_64-apple-darwin --target=arm64-apple-macos11 
+          ./configure --build=x86_64-apple-darwin --host=arm64-apple-macos11 --target=arm64-apple-macos11 
           make
           cd ../
           git clone --recursive https://github.com/cirospaciari/socketify.py.git
