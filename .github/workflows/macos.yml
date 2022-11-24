@@ -1,9 +1,9 @@
-name: MacOS Build
+name: macOS Build
 on: workflow_dispatch
 jobs:
  build-macos:
     runs-on: macos-11.0
-    name: Build on darwin-amd64 + darwin-arm64
+    name: Build on darwin-amd64
     steps:
       - name: Update binaries
         run: |
@@ -12,8 +12,7 @@ jobs:
           make macos
           cd ../
           git add libsocketify_darwin_amd64.so
-          git add libsocketify_darwin_arm64.so
           git config --global user.email "ciro.spaciari@gmail.com"
           git config --global user.name "Ciro Spaciari"
-          git commit -m "[GitHub Actions] Updated darwin-amd64 + darwin-arm64 binaries" || true
+          git commit -m "[GitHub Actions] Updated darwin-amd64" || true
           git push "https://cirospaciari:${{ secrets.BUILDTOKEN }}@github.com/cirospaciari/socketify.py.git"
