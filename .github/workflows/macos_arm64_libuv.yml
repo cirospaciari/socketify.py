@@ -8,8 +8,8 @@ jobs:
       - name: Update binaries
         run: |
           git clone --branch v1.44.2 --recursive https://github.com/libuv/libuv.git
-	        cd libuv
+          cd libuv
           sh autogen.sh
-	        ./configure --build=x86_64-apple-darwin --host=arm64-apple-macos11 
-	        make
-	        git status
+          ./configure --build=x86_64-apple-darwin --host=arm64-apple-macos11 
+          make
+          git status
