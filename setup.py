@@ -59,15 +59,15 @@ with open("README.md", "r", encoding="utf-8") as fh:
 setuptools.setup(
     name="socketify",
     version="0.0.1",
-    platforms=["macOS", "POSIX"],
+    platforms=["any"],
     author="Ciro Spaciari",
     author_email="ciro.spaciari@gmail.com",
-    description="Fast WebSocket and Http/Https server",
+    description="Bringing WebSockets, Http/Https High Peformance servers for PyPy3 and Python3",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/cirospaciari/socketify.py",
     project_urls={
-        "Bug Tracker": "https://github.com/cirospaciari/issues",
+        "Bug Tracker": "https://github.com/cirospaciari/socketify.py/issues",
     },
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -89,7 +89,7 @@ setuptools.setup(
         ]
     },
     python_requires=">=3.7",
-    install_requires=["cffi>=1.0.0", "setuptools>=58.1.0"],
+    install_requires=["cffi>=1.0", "setuptools>=58.1.0"],
     has_ext_modules=lambda: True,
     cmdclass={},  # cmdclass={'sdist': Prepare, 'build_ext': Makefile},
     include_package_data=True,

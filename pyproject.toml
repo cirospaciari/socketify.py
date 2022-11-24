@@ -1,0 +1,22 @@
+[build-system]
+requires = ["cffi>=1.0","setuptools>=58.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "socketify"
+version = "0.0.1"
+authors = [
+  { name="Ciro Spaciari", email="ciro.spaciari@gmail.com" },
+]
+description = "Bringing WebSockets, Http/Https High Peformance servers for PyPy3 and Python3"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/cirospaciari/socketify.py"
+"Bug Tracker" = "https://github.com/cirospaciari/socketify.py/issues"
