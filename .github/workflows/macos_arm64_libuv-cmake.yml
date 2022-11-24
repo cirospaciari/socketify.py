@@ -10,6 +10,6 @@ jobs:
           brew install autoconf automake libtool cmake
           git clone --branch v1.44.2 --recursive https://github.com/libuv/libuv.git
           cd libuv
-          cmake . -DCMAKE_SYSTEM_NAME=Darwin -DCMAKE_C_COMPILER=arm64-apple-macos11-clang
-          cmake --build . -DCMAKE_SYSTEM_NAME=Darwin -DCMAKE_C_COMPILER=arm64-apple-macos11-clang
+          cmake . -DCMAKE_SYSTEM_NAME=Darwin -DCMAKE_C_COMPILER=arm64-apple-macos11-gcc
+          cmake --build . -DCMAKE_SYSTEM_NAME=Darwin -DCMAKE_C_COMPILER=arm64-apple-macos11-gcc
           ls *
