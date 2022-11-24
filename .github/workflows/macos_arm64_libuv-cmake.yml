@@ -11,5 +11,5 @@ jobs:
           git clone --branch v1.44.2 --recursive https://github.com/libuv/libuv.git
           cd libuv
           cmake . -DCMAKE_OSX_ARCHITECTURES="arm64"
-          cmake --build . -DCMAKE_OSX_ARCHITECTURES="arm64"
+          cmake --build .
           ls *
