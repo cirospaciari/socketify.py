@@ -82,9 +82,5 @@ jobs:
             git config --global user.name "GitHub Action"
             git config --global user.email "action@github.com"
             git commit -m "create clone count badge"
+            git push "https://cirospaciari:${{ secrets.BUILDTOKEN }}@github.com/cirospaciari/socketify.py.git"
           fi
-
-      - name: Push
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.BUILDTOKEN }}
