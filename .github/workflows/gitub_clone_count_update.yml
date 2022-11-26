@@ -79,8 +79,8 @@ jobs:
             echo '```' >> CLONE.md
             
             git add CLONE.md
-            git config --global user.name "GitHub Action"
-            git config --global user.email "action@github.com"
+            git config --global user.email "ciro.spaciari@gmail.com"
+            git config --global user.name "Ciro Spaciari"
             git commit -m "create clone count badge"
             git push "https://cirospaciari:${{ secrets.BUILDTOKEN }}@github.com/cirospaciari/socketify.py.git"
           fi
