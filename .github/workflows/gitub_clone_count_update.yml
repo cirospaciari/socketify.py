@@ -61,9 +61,9 @@ jobs:
             -d @post_clone.json https://api.github.com/gists/${{ steps.set_id.outputs.GIST }} > /dev/null 2>&1
 
           if [ ! -f CLONE.md ]; then
-            git clone --recursive https://github.com/cirospaciari/socketify.py.git
+            git clone https://github.com/cirospaciari/socketify.py.git
             cd socketify.py
-            
+
             shields="https://img.shields.io/badge/dynamic/json?color=success&label=Clone&query=count&url="
             url="https://gist.githubusercontent.com/${{ github.actor }}/${{ steps.set_id.outputs.GIST }}/raw/clone.json"
             repo="https://github.com/cirospaciari/socketify.py"
