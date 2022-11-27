@@ -27,7 +27,7 @@ def ws_close(ws, close, message):
     remaining_clients = remaining_clients + 1
 
 
-app = App()
+app = App(websocket_factory_max_itens=1_500_000)
 app.ws(
     "/*",
     {

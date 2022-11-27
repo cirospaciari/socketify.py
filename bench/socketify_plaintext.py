@@ -4,7 +4,7 @@ import multiprocessing
 
 
 def run_app():
-    app = App()
+    app = App(None, 200_000)
     app.get("/", lambda res, req: res.end("Hello, World!"))
     app.listen(
         8000,
@@ -26,5 +26,6 @@ def create_fork():
 # fork limiting the cpu count - 1
 for i in range(1, multiprocessing.cpu_count()):
     create_fork()
+
 
 run_app()  # run app on the main process too :)
