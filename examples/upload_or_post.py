@@ -1,7 +1,7 @@
 from socketify import App
 
 ###
-# We always recomend check res.aborted in async operations
+# We always recommend check res.aborted in async operations
 ###
 
 

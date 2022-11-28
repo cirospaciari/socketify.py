@@ -22,7 +22,7 @@ if __name__ == "__main__":
         # Serve until process is killed
         httpd.serve_forever()
 
-# pypy3 -m gunicorn falcon_plaintext:app -w 4 --worker-class=gevent #recomended for pypy3
+# pypy3 -m gunicorn falcon_plaintext:app -w 4 --worker-class=gevent #recommended for pypy3
 # python3 -m gunicorn falcon_plaintext:app -w 4 #without Cython
 # pypy3 -m gunicorn falcon_plaintext:app -w 4 #without gevent
 # python3 -m gunicorn falcon_plaintext:app -w 4 --worker-class="egg:meinheld#gunicorn_worker" #with Cython

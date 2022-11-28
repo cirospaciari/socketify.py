@@ -43,7 +43,7 @@ async def home(res, req):
         # check if modified since is provided
         if if_modified_since == last_modified:
             return res.write_status(304).end_without_body()
-        # tells the broswer the last modified date
+        # tells the browser the last modified date
         res.write_header(b"Last-Modified", last_modified)
 
         # add content type

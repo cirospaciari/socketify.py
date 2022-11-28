@@ -1,13 +1,13 @@
 import asyncio
 from .memory_cache import MemoryCache
 
-# 2 LEVEL CACHE (Redis to share amoung worker, Memory to be much faster)
+# 2 LEVEL CACHE (Redis to share among worker, Memory to be much faster)
 class TwoLevelCache:
     def __init__(
-        self, redis_conection, memory_expiration_time=3, redis_expiration_time=10
+        self, redis_connection, memory_expiration_time=3, redis_expiration_time=10
     ):
         self.memory_cache = MemoryCache()
-        self.redis_conection = redis_conection
+        self.redis_connection = redis_connection
         self.memory_expiration_time = memory_expiration_time
         self.redis_expiration_time = redis_expiration_time
 
@@ -17,7 +17,7 @@ class TwoLevelCache:
             # never cache invalid data
             if data == None:
                 return False
-            self.redis_conection.setex(key, self.redis_expiration_time, data)
+            self.redis_connection.setex(key, self.redis_expiration_time, data)
             self.memory_cache.setex(key, self.memory_expiration_time, data)
             return True
         except Exception as err:
@@ -30,7 +30,7 @@ class TwoLevelCache:
             if value != None:
                 return value
             # no memory cache so, got to redis
-            value = self.redis_conection.get(key)
+            value = self.redis_connection.get(key)
             if value != None:
                 # refresh memory cache to speed up
                 self.memory_cache.setex(key, self.memory_expiration_time, data)
@@ -42,7 +42,7 @@ class TwoLevelCache:
     async def run_once(self, key, timeout, executor, *args):
         result = None
         try:
-            lock = self.redis_conection.lock(f"lock-{key}", blocking_timeout=timeout)
+            lock = self.redis_connection.lock(f"lock-{key}", blocking_timeout=timeout)
             # wait lock (some request is yeat not finish)
             while lock.locked():
                 await asyncio.sleep(0)
