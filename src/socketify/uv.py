@@ -85,6 +85,7 @@ class UVCheck:
 
     def stop(self):
         lib.socketify_check_destroy(self._ptr)
+        self._ptr = ffi.NULL
 
     def __del__(self):
         if self._ptr != ffi.NULL:
