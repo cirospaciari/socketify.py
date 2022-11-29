@@ -1,7 +1,5 @@
 import asyncio
-import threading
-import time
-
+import logging
 from .uv import UVLoop
 
 import asyncio
@@ -17,7 +15,7 @@ def future_handler(future, loop, exception_handler, response):
         else:
             try:
                 # just log in console the error to call attention
-                print("Uncaught Exception: %s" % str(error))
+                logging.error("Uncaught Exception: %s" % str(error))
                 if response != None:
                     response.write_status(500).end("Internal Error")
             finally:

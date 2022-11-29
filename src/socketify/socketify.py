@@ -6,17 +6,15 @@ import inspect
 import json
 import mimetypes
 import os
-from os import path
 import platform
 import signal
-from threading import Thread, local, Lock
 import uuid
 from urllib.parse import parse_qs, quote_plus, unquote_plus
+import logging
 
 from .loop import Loop
 from .status_codes import status_codes
 from .helpers import static_route
-from queue import SimpleQueue
 
 mimetypes.init()
 
@@ -296,7 +294,7 @@ def uws_missing_server_name(hostname, hostname_length, user_data):
             else:
                 handler(data)
         except Exception as err:
-            print(
+            logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
 
@@ -323,7 +321,7 @@ def uws_websocket_factory_drain_handler(ws, user_data):
         except Exception as err:
             if dispose:
                     app._ws_factory.dispose(instances)
-            print(
+            logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
 
@@ -339,7 +337,7 @@ def uws_websocket_drain_handler(ws, user_data):
             else:
                 handler(ws)
         except Exception as err:
-            print(
+            logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
 
@@ -366,7 +364,7 @@ def uws_websocket_factory_open_handler(ws, user_data):
         except Exception as err:
             if dispose:
                     app._ws_factory.dispose(instances)
-            print(
+            logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
 
@@ -383,7 +381,7 @@ def uws_websocket_open_handler(ws, user_data):
             else:
                 handler(ws)
         except Exception as err:
-            print(
+            logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
 
@@ -419,7 +417,7 @@ def uws_websocket_factory_message_handler(ws, message, length, opcode, user_data
         except Exception as err:
             if dispose:
                app._ws_factory.dispose(instances)
-            print(
+            logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
 
@@ -445,7 +443,7 @@ def uws_websocket_message_handler(ws, message, length, opcode, user_data):
                 handler(ws, data, opcode)
 
         except Exception as err:
-            print(
+            logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
 
@@ -478,7 +476,7 @@ def uws_websocket_factory_pong_handler(ws, message, length, user_data):
         except Exception as err:
             if dispose:
                app._ws_factory.dispose(instances)
-            print(
+            logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
 @ffi.callback("void(uws_websocket_t*, const char*, size_t, void*)")
@@ -498,7 +496,7 @@ def uws_websocket_pong_handler(ws, message, length, user_data):
             else:
                 handler(ws, data)
         except Exception as err:
-            print(
+            logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
 
@@ -532,7 +530,7 @@ def uws_websocket_factory_ping_handler(ws, message, length, user_data):
         except Exception as err:
             if dispose:
                app._ws_factory.dispose(instances)
-            print(
+            logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
 
@@ -555,7 +553,7 @@ def uws_websocket_ping_handler(ws, message, length, user_data):
                 handler(ws, data)
 
         except Exception as err:
-            print(
+            logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
 
@@ -600,7 +598,7 @@ def uws_websocket_factory_close_handler(ws, code, message, length, user_data):
                     app._ws_factory.dispose(instances)
 
         except Exception as err:
-            print(
+            logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
 
@@ -638,7 +636,7 @@ def uws_websocket_close_handler(ws, code, message, length, user_data):
                     SocketRefs.pop(key, None)
 
         except Exception as err:
-            print(
+            logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
 
@@ -846,7 +844,7 @@ def uws_generic_cork_handler(res, user_data):
                 raise RuntimeError("Calls inside cork must be sync")
             response._cork_handler(response)
         except Exception as err:
-            print("Error on cork handler %s" % str(err))
+            logging.error("Error on cork handler %s" % str(err))
 
 
 @ffi.callback("void(void*)")
@@ -858,7 +856,7 @@ def uws_ws_cork_handler(user_data):
                 raise RuntimeError("Calls inside cork must be sync")
             ws._cork_handler(ws)
         except Exception as err:
-            print("Error on cork handler %s" % str(err))
+            logging.error("Error on cork handler %s" % str(err))
 
 
 # Compressor mode is 8 lowest bits where HIGH4(windowBits), LOW4(memLevel).
@@ -936,7 +934,7 @@ class WebSocket:
                     )
                 self._for_each_topic_handler(topic)
             except Exception as err:
-                print("Error on for each topic handler %s" % str(err))
+                logging.error("Error on for each topic handler %s" % str(err))
 
     # uuid for socket data, used to free data after socket closes
     def get_user_data_uuid(self):
@@ -1502,7 +1500,7 @@ class AppRequest:
                     )
                 self._for_each_header_handler(key, value)
             except Exception as err:
-                print("Error on data handler %s" % str(err))
+                logging.error("Error on data handler %s" % str(err))
 
         return self
 
@@ -1562,7 +1560,7 @@ class AppResponse:
                 else:
                     self._aborted_handler(self)
             except Exception as err:
-                print("Error on abort handler %s" % str(err))
+                logging.error("Error on abort handler %s" % str(err))
         return self
 
     def trigger_data_handler(self, data, is_end):
@@ -1575,7 +1573,7 @@ class AppResponse:
                 else:
                     self._data_handler(self, data, is_end)
             except Exception as err:
-                print("Error on data handler %s" % str(err))
+                logging.error("Error on data handler %s" % str(err))
 
         return self
 
@@ -1590,7 +1588,7 @@ class AppResponse:
                     raise RuntimeError("AppResponse.on_writable must be synchronous")
                 return self._writable_handler(self, offset)
             except Exception as err:
-                print("Error on writable handler %s" % str(err))
+                logging.error("Error on writable handler %s" % str(err))
             return False
         return False
 
@@ -2529,7 +2527,7 @@ class App:
     def trigger_error(self, error, response, request):
         if self.error_handler == None:
             try:
-                print(
+                logging.error(
                     "Uncaught Exception: %s" % str(error)
                 )  # just log in console the error to call attention
                 response.write_status(500).end("Internal Error")
@@ -2546,7 +2544,7 @@ class App:
             except Exception as error:
                 try:
                     # Error handler got an error :D
-                    print(
+                    logging.error(
                         "Uncaught Exception: %s" % str(error)
                     )  # just log in console the error to call attention
                     response.write_status(500).end("Internal Error")

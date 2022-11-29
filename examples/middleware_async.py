@@ -19,6 +19,7 @@ def auth(route):
         params = req.get_parameters()
         # get queries will preserve all queries inside req after await
         queries = req.get_queries()
+        # or just use req.preserve() to preserve all
 
         user = await get_user(headers.get("authorization", None))
         if user:
