@@ -76,7 +76,6 @@ def socketify_generic_handler(data):
         (handler, user_data) = ffi.from_handle(data)
         handler(user_data)
 
-
 class UVCheck:
     def __init__(self, loop, handler, user_data):
         self._handler_data = ffi.new_handle((handler, user_data))
@@ -108,7 +107,6 @@ class UVTimer:
 
     def stop(self):
         lib.socketify_timer_destroy(self._ptr)
-        self._handler_data = None
         self._ptr = ffi.NULL
 
     def set_repeat(self, repeat):
