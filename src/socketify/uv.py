@@ -85,13 +85,10 @@ class UVCheck:
 
     def stop(self):
         lib.socketify_check_destroy(self._ptr)
-        self._handler_data = None
-        self._ptr = ffi.NULL
 
     def __del__(self):
         if self._ptr != ffi.NULL:
             lib.socketify_check_destroy(self._ptr)
-            self._handler_data = None
 
 
 class UVTimer:
@@ -115,7 +112,6 @@ class UVTimer:
     def __del__(self):
         if self._ptr != ffi.NULL:
             lib.socketify_timer_destroy(self._ptr)
-            self._handler_data = None
 
 
 class UVLoop:
