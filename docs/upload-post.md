@@ -14,7 +14,7 @@ def upload(res, req):
 ```
 
 ### Getting it in an single call
-We created an `res.get_data()` to get all data at once internally will create a list of bytes chunks for you.
+We created an `res.get_data()` to get all data at once internally will create an BytesIO for you.
 
 ```python
 async def upload_chunks(res, req):
@@ -22,7 +22,7 @@ async def upload_chunks(res, req):
     # await all the data, returns received chunks if fail (most likely fail is aborted requests)
     data = await res.get_data()
 
-    print(f"Got chunks {len(data)} of data!")
+    print(f"Got {len(data.getvalue())} bytes of data!")
     
     # We respond when we are done
     res.cork_end("Thanks for the data!")

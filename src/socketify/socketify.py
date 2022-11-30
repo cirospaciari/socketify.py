@@ -3,6 +3,7 @@ from datetime import datetime
 from enum import IntEnum
 from http import cookies
 import inspect
+from io import BytesIO
 import json
 import mimetypes
 import os
@@ -1601,7 +1602,7 @@ class AppResponse:
         try:
             # decode and unquote all
             result = {}
-            parsed = parse_qs(b"".join(data), encoding=encoding)
+            parsed = parse_qs(data.getvalue(), encoding=encoding)
             has_value = False
             for key in parsed:
                 has_value = True
@@ -1620,14 +1621,14 @@ class AppResponse:
     async def get_text(self, encoding="utf-8"):
         data = await self.get_data()
         try:
-            return b"".join(data).decode(encoding)
+            return data.getvalue().decode(encoding)
         except Exception:
             return None  # invalid encoding
 
     async def get_json(self):
         data = await self.get_data()
         try:
-            return json.loads(b"".join(data).decode("utf-8"))
+            return json.loads(data.getvalue().decode("utf-8"))
         except Exception:
             return None  # invalid json
 
@@ -1674,7 +1675,7 @@ class AppResponse:
 
     def get_data(self):
         self._dataFuture = self.loop.create_future()
-        self._data = []
+        self._data = BytesIO()
 
         def is_aborted(self):
             self.aborted = True
@@ -1685,7 +1686,7 @@ class AppResponse:
                 pass
 
         def get_chunks(self, chunk, is_end):
-            self._data.append(chunk)
+            self._data.write(chunk)
             if is_end:
                 self._dataFuture.set_result(self._data)
                 self._data = None

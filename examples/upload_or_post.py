@@ -21,7 +21,7 @@ async def upload_chunks(res, req):
     # await all the data, returns received chunks if fail (most likely fail is aborted requests)
     data = await res.get_data()
 
-    print(f"Got chunks {len(data)} of data!")
+    print(f"Got {len(data.getvalue())} bytes of data!")
     
     # We respond when we are done
     res.cork_end("Thanks for the data!")
