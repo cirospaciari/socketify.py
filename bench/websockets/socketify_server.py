@@ -1,6 +1,7 @@
 from socketify import App, AppOptions, OpCode, CompressOptions
 
 remaining_clients = 16
+app = App(websocket_factory_max_itens=1_500_000)
 
 
 def ws_open(ws):
@@ -11,23 +12,18 @@ def ws_open(ws):
         print("All clients connected")
         print('Starting benchmark by sending "ready" message')
 
-        ws.publish("room", "ready", OpCode.TEXT)
-        # publish will send to everyone except it self so send to it self too
-        ws.send("ready", OpCode.TEXT)
+        app.publish("room", "ready", OpCode.TEXT)
 
 
 def ws_message(ws, message, opcode):
     # publish will send to everyone except it self so send to it self too
-    ws.publish("room", message, opcode)
-    ws.send(message, opcode)
-
+    app.publish("room", message, opcode)
 
 def ws_close(ws, close, message):
     global remaining_clients
     remaining_clients = remaining_clients + 1
 
 
-app = App(websocket_factory_max_itens=1_500_000)
 app.ws(
     "/*",
     {
