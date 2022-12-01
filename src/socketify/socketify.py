@@ -1189,7 +1189,7 @@ class WebSocket:
             return self
 
     def close(self):
-        lib.uws_ws_close(self.SSL, self._ptr)
+        lib.uws_ws_close(self.SSL, self.ws)
         return self
 
     def cork(self, callback):
