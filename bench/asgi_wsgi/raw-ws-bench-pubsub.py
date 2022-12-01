@@ -3,13 +3,6 @@ from socketify import ASGI
 clients = set([])
 remaining_clients = 16
 
-async def broadcast(message):
-    for send in clients:
-        await send({
-            'type': 'websocket.send',
-            'text': message
-        })
-
 async def app(scope, receive, send):
     global remaining_clients
 
@@ -46,7 +39,6 @@ async def app(scope, receive, send):
         'topic':"all"
     })
     if remaining_clients == 0:
-        # await broadcast("ready")
         await send({
             'type': 'websocket.publish',
             'topic': "all",
@@ -65,7 +57,6 @@ async def app(scope, receive, send):
             print("remaining_clients", remaining_clients)
             break
         
-        # await broadcast(scope.get('text', ''))
         await send({
             'type': 'websocket.publish',
             'topic': "all",
