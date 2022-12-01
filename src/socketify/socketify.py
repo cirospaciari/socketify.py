@@ -2230,9 +2230,9 @@ class App:
         elif isinstance(message, bytes):
             message_data = message
         elif message == None:
-            data = b""
+            message_data = b""
         else:
-            data = json.dumps(message).encode("utf-8")
+            message_data = json.dumps(message).encode("utf-8")
 
         return bool(
             lib.uws_publish(
