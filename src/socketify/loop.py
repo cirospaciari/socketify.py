@@ -71,6 +71,7 @@ class Loop:
         
     def stop(self):
         self.started = False
+        self.uv_loop.stop()
 
     # Exposes native loop for uWS
     def get_native_loop(self):
