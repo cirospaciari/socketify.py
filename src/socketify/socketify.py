@@ -2508,7 +2508,6 @@ class App:
 
     def run(self):
         signal.signal(signal.SIGINT, lambda sig, frame: self.close())
-        self.loop.start()
         self.loop.run()
         return self
 

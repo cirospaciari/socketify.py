@@ -143,6 +143,9 @@ class UVLoop:
         lib.socketify_destroy_loop(self._loop)
         self._handler_data = None
 
+    def run_nowait(self):
+        return lib.socketify_loop_run(self._loop, lib.SOCKETIFY_RUN_NOWAIT)
+        
     def run(self):
         return lib.socketify_loop_run(self._loop, lib.SOCKETIFY_RUN_DEFAULT)
 

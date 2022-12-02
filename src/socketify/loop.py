@@ -4,7 +4,6 @@ from .uv import UVLoop
 
 import asyncio
 
-
 def future_handler(future, loop, exception_handler, response):
     try:
         future.result()
@@ -46,43 +45,32 @@ class Loop:
     def create_future(self):
         return self.loop.create_future()
 
-    def start(self):
-        self.started = True
-        # run asyncio once per tick
-        def tick(loop):
-            # run once asyncio
-            loop.run_once_asyncio()
-
-        # use check for calling asyncio once per tick
-        self.timer = self.uv_loop.create_timer(0, 1, tick, self)
-        # self.timer = self.uv_loop.create_check(tick, self)
-
+    def keep_alive(self):
+        if self.started:
+            self.uv_loop.run_once()
+            self.loop.call_soon(self.keep_alive)
+   
     def run(self):
-        self.uv_loop.run()
+        self.started = True
+        while self.started:
+            self.run_once_asyncio()
+            self.uv_loop.run_once()
+        
+        # Find all running tasks in main thread:
+        pending = asyncio.all_tasks(self.loop)
+        # Run loop until tasks done
+        self.loop.run_until_complete(asyncio.gather(*pending))
 
     def run_once(self):
         self.uv_loop.run_once()
 
     def run_once_asyncio(self):
-        # with suppress(asyncio.CancelledError):
         # run only one step
-        self.loop.call_soon(self.loop.stop)
-        self.loop.run_forever()
-
+        self.loop._stopping = True
+        self.loop._run_once()
+        
     def stop(self):
-        if self.started:
-            self.timer.stop()
-            self.started = False
-        # unbind run_once
-        # if is still running stops
-        if self.loop.is_running():
-            self.loop.stop()
-
-        self.last_defer = None
-        # Find all running tasks in main thread:
-        pending = asyncio.all_tasks(self.loop)
-        # Run loop until tasks done
-        self.loop.run_until_complete(asyncio.gather(*pending))
+        self.started = False
 
     # Exposes native loop for uWS
     def get_native_loop(self):
