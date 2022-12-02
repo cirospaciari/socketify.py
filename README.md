@@ -43,7 +43,9 @@
 - Fetch like API powered by libuv
 - Async file IO powered by libuv
 - Full asyncio integration with libuv
-- SSGI Server spec and Falcon support
+- SSGI Server spec and support
+- RSGI Server support
+- WSGI Server compatibility
 - Full Http3 support
 - [`HPy`](https://hpyproject.org/) integration to better support [`CPython`](https://github.com/python/cpython), [`PyPy`](https://www.pypy.org/) and [`GraalPython`](https://github.com/oracle/graalpython)
 - Hot Reloading
