@@ -53,22 +53,8 @@ class Loop:
    
     def run(self):
         self.started = True
-        try:
-            asyncio.events._set_running_loop(self.loop)
-            self.loop._thread_id = threading.get_ident()
-            while self.started:
-                # run one step of asyncio 
-                self.loop._stopping = True
-                self.loop._run_once()
-                # run one step of libuv
-                self.uv_loop.run_once()
-        finally:
-            self.loop._thread_id = None
-            asyncio.events._set_running_loop(None)
-        # Find all running tasks in main thread
-        pending = asyncio.all_tasks(self.loop)
-        # Run loop until tasks done
-        self.loop.run_until_complete(asyncio.gather(*pending))
+        self.loop.call_soon(self.keep_alive)
+        self.loop.run_forever()
         # clean up uvloop
         self.uv_loop.stop()
 
@@ -83,6 +69,7 @@ class Loop:
     def stop(self):
         # Just mark as started = False and wait
         self.started = False
+        self.loop.stop()
 
     # Exposes native loop for uWS
     def get_native_loop(self):
@@ -97,7 +84,6 @@ class Loop:
             lambda f: future_handler(f, self.loop, self.exception_handler, response)
         )
         # force asyncio run once to enable req in async functions before first await
-        self.loop._stopping = True
         self.loop._run_once()
 
         return future
