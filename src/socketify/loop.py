@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import threading
 from .uv import UVLoop
 
 import asyncio
@@ -52,11 +53,19 @@ class Loop:
    
     def run(self):
         self.started = True
-        while self.started:
-            self.run_once_asyncio()
-            self.uv_loop.run_once()
-        
-        # Find all running tasks in main thread:
+        try:
+            asyncio.events._set_running_loop(self.loop)
+            self.loop._thread_id = threading.get_ident()
+            while self.started:
+                # run one step of asyncio 
+                self.loop._stopping = True
+                self.loop._run_once()
+                # run one step of libuv
+                self.uv_loop.run_once()
+        finally:
+            self.loop._thread_id = None
+            asyncio.events._set_running_loop(None)
+        # Find all running tasks in main thread
         pending = asyncio.all_tasks(self.loop)
         # Run loop until tasks done
         self.loop.run_until_complete(asyncio.gather(*pending))
@@ -64,12 +73,12 @@ class Loop:
         self.uv_loop.stop()
 
     def run_once(self):
-        self.uv_loop.run_once()
-
-    def run_once_asyncio(self):
-        # run only one step
+        # run one step of asyncio 
         self.loop._stopping = True
         self.loop._run_once()
+        # run one step of libuv
+        self.uv_loop.run_once()
+
         
     def stop(self):
         # Just mark as started = False and wait
@@ -88,10 +97,9 @@ class Loop:
             lambda f: future_handler(f, self.loop, self.exception_handler, response)
         )
         # force asyncio run once to enable req in async functions before first await
-        self.run_once_asyncio()
+        self.loop._stopping = True
+        self.loop._run_once()
 
-        # if response != None: #set auto cork
-        #   response.needs_cork = True
         return future
 
 
