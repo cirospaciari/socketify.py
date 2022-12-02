@@ -60,6 +60,8 @@ class Loop:
         pending = asyncio.all_tasks(self.loop)
         # Run loop until tasks done
         self.loop.run_until_complete(asyncio.gather(*pending))
+        # clean up uvloop
+        self.uv_loop.stop()
 
     def run_once(self):
         self.uv_loop.run_once()
@@ -70,8 +72,8 @@ class Loop:
         self.loop._run_once()
         
     def stop(self):
+        # Just mark as started = False and wait
         self.started = False
-        self.uv_loop.stop()
 
     # Exposes native loop for uWS
     def get_native_loop(self):
