@@ -2,7 +2,7 @@ name: Linux Build
 on: workflow_dispatch
 jobs:
  build-linux:
-    runs-on: debian-bullseye
+    runs-on: debian-latest
     name: Build on linux-amd64
     steps:
       - name: Update binaries
