@@ -58,6 +58,8 @@ DLL_EXPORT typedef struct {
   size_t remote_address_size;
 
   socketify_header* header_list;
+
+  bool has_content;
 } socketify_asgi_data;
 
 DLL_EXPORT typedef struct {
@@ -85,12 +87,21 @@ DLL_EXPORT typedef struct {
 } socketify_asgi_ws_data;
 
 DLL_EXPORT typedef void (*socketify_asgi_method_handler)(int ssl, uws_res_t *response, socketify_asgi_data request, void *user_data, bool* aborted);
+DLL_EXPORT typedef void (*socketify_asgi_ws_method_handler)(int ssl, uws_res_t *response, socketify_asgi_ws_data request, uws_socket_context_t* socket, void *user_data, bool* aborted);
 DLL_EXPORT typedef struct {
   int ssl;
   uws_app_t* app;
   socketify_asgi_method_handler handler;
   void * user_data;
 } socksocketify_asgi_app_info;
+
+DLL_EXPORT typedef struct {
+  int ssl;
+  uws_app_t* app;
+  socketify_asgi_ws_method_handler handler;
+  uws_socket_behavior_t behavior;
+  void * user_data;
+} socksocketify_asgi_ws_app_info;
 
 
 DLL_EXPORT socketify_loop * socketify_create_loop();
@@ -122,6 +133,10 @@ DLL_EXPORT void socketify_destroy_asgi_app_info(socksocketify_asgi_app_info* app
 
 DLL_EXPORT void socketify_res_cork_write(int ssl, uws_res_t *response, const char* data, size_t length);
 DLL_EXPORT void socketify_res_cork_end(int ssl, uws_res_t *response, const char* data, size_t length, bool close_connection);
+
+DLL_EXPORT socksocketify_asgi_ws_app_info* socketify_add_asgi_ws_handler(int ssl, uws_app_t* app, uws_socket_behavior_t behavior, socketify_asgi_ws_method_handler handler, void* user_data);
+DLL_EXPORT void socketify_destroy_asgi_ws_app_info(socksocketify_asgi_ws_app_info* app);
+DLL_EXPORT void socketify_ws_cork_send(int ssl, uws_websocket_t *ws, const char* data, size_t length, uws_opcode_t opcode);
 #endif
 #ifdef __cplusplus
 }

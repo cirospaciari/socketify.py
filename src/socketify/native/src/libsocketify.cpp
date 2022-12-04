@@ -145,15 +145,23 @@ socketify_asgi_data socketify_asgi_request(int ssl, uws_req_t *req, uws_res_t *r
     result.query_string_size = query_string_size;
     result.method_size = method_size;
     result.remote_address_size = remote_address_size;
-
+    result.has_content = false;
     uWS::HttpRequest *uwsReq = (uWS::HttpRequest *)req;
     result.header_list = NULL;
     socketify_header* last = NULL;
     for (auto header : *uwsReq)
     {
         socketify_header* current = (socketify_header*)malloc(sizeof(socketify_header));
-        current->name = header.first.data();
-        current->name_size = header.first.length();
+        auto name = header.first;
+        auto value = header.second;
+        
+        current->name = name.data();
+        current->name_size = name.length();
+        
+        if(name.compare("content-length") == 0 || name.compare("transfer-encoding") == 0){
+            result.has_content = true;
+        }
+
         current->value = header.second.data();
         current->value_size = header.second.length();
         current->next = NULL;
@@ -268,6 +276,8 @@ void socketify_asgi_http_handler(uws_res_t *response, uws_req_t *request, void *
     socketify_destroy_headers(data.header_list);
 }
 
+
+
 void socketify_res_cork_write(int ssl, uws_res_t *res, const char* data, size_t length){
     if (ssl)
     {
@@ -301,6 +311,69 @@ void socketify_res_cork_end(int ssl, uws_res_t *res, const char* data, size_t le
         });
     }
 }
+void socketify_ws_cork_send(int ssl, uws_websocket_t *ws, const char* data, size_t length, uws_opcode_t opcode){
+    if (ssl)
+    {
+        uWS::WebSocket<true, true, void *> *uws = (uWS::WebSocket<true, true, void *> *)ws;
+        uws->cork([&](){ 
+            uws->send(std::string_view(data, length), (uWS::OpCode)(unsigned char) opcode);
+        });
+    }
+    else
+    {
+        uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
+        uws->cork([&](){ 
+            uws->send(std::string_view(data, length), (uWS::OpCode)(unsigned char) opcode);
+        });
+    }
+
+}
+
+
+socksocketify_asgi_ws_app_info* socketify_add_asgi_ws_handler(int ssl, uws_app_t* app, uws_socket_behavior_t behavior, socketify_asgi_ws_method_handler handler, void* user_data){
+    socksocketify_asgi_ws_app_info* info = (socksocketify_asgi_ws_app_info*)malloc(sizeof(socksocketify_asgi_ws_app_info));
+    info->ssl = ssl;
+    info->app = app;
+    info->handler = handler;
+    info->user_data = user_data;
+    info->behavior = behavior;
+
+    const char* pattern = "/*";
+    uws_socket_behavior_t ws_behavior;
+    memcpy(&ws_behavior, &behavior, sizeof(behavior));
+    
+    ws_behavior.upgrade = [](uws_res_t *response, uws_req_t *request, uws_socket_context_t *context, void* user_data){
+        socksocketify_asgi_ws_app_info* info = ((socksocketify_asgi_ws_app_info*)user_data);
+        socketify_asgi_ws_data data = socketify_asgi_ws_request(info->ssl, request, response);
+        bool* aborted = (bool*)malloc(sizeof(aborted));
+        *aborted = false;
+        uws_res_on_aborted(info->ssl, response, [](uws_res_t *res, void *opcional_data){
+            bool* aborted = (bool*)opcional_data;
+            *aborted = true;
+        }, aborted);
+        info->handler(info->ssl, response, data, context, info->user_data, aborted);
+        socketify_destroy_headers(data.header_list);
+    };
+    ws_behavior.open = [](uws_websocket_t *ws, void* user_data){
+        socksocketify_asgi_ws_app_info* info = ((socksocketify_asgi_ws_app_info*)user_data);
+        auto socket_data = uws_ws_get_user_data(info->ssl, ws);
+        info->behavior.open(ws, socket_data);
+    };
+    ws_behavior.message = [](uws_websocket_t* ws, const char* message, size_t length, uws_opcode_t opcode, void* user_data){
+        socksocketify_asgi_ws_app_info* info = ((socksocketify_asgi_ws_app_info*)user_data);
+        auto socket_data = uws_ws_get_user_data(info->ssl, ws);
+        info->behavior.message(ws, message, length, opcode, socket_data);
+    };
+
+    ws_behavior.close = [](uws_websocket_t* ws, int code, const char* message, size_t length, void* user_data){
+        socksocketify_asgi_ws_app_info* info = ((socksocketify_asgi_ws_app_info*)user_data);
+        auto socket_data = uws_ws_get_user_data(info->ssl, ws);
+        info->behavior.close(ws,code,  message, length, socket_data);
+    };
+    
+    uws_ws(ssl, app, pattern, ws_behavior, info);
+    return info;
+}
 
 socksocketify_asgi_app_info* socketify_add_asgi_http_handler(int ssl, uws_app_t* app, socketify_asgi_method_handler handler, void* user_data){
     socksocketify_asgi_app_info* info = (socksocketify_asgi_app_info*)malloc(sizeof(socksocketify_asgi_app_info));
@@ -315,6 +388,9 @@ socksocketify_asgi_app_info* socketify_add_asgi_http_handler(int ssl, uws_app_t*
 }
 
 void socketify_destroy_asgi_app_info(socksocketify_asgi_app_info* app){
+    free(app);
+}
+void socketify_destroy_asgi_ws_app_info(socksocketify_asgi_ws_app_info* app){
     free(app);
 }
 
@@ -373,8 +449,6 @@ bool socketify_on_prepare(socketify_loop* loop, socketify_prepare_handler handle
     uv_prepare_start(prepare, socketify_generic_prepare_callback);
 
     return true;
-    // uv_unref((uv_handle_t *) loop->uv_pre);
-    // loop->uv_pre->data = loop;
 }
 
 bool socketify_prepare_unbind(socketify_loop* loop){
