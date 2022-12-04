@@ -31,6 +31,67 @@ DLL_EXPORT typedef struct{
 } socketify_timer;
 
 
+DLL_EXPORT typedef struct {
+
+  const char* name;
+  const char* value;
+  
+  size_t name_size;
+  size_t value_size;
+  
+  void* next;
+} socketify_header;
+
+
+DLL_EXPORT typedef struct {
+
+  const char* full_url;
+  const char* url;
+  const char* query_string;
+  const char* method;
+  const char* remote_address;
+
+  size_t full_url_size;
+  size_t url_size;
+  size_t query_string_size;
+  size_t method_size;
+  size_t remote_address_size;
+
+  socketify_header* header_list;
+} socketify_asgi_data;
+
+DLL_EXPORT typedef struct {
+
+  const char* full_url;
+  const char* url;
+  const char* query_string;
+  const char* method;
+  const char* remote_address;
+
+  size_t full_url_size;
+  size_t url_size;
+  size_t query_string_size;
+  size_t method_size;
+  size_t remote_address_size;
+
+  const char* protocol;
+  const char* key;
+  const char* extensions;
+  size_t protocol_size;
+  size_t key_size;
+  size_t extensions_size;
+
+  socketify_header* header_list;
+} socketify_asgi_ws_data;
+
+DLL_EXPORT typedef void (*socketify_asgi_method_handler)(int ssl, uws_res_t *response, socketify_asgi_data request, void *user_data, bool* aborted);
+DLL_EXPORT typedef struct {
+  int ssl;
+  uws_app_t* app;
+  socketify_asgi_method_handler handler;
+  void * user_data;
+} socksocketify_asgi_app_info;
+
 
 DLL_EXPORT socketify_loop * socketify_create_loop();
 DLL_EXPORT bool socketify_constructor_failed(socketify_loop* loop);
@@ -48,6 +109,19 @@ DLL_EXPORT void socketify_timer_set_repeat(socketify_timer* timer, uint64_t repe
 
 DLL_EXPORT socketify_timer* socketify_create_check(socketify_loop* loop, socketify_timer_handler handler, void* user_data);
 DLL_EXPORT void socketify_check_destroy(socketify_timer* timer);
+
+DLL_EXPORT socketify_asgi_data socketify_asgi_request(int ssl, uws_req_t *req, uws_res_t *res);
+DLL_EXPORT void socketify_destroy_headers(socketify_header* headers);
+DLL_EXPORT bool socketify_res_write_int_status_with_headers(int ssl, uws_res_t* res, int code, socketify_header* headers);
+DLL_EXPORT void socketify_res_write_headers(int ssl, uws_res_t* res, socketify_header* headers);
+DLL_EXPORT bool socketify_res_write_int_status(int ssl, uws_res_t* res, int code);
+DLL_EXPORT socketify_asgi_ws_data socketify_asgi_ws_request(int ssl, uws_req_t *req, uws_res_t *res);
+
+DLL_EXPORT socksocketify_asgi_app_info* socketify_add_asgi_http_handler(int ssl, uws_app_t* app, socketify_asgi_method_handler handler, void* user_data);
+DLL_EXPORT void socketify_destroy_asgi_app_info(socksocketify_asgi_app_info* app);
+
+DLL_EXPORT void socketify_res_cork_write(int ssl, uws_res_t *response, const char* data, size_t length);
+DLL_EXPORT void socketify_res_cork_end(int ssl, uws_res_t *response, const char* data, size_t length, bool close_connection);
 #endif
 #ifdef __cplusplus
 }
