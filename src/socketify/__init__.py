@@ -12,4 +12,7 @@ from .asgi import (
 from .wsgi import (
     WSGI
 )
+from .ssgi import (
+    SSGI
+)
 from .helpers import sendfile, middleware, MiddlewareRouter

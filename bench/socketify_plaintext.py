@@ -1,11 +1,12 @@
 from socketify import App
 import os
 import multiprocessing
-
-
 def run_app():
     app = App(request_response_factory_max_itens=200_000)
-    app.get("/", lambda res, req: res.end("Hello, World!"))
+    def home(res, req):
+        res.end("Hello, World!")
+        
+    app.get("/", home)
     app.listen(
         8000,
         lambda config: print(
@@ -26,5 +27,5 @@ def create_fork():
 # fork limiting the cpu count - 1
 for i in range(1, multiprocessing.cpu_count()):
     create_fork()
-    
+
 run_app()  # run app on the main process too :)

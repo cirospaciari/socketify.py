@@ -21,5 +21,3 @@ async def app(scope, receive, send):
 
 if __name__ == "__main__":
     ASGI(app).listen(8000, lambda config: print(f"Listening on port http://localhost:{config.port} now\n")).run()
-
-# python3 -m gunicorn test:app -w 1 -k uvicorn.workers.UvicornWorker

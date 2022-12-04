@@ -25,23 +25,25 @@ class SomeResource:
         try:
             await ws.accept()
             clients.add(ws)
-            remaining_clients = remaining_clients - 1
+            remaining_clients -= 1
+            print("remaining_clients", remaining_clients)
             if remaining_clients == 0:
                 await broadcast("ready")
-            else:
-                print("remaining_clients", remaining_clients)
 
             while True:
                 payload = await ws.receive_text()
-                await broadcast(payload)
+                if payload:
+                    await broadcast(payload)
 
         except falcon.WebSocketDisconnected:
             clients.remove(ws)
-            remaining_clients = remaining_clients + 1
+            remaining_clients += 1
             print("remaining_clients", remaining_clients)
 
 
 app = falcon.asgi.App()
+app.ws_options.max_receive_queue = 20_000_000# this virtual disables queue but adds overhead
+app.ws_options.enable_buffered_receiver = True # this disable queue but for now only available on cirospaciari/falcon
 app.add_route("/", SomeResource())
 # python3 -m gunicorn falcon_server:app -b 127.0.0.1:4001 -w 1 -k uvicorn.workers.UvicornWorker
 # pypy3 -m gunicorn falcon_server:app -b 127.0.0.1:4001 -w 1 -k uvicorn.workers.UvicornH11Worker

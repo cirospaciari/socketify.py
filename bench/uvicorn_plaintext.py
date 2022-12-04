@@ -18,5 +18,5 @@ async def app(scope, receive, send):
     )
 
 
-# python3 -m gunicorn uvicorn_guvicorn_plaintext:app -w 1 -k uvicorn.workers.UvicornWorker
-# pypy3 -m gunicorn uvicorn_guvicorn_plaintext:app -w 1 -k uvicorn.workers.UvicornWorker
+# python3 -m gunicorn uvicorn_plaintext:app -w 1 -k uvicorn.workers.UvicornWorker
+# pypy3 -m gunicorn uvicorn_plaintext:app -w 1 -k uvicorn.workers.UvicornWorker

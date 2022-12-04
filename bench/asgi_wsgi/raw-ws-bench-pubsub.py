@@ -47,9 +47,10 @@ async def app(scope, receive, send):
     else:
         print("remaining_clients", remaining_clients)
 
-    scope = await receive()
     # get data
     while True:
+        scope = await receive()
+
         type = scope['type']
         # disconnected!
         if type == 'websocket.disconnect':
@@ -57,13 +58,14 @@ async def app(scope, receive, send):
             print("remaining_clients", remaining_clients)
             break
         
+
         await send({
             'type': 'websocket.publish',
             'topic': "all",
             'text': scope.get('text', '')
         })
 
-        scope = await receive()
+        
 
 
 
@@ -71,4 +73,4 @@ async def app(scope, receive, send):
 if __name__ == "__main__":
     ASGI(app).listen(4001, lambda config: print(f"Listening on port http://localhost:{config.port} now\n")).run()
 
-# python3 -m gunicorn test-ws-bench:app -b 127.0.0.1:4001 -w 1 -k uvicorn.workers.UvicornWorker
+# python3 -m gunicorn raw-ws-bench-pubsub:app -b 127.0.0.1:4001 -w 1 -k uvicorn.workers.UvicornWorker

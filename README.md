@@ -37,6 +37,7 @@
 - Middlewares
 - Templates Support (examples with [`Mako`](https://github.com/cirospaciari/socketify.py/tree/main/examples/template_mako.py) and [`Jinja2`](https://github.com/cirospaciari/socketify.py/tree/main/examples/template_jinja2.py))
 - ASGI Server with pub/sub extension for Falcon
+- WSGI Server
 
 ## :mag_right: Upcoming Features
 - In-Memory Cache Tools
@@ -45,7 +46,6 @@
 - Full asyncio integration with libuv
 - SSGI Server spec and support
 - RSGI Server support
-- WSGI Server compatibility
 - Full Http3 support
 - [`HPy`](https://hpyproject.org/) integration to better support [`CPython`](https://github.com/python/cpython), [`PyPy`](https://www.pypy.org/) and [`GraalPython`](https://github.com/oracle/graalpython)
 - Hot Reloading

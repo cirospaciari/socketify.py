@@ -24,5 +24,3 @@ app.add_route("/", home)
 
 if __name__ == "__main__":
     ASGI(app).listen(8000, lambda config: print(f"Listening on port http://localhost:{config.port} now\n")).run()
-   
-#pypy3 -m gunicorn uvicorn_guvicorn_plaintext:app -w 1 -k uvicorn.workers.UvicornWorker

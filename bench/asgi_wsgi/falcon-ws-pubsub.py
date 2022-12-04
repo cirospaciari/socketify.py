@@ -31,8 +31,9 @@ class SomeResource:
             remaining_clients = remaining_clients + 1
             print("remaining_clients", remaining_clients)
 
-
 app = falcon.asgi.App()
+app.ws_options.max_receive_queue = 20_000_000 # this virtual disables queue but adds overhead
+app.ws_options.enable_buffered_receiver = False # this disable queue but for now only available on cirospaciari/falcon
 app.add_route("/", SomeResource())
 
 if __name__ == "__main__":

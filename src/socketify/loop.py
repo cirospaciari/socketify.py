@@ -25,7 +25,7 @@ def future_handler(future, loop, exception_handler, response):
 
 class Loop:
     def __init__(self, exception_handler=None):
-        self.loop = asyncio.new_event_loop()
+        self.loop = asyncio.get_event_loop()
         self.uv_loop = UVLoop()
 
         if hasattr(exception_handler, "__call__"):
@@ -36,9 +36,7 @@ class Loop:
         else:
             self.exception_handler = None
 
-        asyncio.set_event_loop(self.loop)
         self.started = False
-        self.last_defer = False
 
     def set_timeout(self, timeout, callback, user_data):
         return self.uv_loop.create_timer(timeout, 0, callback, user_data)
@@ -46,14 +44,14 @@ class Loop:
     def create_future(self):
         return self.loop.create_future()
 
-    def keep_alive(self):
+    def _keep_alive(self):
         if self.started:
             self.uv_loop.run_once()
-            self.loop.call_soon(self.keep_alive)
+            self.loop.call_soon(self._keep_alive)
    
     def run(self):
         self.started = True
-        self.loop.call_soon(self.keep_alive)
+        self.loop.call_soon(self._keep_alive)
         self.loop.run_forever()
         # clean up uvloop
         self.uv_loop.stop()
@@ -74,6 +72,7 @@ class Loop:
     # Exposes native loop for uWS
     def get_native_loop(self):
         return self.uv_loop.get_native_loop()
+   
 
     def run_async(self, task, response=None):
         # with run_once

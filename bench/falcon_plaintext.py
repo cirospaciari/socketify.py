@@ -1,7 +1,7 @@
 from wsgiref.simple_server import make_server
 
 import falcon
-
+# check ./asgi_wsgi/falcon-ws-pubsub.py for pub/sub extension
 
 class Home:
     def on_get(self, req, resp):
