@@ -95,6 +95,7 @@ def wsgi(ssl, response, info, user_data, aborted):
         write_status(ssl, response, status)
         for (name, value) in headers:
             write_header(ssl, response, name, value)
+        write_header(ssl, response, b'Server', b'socketify.py')
     #             #check for body
     if environ.get("HTTP_CONTENT_LENGTH", False) or environ.get("HTTP_TRANSFER_ENCODING", False): 
         WSGI_INPUT = BytesIO()

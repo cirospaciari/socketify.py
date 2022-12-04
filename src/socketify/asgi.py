@@ -119,6 +119,7 @@ def uws_asgi_corked_response_start_handler(res, user_data):
     lib.socketify_res_write_int_status(ssl, res, status)
     for name, value in headers:
         write_header(ssl, res, name, value)
+    write_header(ssl, res, b'Server', b'socketify.py')
 
 
 @ffi.callback("void(int, uws_res_t*, socketify_asgi_data request, void*, bool*)")
