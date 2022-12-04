@@ -2,7 +2,7 @@ name: Linux Build
 on: workflow_dispatch
 jobs:
  build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     name: Build on linux-amd64
     steps:
       - name: Update binaries
