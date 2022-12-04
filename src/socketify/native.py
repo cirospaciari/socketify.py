@@ -359,7 +359,7 @@ void socketify_destroy_headers(socketify_header* headers);
 bool socketify_res_write_int_status_with_headers(int ssl, uws_res_t* res, int code, socketify_header* headers);
 void socketify_res_write_headers(int ssl, uws_res_t* res, socketify_header* headers);
 socketify_asgi_ws_data socketify_asgi_ws_request(int ssl, uws_req_t *req, uws_res_t *res);
-
+bool socketify_res_write_int_status(int ssl, uws_res_t* res, int code);
 socksocketify_asgi_app_info* socketify_add_asgi_http_handler(int ssl, uws_app_t* app, socketify_asgi_method_handler handler, void* user_data);
 void socketify_destroy_asgi_app_info(socksocketify_asgi_app_info* app);
 

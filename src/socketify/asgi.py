@@ -116,7 +116,7 @@ def write_header(ssl, res, key, value):
 @ffi.callback("void(uws_res_t*, void*)")
 def uws_asgi_corked_response_start_handler(res, user_data):
     (ssl, status, headers) = ffi.from_handle(user_data)
-    lib.socketify_res_write_int_status(ssl, res, status)
+    lib.socketify_res_write_int_status(ssl, res, int(status))
     for name, value in headers:
         write_header(ssl, res, name, value)
     write_header(ssl, res, b'Server', b'socketify.py')
