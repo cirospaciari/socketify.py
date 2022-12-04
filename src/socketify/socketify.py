@@ -2298,7 +2298,8 @@ class App:
                     pass
 
     def __del__(self):
-        lib.uws_app_destroy(self.SSL, self.app)
+        if self.app: #only destroy if exists
+            lib.uws_app_destroy(self.SSL, self.app)
 
 
 class AppListenOptions:
