@@ -319,6 +319,7 @@ typedef struct {
   size_t remote_address_size;
 
   socketify_header* header_list;
+  bool has_content;
 } socketify_asgi_data;
 
 typedef struct {
@@ -352,7 +353,14 @@ typedef struct {
   socketify_asgi_method_handler handler;
   void * user_data;
 } socksocketify_asgi_app_info;
-
+typedef void (*socketify_asgi_ws_method_handler)(int ssl, uws_res_t *response, socketify_asgi_ws_data request, uws_socket_context_t* socket, void *user_data, bool* aborted);
+typedef struct {
+  int ssl;
+  uws_app_t* app;
+  socketify_asgi_ws_method_handler handler;
+  uws_socket_behavior_t behavior;
+  void * user_data;
+} socksocketify_asgi_ws_app_info;
 
 socketify_asgi_data socketify_asgi_request(int ssl, uws_req_t *req, uws_res_t *res);
 void socketify_destroy_headers(socketify_header* headers);
@@ -362,10 +370,12 @@ socketify_asgi_ws_data socketify_asgi_ws_request(int ssl, uws_req_t *req, uws_re
 bool socketify_res_write_int_status(int ssl, uws_res_t* res, int code);
 socksocketify_asgi_app_info* socketify_add_asgi_http_handler(int ssl, uws_app_t* app, socketify_asgi_method_handler handler, void* user_data);
 void socketify_destroy_asgi_app_info(socksocketify_asgi_app_info* app);
+socksocketify_asgi_ws_app_info* socketify_add_asgi_ws_handler(int ssl, uws_app_t* app, uws_socket_behavior_t behavior, socketify_asgi_ws_method_handler handler, void* user_data);
+void socketify_destroy_asgi_ws_app_info(socksocketify_asgi_ws_app_info* app);
 
 void socketify_res_cork_write(int ssl, uws_res_t *response, const char* data, size_t length);
 void socketify_res_cork_end(int ssl, uws_res_t *response, const char* data, size_t length, bool close_connection);
-
+void socketify_ws_cork_send(int ssl, uws_websocket_t *ws, const char* data, size_t length, uws_opcode_t opcode);
 """
 )
 

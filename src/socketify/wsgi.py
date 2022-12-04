@@ -5,9 +5,6 @@ from socketify import App
 from io import BytesIO
 from .native import lib, ffi
 
-# Just an IDEA, must be implemented in native code (Cython or HPy), is really slow use this way
-# re formatting headers is really slow and dummy, dict ops are really slow
-
 @ffi.callback("void(uws_res_t*, const char*, size_t, bool, void*)")
 def wsgi_on_data_handler(res, chunk, chunk_length, is_end, user_data):
     data_response = ffi.from_handle(user_data)
@@ -48,8 +45,10 @@ def write_status(ssl, res, status_text):
 
 def write_header(ssl, res, key, value):
     if isinstance(key, str):
+        if key == "content-length": return #auto
         key_data = key.encode("utf-8")
     elif isinstance(key, bytes):
+        if key == b'content-length': return #auto
         key_data = key
 
     if isinstance(value, int):
@@ -89,6 +88,7 @@ def wsgi(ssl, response, info, user_data, aborted):
         header = next_header[0]
         name = ffi.unpack(header.name, header.name_size).decode('utf8')
         value = ffi.unpack(header.value, header.value_size).decode('utf8')
+        # this conversion should be optimized in future
         environ[f"HTTP_{name.replace('-', '_').upper()}"]=value
         next_header = ffi.cast("socketify_header*", next_header.next)
     def start_response(status, headers):
@@ -96,8 +96,8 @@ def wsgi(ssl, response, info, user_data, aborted):
         for (name, value) in headers:
             write_header(ssl, response, name, value)
         write_header(ssl, response, b'Server', b'socketify.py')
-    #             #check for body
-    if environ.get("HTTP_CONTENT_LENGTH", False) or environ.get("HTTP_TRANSFER_ENCODING", False): 
+    # check for body
+    if bool(info.has_content): 
         WSGI_INPUT = BytesIO()
         environ['wsgi.input'] = WSGI_INPUT
         def on_data(data_response, response):
@@ -145,7 +145,7 @@ class WSGI:
             self._ptr
         )
 
-    def listen(self, port_or_options, handler):
+    def listen(self, port_or_options, handler=None):
         self.SERVER_PORT = port_or_options if isinstance(port_or_options, int) else port_or_options.port
         self.BASIC_ENVIRON.update({
             'GATEWAY_INTERFACE': 'CGI/1.1', 

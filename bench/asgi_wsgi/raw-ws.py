@@ -34,7 +34,7 @@ async def app(scope, receive, send):
         if type == 'websocket.disconnect':
             print("disconnected!", scope)
             break
-        
+
         # echo!
         await send({
             'type': 'websocket.send',
