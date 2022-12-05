@@ -1,12 +1,15 @@
-from flask import Flask
+from flask import Flask, make_response
 from socketify import WSGI
 
 app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return 'Hello, World!'
+    """Test 6: Plaintext"""
+    response = make_response(b"Hello, World!")
+    response.content_type = "text/plain"
+    return response
 
-def run_app():
-    WSGI(app, request_response_factory_max_itens=200_000).listen(8000, lambda config: print(f"Listening on port http://localhost:{config.port} now\n")).run()
+
+WSGI(app).listen(8000, lambda config: print(f"Listening on port http://localhost:{config.port} now\n")).run()
 

@@ -286,10 +286,12 @@ class ASGIWebSocket:
 
 def write_header(ssl, res, key, value):
     if isinstance(key, str):
-        if key == "content-length": return #auto
+        if key.lower() == "content-length": return #auto
+        if key.lower() == "transfer-encoding": return #auto
         key_data = key.encode("utf-8")
     elif isinstance(key, bytes):
-        if key == b'content-length': return #auto
+        if key.lower() == b'content-length': return #auto
+        if key.lower() == b'transfer-encoding': return #auto
         key_data = key
 
     if isinstance(value, int):
