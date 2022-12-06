@@ -15,7 +15,7 @@ def home(res, req):
     delay = req.get_query("delay")
     delay = 0 if delay == None else float(delay)
     # tell response to run this in the event loop
-    # abort handler is grabed here, so responses only will be send if res.aborted == False
+    # abort handler is grabbed here, so responses only will be send if res.aborted == False
     res.run_async(delayed_hello(delay, res))
 
 

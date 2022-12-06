@@ -22,7 +22,7 @@ async def home(res, req):
     
 app.post("/", home)
 ```
-> Whenever your callback is a coroutine, such as the async/await, automatic corking can only happen in the very first portion of the coroutine (consider await a separator which essentially cuts the coroutine into smaller segments). Only the first "segment" of the coroutine will be called from socketify, the following async segments will be called by the asyncio event loop at a later point in time and will thus not be under our control with default corking enabled, HttpRequest object being stack-allocated and only valid in one single callback invocation so only valid in the first "segment" before the first await. If you just want to preserve headers, url, method, cookies and query string you can use `req.preserve()` to copy all data and keep it in the request object, but will be some performance penality. Take a look in [Corking](corking.md) for get a more in deph information
+> Whenever your callback is a coroutine, such as the async/await, automatic corking can only happen in the very first portion of the coroutine (consider await a separator which essentially cuts the coroutine into smaller segments). Only the first "segment" of the coroutine will be called from socketify, the following async segments will be called by the asyncio event loop at a later point in time and will thus not be under our control with default corking enabled, HttpRequest object being stack-allocated and only valid in one single callback invocation so only valid in the first "segment" before the first await. If you just want to preserve headers, url, method, cookies and query string you can use `req.preserve()` to copy all data and keep it in the request object, but will be some performance penalty. Take a look in [Corking](corking.md) for get a more in deph information
 
 ## Pattern matching
 Routes are matched in order of specificity, not by the order you register them:
@@ -58,7 +58,7 @@ app.any("/*", not_found)
 ```
 
 ## Error handler
-In case of some uncaught exceptions we will always try our best to call the error handler, you can set the handler using `app.set_error_handler(hanlder)`
+In case of some uncaught exceptions we will always try our best to call the error handler, you can set the handler using `app.set_error_handler(handler)`
 
 ```python
 

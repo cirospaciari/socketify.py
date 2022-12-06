@@ -21,7 +21,7 @@
 ## 💡 Features
 
 - WebSocket with pub/sub support
-- Fast and realiable Http/Https
+- Fast and reliable Http/Https
 - Support for Windows, Linux and macOS Silicon & x64
 - Support for [`PyPy3`](https://www.pypy.org/) and [`CPython`](https://github.com/python/cpython)
 - Dynamic URL Routing with Wildcard & Parameter support
@@ -68,7 +68,7 @@ Socketify got almost 900k messages/s with PyPy3 and 860k with Python3 the same p
 
 Runtime versions: PyPy3 7.3.9, Python 3.10.7, node v16.17.0, bun v0.2.2<br/>
 Framework versions: gunicorn 20.1.0 + uvicorn 0.19.0, socketify alpha, gunicorn 20.1.0 + falcon 3.1.0, robyn 0.18.3<br/>
-Http tested with oha -c 40 -z 5s http://localhost:8000/ (1 run for warmup and 3 runs average for testing)<br/>
+Http tested with oha -c 40 -z 5s http://localhost:8000/ (1 run for warm-up and 3 runs average for testing)<br/>
 WebSocket tested with [Bun.sh](https://bun.sh) bench chat-client <br/>
 Source code in [bench](https://github.com/cirospaciari/socketify.py/tree/main/bench)<br/>
 
@@ -205,7 +205,7 @@ And yes, we can be faster than japronto when all our features and goals are achi
 We don't use uvloop, because uvloop don't support Windows and PyPy3 at this moment, this can change in the future, but right now we want to implement our own libuv + asyncio solution, and a lot more.
 
 ## :dizzy: CFFI vs Cython vs HPy
-Cython performs really well on Python3 but really bad on PyPy3, CFFI are choosen for better support PyPy3 until we got our hands on an stable [`HPy`](https://hpyproject.org/) integration.
+Cython performs really well on Python3 but really bad on PyPy3, CFFI are chosen for better support PyPy3 until we got our hands on an stable [`HPy`](https://hpyproject.org/) integration.
 
 ## :bookmark_tabs: Documentation
 See the full docs in [docs.socketify.dev](https://docs.socketify.dev) or in [/docs/README.md](docs/README.md)

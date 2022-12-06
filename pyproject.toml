@@ -8,7 +8,7 @@ version = "0.0.1"
 authors = [
   { name="Ciro Spaciari", email="ciro.spaciari@gmail.com" },
 ]
-description = "Bringing WebSockets, Http/Https High Peformance servers for PyPy3 and Python3"
+description = "Bringing WebSockets, Http/Https High Performance servers for PyPy3 and Python3"
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [

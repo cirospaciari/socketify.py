@@ -110,7 +110,7 @@ We also have an `req.get_cookie(cookie_name)` to get a cookie value as String an
 ```python
 
 def cookies(res, req):
-    # cookies are writen after end
+    # cookies are written after end
     res.set_cookie(
         "session_id",
         "1234567890",
@@ -192,6 +192,6 @@ If you need to access the raw pointer of `libuv` you can use `app.get_native_han
 
 ## Preserve data for use after await
 HttpRequest object being stack-allocated and only valid in one single callback invocation so only valid in the first "segment" before the first await. 
-If you just want to preserve headers, url, method, cookies and query string you can use `req.preserve()` to copy all data and keep it in the request object, but will be some performance penality.
+If you just want to preserve headers, url, method, cookies and query string you can use `req.preserve()` to copy all data and keep it in the request object, but will be some performance penalty.
 
 ### Next [Upload and Post](upload-post.md)

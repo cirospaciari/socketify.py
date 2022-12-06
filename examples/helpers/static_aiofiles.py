@@ -5,7 +5,7 @@ import mimetypes
 from os import path
 
 mimetypes.init()
-# In production we highly recomend to use CDN like CloudFlare or/and NGINX or similar for static files
+# In production we highly recommend to use CDN like CloudFlare or/and NGINX or similar for static files
 async def sendfile(res, req, filename):
     # read headers before the first await
     if_modified_since = req.get_header("if-modified-since")
@@ -36,7 +36,7 @@ async def sendfile(res, req, filename):
         # check if modified since is provided
         if if_modified_since == last_modified:
             return res.write_status(304).end_without_body()
-        # tells the broswer the last modified date
+        # tells the browser the last modified date
         res.write_header(b"Last-Modified", last_modified)
 
         # add content type

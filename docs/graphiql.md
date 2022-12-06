@@ -54,7 +54,7 @@ def graphiql_from(Query, Mutation=None):
         # we can pass whatever we want to context, query, headers or params, cookies etc
         context_value = req.preserve()
 
-        # get all incomming data and parses as json
+        # get all incoming data and parses as json
         body = await res.get_json()
 
         query = body["query"]
