@@ -540,12 +540,13 @@ def uws_generic_listen_handler(listen_socket, config, user_data):
             app.socket = listen_socket
             app._listen_handler(
                 None
+                
                 if config == ffi.NULL
                 else AppListenOptions(
                     port=int(config.port),
                     host=None
                     if config.host == ffi.NULL
-                    else ffi.string(config.host).decode("utf-8"),
+                    else ffi.string(config.host).decode("utf8"),
                     options=int(config.options),
                 )
             )
@@ -2261,7 +2262,8 @@ class App:
         if hasattr(self, "socket"):
             if not self.socket == ffi.NULL:
                 lib.us_listen_socket_close(self.SSL, self.socket)
-                self.loop.stop()
+                self.socket = ffi.NULL
+        self.loop.stop()
         return self
 
     def set_error_handler(self, handler):
@@ -2297,9 +2299,24 @@ class App:
                 finally:
                     pass
 
+    def dispose(self):
+        if self.app: #only destroy if exists
+            self.close()
+            lib.uws_app_destroy(self.SSL, self.app)
+            self.app = None
+
+        if self.loop:
+           self.loop.dispose()
+           self.loop = None
+        
     def __del__(self):
         if self.app: #only destroy if exists
+            self.close()
             lib.uws_app_destroy(self.SSL, self.app)
+        if self.loop:
+            self.loop.dispose()
+            self.loop = None
+            
 
 
 class AppListenOptions:
@@ -2348,3 +2365,4 @@ class AppOptions:
         self.ca_file_name = ca_file_name
         self.ssl_ciphers = ssl_ciphers
         self.ssl_prefer_low_memory_usage = ssl_prefer_low_memory_usage
+

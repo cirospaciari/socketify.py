@@ -329,6 +329,23 @@ void socketify_ws_cork_send(int ssl, uws_websocket_t *ws, const char* data, size
 
 }
 
+void socketify_ws_cork_send_with_options(int ssl, uws_websocket_t *ws, const char* data, size_t length, uws_opcode_t opcode, bool compress, bool fin){
+    if (ssl)
+    {
+        uWS::WebSocket<true, true, void *> *uws = (uWS::WebSocket<true, true, void *> *)ws;
+        uws->cork([&](){ 
+            uws->send(std::string_view(data, length), (uWS::OpCode)(unsigned char) opcode, compress, fin);
+        });
+    }
+    else
+    {
+        uWS::WebSocket<false, true, void *> *uws = (uWS::WebSocket<false, true, void *> *)ws;
+        uws->cork([&](){ 
+            uws->send(std::string_view(data, length), (uWS::OpCode)(unsigned char) opcode, compress, fin);
+        });
+    }
+}
+
 
 socksocketify_asgi_ws_app_info* socketify_add_asgi_ws_handler(int ssl, uws_app_t* app, uws_socket_behavior_t behavior, socketify_asgi_ws_method_handler handler, void* user_data){
     socksocketify_asgi_ws_app_info* info = (socksocketify_asgi_ws_app_info*)malloc(sizeof(socksocketify_asgi_ws_app_info));

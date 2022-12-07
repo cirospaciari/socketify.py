@@ -376,6 +376,9 @@ void socketify_destroy_asgi_ws_app_info(socksocketify_asgi_ws_app_info* app);
 void socketify_res_cork_write(int ssl, uws_res_t *response, const char* data, size_t length);
 void socketify_res_cork_end(int ssl, uws_res_t *response, const char* data, size_t length, bool close_connection);
 void socketify_ws_cork_send(int ssl, uws_websocket_t *ws, const char* data, size_t length, uws_opcode_t opcode);
+
+
+void socketify_ws_cork_send_with_options(int ssl, uws_websocket_t *ws, const char* data, size_t length, uws_opcode_t opcode, bool compress, bool close_connection);
 """
 )
 

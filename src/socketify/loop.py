@@ -65,9 +65,10 @@ class Loop:
 
         
     def stop(self):
-        # Just mark as started = False and wait
-        self.started = False
-        self.loop.stop()
+        if self.started:
+            # Just mark as started = False and wait
+            self.started = False
+            self.loop.stop()
 
     # Exposes native loop for uWS
     def get_native_loop(self):
@@ -87,6 +88,10 @@ class Loop:
 
         return future
 
+    def dispose(self):
+        if self.uv_loop:
+            self.uv_loop.dispose()
+            self.uv_loop = None
 
 #  if sys.version_info >= (3, 11)
 #         with asyncio.Runner(loop_factory=uvloop.new_event_loop) as runner:

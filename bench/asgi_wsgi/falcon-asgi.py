@@ -24,4 +24,4 @@ home = Home()
 app.add_route("/", home)
 
 if __name__ == "__main__":
-    ASGI(app).listen(8000, lambda config: print(f"Listening on port http://localhost:{config.port} now\n")).run()
+    ASGI(app).listen(8000, lambda config: print(f"Listening on port http://localhost:{config.port} now\n")).run(workers=8)

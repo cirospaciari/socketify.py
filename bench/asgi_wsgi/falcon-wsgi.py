@@ -23,5 +23,4 @@ home = Home()
 app.add_route("/", home)
 
 if __name__ == "__main__":
-    WSGI(app).listen(8000, lambda config: print(f"Listening on port http://localhost:{config.port} now\n")).run()
-   
+    WSGI(app).listen(8000, lambda config: print(f"Listening on port http://localhost:{config.port} now\n")).run(workers=2)

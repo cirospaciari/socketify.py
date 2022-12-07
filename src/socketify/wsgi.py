@@ -1,7 +1,7 @@
-
-
 import os
+import inspect
 from socketify import App
+from .asgi import ws_close, ws_upgrade, ws_open, ws_message
 from io import BytesIO
 from .native import lib, ffi
 
@@ -132,12 +132,17 @@ def wsgi(ssl, response, info, user_data, aborted):
                 app_iter.close()
         lib.uws_res_end_without_body(ssl, response, 0)
 
-class WSGI:
-    def __init__(self, app, options=None, request_response_factory_max_itens=0, websocket_factory_max_itens=0):
-        self.server = App(options, request_response_factory_max_itens, websocket_factory_max_itens) 
+
+class _WSGI:
+
+    def __init__(self, app, options=None, websocket=None, websocket_options=None):
+        self.server = App(options) 
+        self.SERVER_HOST = None
         self.SERVER_PORT = None
+        self.SERVER_WS_SCHEME = 'wss' if self.server.options else 'ws'
         self.app = app
         self.BASIC_ENVIRON = dict(os.environ)
+        self.ws_compression = False
 
         self._ptr = ffi.new_handle(self)
         self.asgi_http_info = lib.socketify_add_asgi_http_handler(
@@ -146,9 +151,70 @@ class WSGI:
             wsgi,
             self._ptr
         )
+        self.asgi_ws_info = None
+        if isinstance(websocket, dict): #serve websocket as socketify.py
+            if websocket_options:
+                websocket.update(websocket_options)
+                
+            self.server.ws("/*", websocket)
+        elif inspect.iscoroutine(websocket):
+            # detect ASGI to use as WebSocket as mixed protocol
+            native_options = ffi.new("uws_socket_behavior_t *")
+            native_behavior = native_options[0]
+
+            if not websocket_options:
+                websocket_options = {}
+
+            self.ws_compression = websocket_options.get('compression', False)
+            
+            native_behavior.maxPayloadLength = ffi.cast(
+                "unsigned int",
+                int(websocket_options.get('max_payload_length', 16777216)),
+            )
+            native_behavior.idleTimeout = ffi.cast(
+                "unsigned short",
+                int(websocket_options.get('idle_timeout', 20)),
+            )
+            native_behavior.maxBackpressure = ffi.cast(
+                "unsigned int",
+                int(websocket_options.get('max_backpressure', 16777216)),
+            )
+            native_behavior.compression = ffi.cast(
+                "uws_compress_options_t", int(self.ws_compression)
+            )
+            native_behavior.maxLifetime = ffi.cast(
+                "unsigned short", int(websocket_options.get('max_lifetime', 0))
+            )
+            native_behavior.closeOnBackpressureLimit = ffi.cast(
+                "int", int(websocket_options.get('close_on_backpressure_limit', 0)),
+            )
+            native_behavior.resetIdleTimeoutOnSend = ffi.cast(
+                "int", bool(websocket_options.get('reset_idle_timeout_on_send', True))
+            )
+            native_behavior.sendPingsAutomatically = ffi.cast(
+                "int", bool(websocket_options.get('send_pings_automatically', True))
+            )
+
+            native_behavior.upgrade = ffi.NULL # will be set first on C++
+
+            native_behavior.open = ws_open
+            native_behavior.message = ws_message
+            native_behavior.ping = ffi.NULL
+            native_behavior.pong = ffi.NULL
+            native_behavior.close = ws_close
+
+            self.asgi_ws_info = lib.socketify_add_asgi_ws_handler(
+                self.server.SSL,
+                self.server.app,
+                native_behavior,
+                ws_upgrade,
+                self._ptr
+            )
+        
 
     def listen(self, port_or_options, handler=None):
         self.SERVER_PORT = port_or_options if isinstance(port_or_options, int) else port_or_options.port
+        self.SERVER_HOST = "0.0.0.0" if isinstance(port_or_options, int) else port_or_options.host
         self.BASIC_ENVIRON.update({
             'GATEWAY_INTERFACE': 'CGI/1.1', 
             'SERVER_PORT': str(self.SERVER_PORT), 
@@ -169,4 +235,47 @@ class WSGI:
         return self
     def run(self):
         self.server.run()
+        return self
+
+    def __del__(self):
+        if self.asgi_http_info:
+            lib.socketify_destroy_asgi_app_info(self.asgi_http_info)
+        if self.asgi_ws_info:
+            lib.socketify_destroy_asgi_ws_app_info(self.asgi_ws_info)
+
+# "Public" WSGI interface to allow easy forks/workers
+class WSGI:
+    def __init__(self, app, options=None, websocket=None, websocket_options=None):
+        self.app = app
+        self.options = options
+        self.websocket = websocket
+        self.websocket_options = websocket_options
+        self.listen_options = None
+        
+        
+    def listen(self, port_or_options, handler=None):
+        self.listen_options = (port_or_options, handler)
+        return self
+
+    def run(self, workers=1):
+        def run_app():
+            server = _WSGI(self.app, self.options, self.websocket, self.websocket_options)
+            if self.listen_options:
+                (port_or_options, handler) = self.listen_options
+                server.listen(port_or_options, handler)
+            server.run()
+
+
+        def create_fork():
+            n = os.fork()
+            # n greater than 0 means parent process
+            if not n > 0:
+                run_app()
+
+
+        # fork limiting the cpu count - 1
+        for i in range(1, workers):
+            create_fork()
+
+        run_app()  # run app on the main process too :)
         return self

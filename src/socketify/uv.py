@@ -70,9 +70,17 @@ class UVLoop:
     def get_native_loop(self):
         return lib.socketify_get_native_loop(self._loop)
 
+    def dispose(self):
+        if self._loop != ffi.NULL:
+            lib.socketify_destroy_loop(self._loop)
+            self._handler_data = None
+            self._loop = ffi.NULL
+
     def __del__(self):
-        lib.socketify_destroy_loop(self._loop)
-        self._handler_data = None
+        if self._loop != ffi.NULL:
+            lib.socketify_destroy_loop(self._loop)
+            self._handler_data = None
+            self._loop = ffi.NULL
 
     def run_nowait(self):
         return lib.socketify_loop_run(self._loop, lib.SOCKETIFY_RUN_NOWAIT)
