@@ -18,7 +18,6 @@ from .loop import Loop
 from .status_codes import status_codes
 from .helpers import static_route
 from dataclasses import dataclass
-from types import NoneType
 
 mimetypes.init()
 
@@ -2325,7 +2324,7 @@ class AppListenOptions:
     def __post_init__(self):
         if not isinstance(self.port, int):
             raise RuntimeError("port must be an int")
-        if not isinstance(self.host, (NoneType, str)):
+        if not isinstance(self.host, (type(None), str)):
             raise RuntimeError("host must be a str if specified")
         if not isinstance(self.options, int):
             raise RuntimeError("options must be an int")
@@ -2342,6 +2341,7 @@ class AppOptions:
     ssl_prefer_low_memory_usage: int = 0
 
     def __post_init__(self):
+        NoneType = type(None)
         if not isinstance(self.key_file_name, (NoneType, str)):
             raise RuntimeError("key_file_name must be a str if specified")
         if not isinstance(self.cert_file_name, (NoneType, str)):
