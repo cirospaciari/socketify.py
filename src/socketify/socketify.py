@@ -1759,11 +1759,6 @@ class App:
                 if options.key_file_name is None
                 else ffi.new("char[]", options.key_file_name.encode("utf-8"))
             )
-            socket_options.key_file_name = (
-                ffi.NULL
-                if options.key_file_name is None
-                else ffi.new("char[]", options.key_file_name.encode("utf-8"))
-            )
             socket_options.cert_file_name = (
                 ffi.NULL
                 if options.cert_file_name is None
