@@ -969,7 +969,7 @@ class WebSocketFactory:
     def get(self, app, ws):
         if len(self.factory_queue) == 0:
             response = WebSocket(ws, app.SSL, app.loop)
-            return (response, False)
+            return response, False
 
         instances = self.factory_queue.pop()
         (websocket, _) = instances
@@ -999,7 +999,7 @@ class RequestResponseFactory:
         if len(self.factory_queue) == 0:
             response = AppResponse(res, app.loop, app.SSL, app._template)
             request =  AppRequest(req)
-            return (response, request, False)
+            return response, request, False
 
         instances = self.factory_queue.pop()
         (response, request, _) = instances
@@ -1467,7 +1467,7 @@ class AppResponse:
     def try_end(self, message, total_size, end_connection=False):
         try:
             if self.aborted:
-                return (False, True)
+                return False, True
             if self._write_jar is not None:
                 self.write_header("Set-Cookie", self._write_jar.output(header=""))
                 self._write_jar = None
@@ -1476,7 +1476,7 @@ class AppResponse:
             elif isinstance(message, bytes):
                 data = message
             else:
-                return (False, True)
+                return False, True
             result = lib.uws_res_try_end(
                 self.SSL,
                 self.res,
@@ -1485,9 +1485,9 @@ class AppResponse:
                 ffi.cast("uintmax_t", total_size),
                 1 if end_connection else 0,
             )
-            return (bool(result.ok), bool(result.has_responded))
+            return bool(result.ok), bool(result.has_responded)
         except:
-            return (False, True)
+            return False, True
 
     def cork_end(self, message, end_connection=False):
         self.cork(lambda res: res.end(message, end_connection))
@@ -2256,7 +2256,7 @@ class App:
 
     def close(self):
         if hasattr(self, "socket"):
-            if not self.socket == ffi.NULL:
+            if self.socket != ffi.NULL:
                 lib.us_listen_socket_close(self.SSL, self.socket)
                 self.loop.stop()
         return self
