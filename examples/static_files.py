@@ -6,8 +6,8 @@
 # using oha -c 400 -z 5s http://localhost:3000/
 
 # nginx     - try_files                 -  77630.15 req/s
-# pypy3     - socketify static          -  10245.82 req/s
-# python3   - socketify static          -   8273.71 req/s
+# pypy3     - socketify static          -  15839.22 req/s
+# python3   - socketify static          -   8294.96 req/s
 # node.js   - @fastify/static           -   5437.16 req/s
 # node.js   - express.static            -   4077.49 req/s
 # python3   - socketify static_aiofile  -   2390.96 req/s
@@ -21,8 +21,8 @@
 
 # Conclusions:
 # With PyPy3 only static is really usable gunicorn/uvicorn, aiofiles and aiofile are realy slow on PyPy3 maybe this changes with HPy
-# Python3 with any option will be faster than gunicorn/uvicorn but with PyPy3 with static we got 2x (or almost this in case of fastify) performance of node.js
-# But even PyPy3 + socketify static is 7x+ slower than NGINX
+# Python3 with any option will be faster than gunicorn/uvicorn but with PyPy3 with static we got almost 4x (or almost 3x this in case of fastify) performance of node.js
+# But even PyPy3 + socketify static is 5x+ slower than NGINX
 
 # Anyway we really recommends using NGINX or similar + CDN for production like everybody else
 # Gunicorn production recommendations: https://docs.gunicorn.org/en/latest/deploy.html#deploying-gunicorn

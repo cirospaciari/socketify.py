@@ -9,6 +9,7 @@ mimetypes.init()
 # We have an version of this using aiofile and aiofiles
 # This is an sync version without any dependencies is normally much faster in CPython and PyPy3
 # In production we highly recomend to use CDN like CloudFlare or/and NGINX or similar for static files
+# TODO: this should be optimized entire in C++
 async def sendfile(res, req, filename):
     # read headers before the first await
     if_modified_since = req.get_header("if-modified-since")
@@ -26,7 +27,7 @@ async def sendfile(res, req, filename):
         exists = path.exists(filename)
         # not found
         if not exists:
-            return res.write_status(404).end(b"Not Found")
+            return res.cork(lambda res: res.write_status(404).end(b"Not Found"))
 
         # get size and last modified date
         stats = os.stat(filename)
@@ -38,17 +39,13 @@ async def sendfile(res, req, filename):
 
         # check if modified since is provided
         if if_modified_since == last_modified:
-            return res.write_status(304).end_without_body()
-        # tells the broswer the last modified date
-        res.write_header(b"Last-Modified", last_modified)
+            return res.cork(lambda res: res.write_status(304).end_without_body()) 
 
         # add content type
         (content_type, encoding) = mimetypes.guess_type(filename, strict=True)
         if content_type and encoding:
-            res.write_header(b"Content-Type", "%s; %s" % (content_type, encoding))
-        elif content_type:
-            res.write_header(b"Content-Type", content_type)
-
+            content_type = "%s; %s" % (content_type, encoding)
+        
         with open(filename, "rb") as fd:
             # check range and support it
             if start > 0 or not end == -1:
@@ -57,17 +54,27 @@ async def sendfile(res, req, filename):
                 size = end - start + 1
                 fd.seek(start)
                 if start > total_size or size > total_size or size < 0 or start < 0:
-                    return res.write_status(416).end_without_body()
-                res.write_status(206)
+                    if content_type:
+                        return res.cork(lambda res: res.write_header(b"Content-Type", content_type).write_status(416).end_without_body())        
+                    return res.cork(lambda res: res.write_status(416).end_without_body()) 
+                status = 206
             else:
                 end = size - 1
-                res.write_status(200)
+                status = 200
 
-            # tells the browser that we support range
-            res.write_header(b"Accept-Ranges", b"bytes")
-            res.write_header(
-                b"Content-Range", "bytes %d-%d/%d" % (start, end, total_size)
-            )
+            def send_headers(res):
+                res.write_status(status)
+                # tells the broswer the last modified date
+                res.write_header(b"Last-Modified", last_modified)
+
+                # tells the browser that we support range
+                if content_type:
+                    res.write_header(b"Content-Type", content_type)
+                res.write_header(b"Accept-Ranges", b"bytes")
+                res.write_header(
+                    b"Content-Range", "bytes %d-%d/%d" % (start, end, total_size)
+                )
+            res.cork(send_headers)
             pending_size = size
             # keep sending until abort or done
             while not res.aborted:
@@ -81,7 +88,7 @@ async def sendfile(res, req, filename):
                     break
 
     except Exception as error:
-        res.write_status(500).end("Internal Error")
+        res.cork(lambda res: res.write_status(500).end("Internal Error"))
 
 
 def in_directory(file, directory):

@@ -22,10 +22,6 @@ from dataclasses import dataclass
 mimetypes.init()
 
 
-is_python = platform.python_implementation() == "CPython"
-
-
-
 @ffi.callback("void(const char*, size_t, void*)")
 def uws_missing_server_name(hostname, hostname_length, user_data):
     if user_data != ffi.NULL:
@@ -529,6 +525,25 @@ def uws_generic_method_handler(res, req, user_data):
             app.trigger_error(err, response, request)
 
 
+
+
+@ffi.callback("void(struct us_listen_socket_t*, const char*, size_t,int, void*)")
+def uws_generic_listen_domain_handler(listen_socket, domain, length, _options, user_data):
+    domain = ffi.unpack(domain, length).decode("utf8")
+    if listen_socket == ffi.NULL:
+        raise RuntimeError("Failed to listen on domain %s" % domain)
+
+    if user_data != ffi.NULL:
+        
+        app = ffi.from_handle(user_data)
+        if hasattr(app, "_listen_handler") and hasattr(app._listen_handler, "__call__"):
+            app.socket = listen_socket
+            app._listen_handler(
+                AppListenOptions(
+                    domain=domain,
+                    options=int(_options)
+                )
+            )
 @ffi.callback("void(struct us_listen_socket_t*, uws_app_listen_config_t, void*)")
 def uws_generic_listen_handler(listen_socket, config, user_data):
     if listen_socket == ffi.NULL:
@@ -1283,7 +1298,9 @@ class AppResponse:
             self._cork_handler = callback
             lib.uws_res_cork(self.SSL, self.res, uws_generic_cork_handler, self._ptr)
 
-    def set_cookie(self, name, value, options={}):
+    def set_cookie(self, name, value, options):
+        if options is None:
+            options = {}
         if self._write_jar is None:
             self._write_jar = cookies.SimpleCookie()
         self._write_jar[name] = quote_plus(value)
@@ -2230,18 +2247,22 @@ class App:
                 self.SSL, self.app, options, uws_generic_listen_handler, self._ptr
             )
         else:
-            native_options = ffi.new("uws_app_listen_config_t *")
-            options = native_options[0]
-            options.port = ffi.cast("int", port_or_options.port)
-            options.host = (
-                ffi.NULL
-                if port_or_options.host is None
-                else ffi.new("char[]", port_or_options.host.encode("utf-8"))
-            )
-            options.options = ffi.cast("int", port_or_options.options)
-            self.native_options_listen = native_options  # Keep alive native_options
-            lib.uws_app_listen_with_config(
-                self.SSL, self.app, options, uws_generic_listen_handler, self._ptr
+            if port_or_options.domain:
+                domain = port_or_options.domain.encode('utf8')
+                lib.uws_app_listen_domain_with_options(self.SSL, self.app, domain, len(domain), int(port_or_options.options), uws_generic_listen_domain_handler, self._ptr)
+            else:
+                native_options = ffi.new("uws_app_listen_config_t *")
+                options = native_options[0]
+                options.port = ffi.cast("int", port_or_options.port)
+                options.host = (
+                    ffi.NULL
+                    if port_or_options.host is None
+                    else ffi.new("char[]", port_or_options.host.encode("utf-8"))
+                )
+                options.options = ffi.cast("int", port_or_options.options)
+                self.native_options_listen = native_options  # Keep alive native_options
+                lib.uws_app_listen_with_config(
+                    self.SSL, self.app, options, uws_generic_listen_handler, self._ptr
             )
 
         return self
@@ -2320,16 +2341,20 @@ class AppListenOptions:
     port: int = 0
     host: str = None
     options: int = 0
+    domain: str = None
 
     def __post_init__(self):
         if not isinstance(self.port, int):
             raise RuntimeError("port must be an int")
         if not isinstance(self.host, (type(None), str)):
             raise RuntimeError("host must be a str if specified")
+        if not isinstance(self.domain, (type(None), str)):
+            raise RuntimeError("domain must be a str if specified")
         if not isinstance(self.options, int):
             raise RuntimeError("options must be an int")
-
-
+        if self.domain and (self.host or self.port != 0):
+            raise RuntimeError("if domain is specified, host and port will be no effect")
+        
 @dataclass
 class AppOptions:
     key_file_name: str = None,

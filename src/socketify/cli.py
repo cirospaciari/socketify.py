@@ -34,7 +34,7 @@ Options:
     --req-res-factory-maxitems INT                      Pre allocated instances of Response and Request objects for socketify interface [default: 0]
     --ws-factory-maxitems INT                           Pre allocated instances of WebSockets objects for socketify interface [default: 0]
     
-    --uds TEXT                                          Bind to a UNIX domain socket.
+    --uds TEXT                                          Bind to a UNIX domain socket, this options disables --host or -h and --port or -p.
     --reload                                            Enable auto-reload. This options also disable --workers or -w option.
     --reload-dir PATH                                   Set reload directories explicitly, instead of using the current working directory.
     --reload-include TEXT                               Set extensions to include while watching for files. 
@@ -153,12 +153,16 @@ def execute(args):
     elif interface != "socketify":
         return print(f"{interface} interface is not supported yet")
 
+    auto_reload = options.get('--reload', False)
     workers = int(options.get("--workers", options.get("-w", os.environ.get('WEB_CONCURRENCY', 1))))
-    if workers < 1:
+    if workers < 1 or auto_reload:
         workers = 1
 
     port = int(options.get("--port", options.get("-p", 8000)))
     host = options.get("--host", options.get("-h", "127.0.0.1"))
+    uds = options.get('--uds', None)
+    
+    
     disable_listen_log = options.get("--disable-listen-log", False)
     websockets = options.get("--ws", "auto")
     
@@ -197,7 +201,10 @@ def execute(args):
 
     def listen_log(config):
         if not disable_listen_log:
-            print(f"Listening on {'https' if ssl_options else 'http'}://{config.host if config.host and len(config.host) > 1 else '127.0.0.1' }:{config.port} now\n")
+            if uds:
+                print(f"Listening on {config.domain} {'https' if ssl_options else 'http'}://localhost now\n")
+            else:
+                print(f"Listening on {'https' if ssl_options else 'http'}://{config.host if config.host and len(config.host) > 1 else '127.0.0.1' }:{config.port} now\n")
 
     if websockets:
         websocket_options = {
@@ -230,7 +237,10 @@ def execute(args):
             if websockets: # if socketify websockets are added using --ws in socketify interface we can set here
                 websockets.update(websocket_options) # set websocket options
                 fork_app.ws("/*", websockets)
-            fork_app.listen(AppListenOptions(port=port, host=host), listen_log)
+            if uds:
+                fork_app.listen(AppListenOptions(domain=uds), listen_log)
+            else:
+                fork_app.listen(AppListenOptions(port=port, host=host), listen_log)
             fork_app.run()
 
         # now we can start all over again
@@ -251,5 +261,29 @@ def execute(args):
         for pid in pid_list:
             os.kill(pid, signal.SIGINT)
     else:
-        #Generic WSGI, ASGI, SSGI Interface
-        Interface(module,options=ssl_options, websocket=websockets, websocket_options=websocket_options).listen(AppListenOptions(port=port, host=host), listen_log).run(workers=workers)
+
+        # def on_change():
+            # auto_reload
+
+        def create_app():
+            #Generic WSGI, ASGI, SSGI Interface
+            if uds:
+                app = Interface(module,options=ssl_options, websocket=websockets, websocket_options=websocket_options).listen(AppListenOptions(domain=uds), listen_log)
+            else:
+                app = Interface(module,options=ssl_options, websocket=websockets, websocket_options=websocket_options).listen(AppListenOptions(port=port, host=host), listen_log)
+            return app
+
+        
+        if auto_reload:
+            force_reload = False
+            app = None
+
+            while auto_reload:
+                app = create_app()
+                app.run()
+                if not force_reload:
+                    auto_reload = False
+                
+        else:
+            app = create_app()
+            app.run(workers=workers)
