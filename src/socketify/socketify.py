@@ -1031,7 +1031,7 @@ class RequestResponseFactory:
         res._aborted_handler = None
         res._writable_handler = None
         res._data_handler = None
-        res._grabed_abort_handler_once = False
+        res._grabbed_abort_handler_once = False
         res._write_jar = None
         res._cork_handler = None
         res._lastChunkOffset = 0
@@ -1283,7 +1283,7 @@ class AppResponse:
         self._writable_handler = None
         self._data_handler = None
         self._ptr = ffi.new_handle(self)
-        self._grabed_abort_handler_once = False
+        self._grabbed_abort_handler_once = False
         self._write_jar = None
         self._cork_handler = None
         self._lastChunkOffset = 0
@@ -1462,8 +1462,8 @@ class AppResponse:
 
     def grab_aborted_handler(self):
         # only needed if is async
-        if not self.aborted and not self._grabed_abort_handler_once:
-            self._grabed_abort_handler_once = True
+        if not self.aborted and not self._grabbed_abort_handler_once:
+            self._grabbed_abort_handler_once = True
             lib.uws_res_on_aborted(
                 self.SSL, self.res, uws_generic_aborted_handler, self._ptr
             )
@@ -1763,7 +1763,7 @@ class AppResponse:
 
 
 class App:
-    def __init__(self, options=None, request_response_factory_max_itens=0, websocket_factory_max_itens=0):
+    def __init__(self, options=None, request_response_factory_max_items=0, websocket_factory_max_items=0):
         socket_options_ptr = ffi.new("struct us_socket_context_options_t *")
         socket_options = socket_options_ptr[0]
         self.options = options
@@ -1825,13 +1825,13 @@ class App:
         self.error_handler = None
         self._missing_server_handler = None
 
-        if request_response_factory_max_itens and request_response_factory_max_itens >= 1:
-            self._factory = RequestResponseFactory(self, request_response_factory_max_itens)
+        if request_response_factory_max_items and request_response_factory_max_items >= 1:
+            self._factory = RequestResponseFactory(self, request_response_factory_max_items)
         else: 
             self._factory = None
 
-        if websocket_factory_max_itens and websocket_factory_max_itens >= 1:
-            self._ws_factory = WebSocketFactory(self, websocket_factory_max_itens)
+        if websocket_factory_max_items and websocket_factory_max_items >= 1:
+            self._ws_factory = WebSocketFactory(self, websocket_factory_max_items)
         else: 
             self._ws_factory = None
         

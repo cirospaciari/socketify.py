@@ -23,7 +23,7 @@ class SSGIHttpResponse:
             self.res.end(payload)
 
     # send chunk of data, can be used to perform with less backpressure than using send
-    # total_size is the sum of all lenghts in bytes of all chunks to be sended
+    # total_size is the sum of all lengths in bytes of all chunks to be sended
     # connection will end when total_size is met
     # returns tuple(bool, bool) first bool represents if the chunk is succefully sended, the second if the connection has ended
     def send_chunk(self, chunk: Union[bytes, bytearray, memoryview], total_size: int) -> Awaitable:
@@ -86,7 +86,7 @@ class SSGIHttpResponse:
             self._received_queue.put(future, False)
             return future
 
-    # on aborted event, calle when the connection abort
+    # on aborted event, called when the connection abort
     def on_aborted(self, handler: Union[Awaitable, Callable], *arguments):
         def on_aborted(res):
             res.aborted = True

@@ -1,6 +1,6 @@
 # We have an version of this using aiofile and aiofiles
 # This is an sync version without any dependencies is normally much faster in CPython and PyPy3
-# In production we highly recomend to use CDN like CloudFlare or/and NGINX or similar for static files (in any language/framework)
+# In production we highly recommend to use CDN like CloudFlare or/and NGINX or similar for static files (in any language/framework)
 
 # Some performance data from my personal machine (Debian 12/testing, i7-7700HQ, 32GB RAM, Samsung 970 PRO NVME)
 # using oha -c 400 -z 5s http://localhost:3000/
@@ -20,8 +20,8 @@
 # pypy3     - scarlette static uvicorn  -    279.45 req/s
 
 # Conclusions:
-# With PyPy3 only static is really usable gunicorn/uvicorn, aiofiles and aiofile are realy slow on PyPy3 maybe this changes with HPy
-# Python3 with any option will be faster than gunicorn/uvicorn but with PyPy3 with static we got almost 4x (or almost 3x this in case of fastify) performance of node.js
+# With PyPy3 only static is really usable gunicorn/uvicorn, aiofiles and aiofile are really slow on PyPy3 maybe this changes with HPy
+# Python3 with any option will be faster than gunicorn/uvicorn but with PyPy3 with static we got 4x (or almost this in case of fastify) performance of node.js
 # But even PyPy3 + socketify static is 5x+ slower than NGINX
 
 # Anyway we really recommends using NGINX or similar + CDN for production like everybody else

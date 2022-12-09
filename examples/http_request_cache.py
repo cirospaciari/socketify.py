@@ -6,10 +6,10 @@ from helpers.twolevel_cache import TwoLevelCache
 
 # create redis poll + connections
 redis_pool = redis.ConnectionPool(host="localhost", port=6379, db=0)
-redis_conection = redis.Redis(connection_pool=redis_pool)
-# 2 LEVEL CACHE (Redis to share amoung workers, Memory to be much faster)
+redis_connection = redis.Redis(connection_pool=redis_pool)
+# 2 LEVEL CACHE (Redis to share among workers, Memory to be much faster)
 # cache in memory is 30s, cache in redis is 60s duration
-cache = TwoLevelCache(redis_conection, 30, 60)
+cache = TwoLevelCache(redis_connection, 30, 60)
 
 ###
 # Model

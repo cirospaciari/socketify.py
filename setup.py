@@ -62,7 +62,7 @@ setuptools.setup(
     platforms=["any"],
     author="Ciro Spaciari",
     author_email="ciro.spaciari@gmail.com",
-    description="Bringing WebSockets, Http/Https High Peformance servers for PyPy3 and Python3",
+    description="Bringing WebSockets, Http/Https High Performance servers for PyPy3 and Python3",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/cirospaciari/socketify.py",

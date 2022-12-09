@@ -14,7 +14,7 @@ def anything(res, req):
 
 
 def cookies(res, req):
-    # cookies are writen after end
+    # cookies are written after end
     res.set_cookie(
         "spaciari",
         "1234567890",
@@ -72,7 +72,7 @@ def delayed(res, req):
     # queries = req.get_queries()
 
     # tell response to run this in the event loop
-    # abort handler is grabed here, so responses only will be send if res.aborted == False
+    # abort handler is grabbed here, so responses only will be send if res.aborted == False
     res.run_async(delayed_hello(delay, res))
 
 
