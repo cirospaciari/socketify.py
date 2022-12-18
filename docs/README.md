@@ -5,10 +5,15 @@
   <a href="https://github.com/cirospaciari/socketify.py"><img src="https://raw.githubusercontent.com/cirospaciari/socketify.py/main/misc/logo.png" alt="Logo" height=170></a>
   <br />
   <br />
-  <a href="https://github.com/cirospaciari/socketify.py/actions/workflows/macos.yml" target="_blank"><img src="https://github.com/cirospaciari/socketify.py/actions/workflows/macos.yml/badge.svg" /></a>
   <a href="https://github.com/cirospaciari/socketify.py/actions/workflows/linux.yml" target="_blank"><img src="https://github.com/cirospaciari/socketify.py/actions/workflows/linux.yml/badge.svg" /></a>
   <a href="https://github.com/cirospaciari/socketify.py/actions/workflows/windows.yml" target="_blank"><img src="https://github.com/cirospaciari/socketify.py/actions/workflows/windows.yml/badge.svg" /></a>
+<a href="https://github.com/cirospaciari/socketify.py/actions/workflows/macos.yml" target="_blank"><img src="https://github.com/cirospaciari/socketify.py/actions/workflows/macos.yml/badge.svg" /></a>
+  <a href="https://github.com/cirospaciari/socketify.py/actions/workflows/macos_arm64.yml" target="_blank"><img src="https://github.com/cirospaciari/socketify.py/actions/workflows/macos_arm64.yml/badge.svg" /></a>
+  <br/>
+<a href='https://github.com/cirospaciari/socketify.py'><img alt='GitHub Clones' src='https://img.shields.io/badge/dynamic/json?color=success&label=Clones&query=count&url=https://gist.githubusercontent.com/cirospaciari/2243d59951f4abe4fd2000f1e20bc561/raw/clone.json&logo=github'></a>
 <a href="https://github.com/sponsors/cirospaciari/" target="_blank"><img src="https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&link=https://github.com/sponsors/cirospaciari"/></a>
+
+
 </p>
 <br/>
 
@@ -30,4 +35,5 @@ With no precedents websocket performance and an really fast HTTP server that can
 - [GraphiQL](graphiql.md)
 - [WebSockets and Backpressure](websockets-backpressure.md)
 - [SSL](ssl.md)
+- [CLI Reference](cli.md)
 - [API Reference](api.md)

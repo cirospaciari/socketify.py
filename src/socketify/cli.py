@@ -108,7 +108,7 @@ def execute(args):
         if selected_option:
             options[selected_option] = option
             selected_option = None
-        elif option.startswith('--'):
+        elif option.startswith('--') or option.startswith('-'):
             if selected_option is None:
                 selected_option = option
             else: # --factory, --reload etc
