@@ -498,7 +498,7 @@ def asgi(ssl, response, info, user_data, aborted):
 
 class _ASGI:
     def __init__(self, app, options=None, websocket=True, websocket_options=None, task_factory_max_items=100_000):
-        self.server = App(options)
+        self.server = App(options, task_factory_max_items=0)
         self.SERVER_PORT = None
         self.SERVER_HOST = ""
         self.SERVER_SCHEME = "https" if self.server.options else "http"

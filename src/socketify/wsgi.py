@@ -169,7 +169,7 @@ def is_asgi(module):
 
 class _WSGI:
     def __init__(self, app, options=None, websocket=None, websocket_options=None, task_factory_max_items=100_000):
-        self.server = App(options)
+        self.server = App(options, task_factory_max_items=0)
         self.SERVER_HOST = None
         self.SERVER_PORT = None
         self.SERVER_WS_SCHEME = "wss" if self.server.options else "ws"
