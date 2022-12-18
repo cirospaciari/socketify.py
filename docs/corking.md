@@ -1,5 +1,5 @@
 ## Corking
-It is very important to understand the corking mechanism, as that is responsible for efficiently formatting, packing and sending data. Without corking your app will still work reliably, but can perform very bad and use excessive networking. In some cases the performance can be dreadful without proper corking.
+It is very important to understand the corking mechanism, as that is responsible for efficiently formatting, packing and sending data. Corking is packing many sends into one single syscall/SSL block, without corking your app will still work reliably, but can perform very bad and use excessive networking. In some cases the performance can be dreadful without proper corking.
 
 That's why your sockets will be corked by default in most simple cases, including all of the examples provided. However there are cases where default corking cannot happen automatically.
 

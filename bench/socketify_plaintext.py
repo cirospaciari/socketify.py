@@ -1,9 +1,10 @@
 from socketify import App
 import os
 import multiprocessing
+import asyncio
 def run_app():
-    app = App(request_response_factory_max_itens=200_000)
-    def home(res, req):
+    app = App(request_response_factory_max_items=200_000)
+    async def home(res, req):
         res.end("Hello, World!")
         
     app.get("/", home)

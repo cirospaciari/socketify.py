@@ -28,7 +28,7 @@ class SSGIHttpResponse:
         pass
 
     # ensure async call for the handler, passing any arguments to it
-    def run_async(self, handler: Awaitable, *arguments) -> Awaitable:
+    def run_async(self, handler: Awaitable, *arguments):
         pass
 
     # get an all data
@@ -67,7 +67,7 @@ class SSGIWebSocket:
         pass
 
     # ensure async call for the handler, passing any arguments to it
-    def run_async(self, handler: Awaitable, *arguments) -> Awaitable:
+    def run_async(self, handler: Awaitable, *arguments):
         pass
 
     # on receive event, called when the socket disconnect

@@ -12,6 +12,8 @@ Options:
     --port or -p INTEGER                                Bind socket to this port.  [default: 8000]
     --workers or -w INTEGER                             Number of worker processes. Defaults to the WEB_CONCURRENCY 
                                                         environment variable if available, or 1
+        
+    --uds TEXT                                          Bind to a UNIX domain socket, this options disables --host or -h and --port or -p.
     --ws [auto|none|module:ws]                          If informed module:ws will auto detect to use socketify.py or ASGI websockets
                                                         interface and disabled if informed none [default: auto]
     --ws-max-size INTEGER                               WebSocket max size message in bytes [default: 16777216]
@@ -33,21 +35,19 @@ Options:
     --ssl-ciphers TEXT                                  Ciphers to use (see stdlib ssl module's) [default: TLSv1]
     --req-res-factory-maxitems INT                      Pre allocated instances of Response and Request objects for socketify interface [default: 0]
     --ws-factory-maxitems INT                           Pre allocated instances of WebSockets objects for socketify interface [default: 0]
-    
-    --uds TEXT                                          Bind to a UNIX domain socket, this options disables --host or -h and --port or -p.
-    --reload                                            Enable auto-reload. This options also disable --workers or -w option.
-    --reload-dir PATH                                   Set reload directories explicitly, instead of using the current working directory.
-    --reload-include TEXT                               Set extensions to include while watching for files. 
-                                                        Includes '.py,.html,.js,.png,.jpeg,.jpg and .webp' by default; 
-                                                        these defaults can be overridden with `--reload-exclude`. 
-    --reload-exclude TEXT                               Set extensions to include while watching for files. 
-    --reload-delay INT                                  Milliseconds to delay reload between file changes. [default: 1000]
 
 Example:
     python3 -m socketify main:app -w 8 -p 8181 
 
 """
 
+    # --reload                                            Enable auto-reload. This options also disable --workers or -w option.
+    # --reload-dir PATH                                   Set reload directories explicitly, instead of using the current working directory.
+    # --reload-include TEXT                               Set extensions to include while watching for files. 
+    #                                                     Includes '.py,.html,.js,.png,.jpeg,.jpg and .webp' by default; 
+    #                                                     these defaults can be overridden with `--reload-exclude`. 
+    # --reload-exclude TEXT                               Set extensions to include while watching for files. 
+    # --reload-delay INT                                  Milliseconds to delay reload between file changes. [default: 1000]
 def is_wsgi(module):
     return hasattr(module, "__call__") and len(inspect.signature(module).parameters) == 2
 def is_asgi(module):
@@ -108,9 +108,14 @@ def execute(args):
         if selected_option:
             options[selected_option] = option
             selected_option = None
+        elif option.startswith('--'):
+            if selected_option is None:
+                selected_option = option
+            else: # --factory, --reload etc
+                options[selected_option] = True
         else:
-            selected_option = option
-    if selected_option: # --factory
+            return print(f"Invalid option ${selected_option} see --help")
+    if selected_option: # --factory, --reload etc
         options[selected_option] = True
     
     interface = (options.get("--interface", "auto")).lower()
@@ -262,28 +267,7 @@ def execute(args):
             os.kill(pid, signal.SIGINT)
     else:
 
-        # def on_change():
-            # auto_reload
-
-        def create_app():
-            #Generic WSGI, ASGI, SSGI Interface
-            if uds:
-                app = Interface(module,options=ssl_options, websocket=websockets, websocket_options=websocket_options).listen(AppListenOptions(domain=uds), listen_log)
-            else:
-                app = Interface(module,options=ssl_options, websocket=websockets, websocket_options=websocket_options).listen(AppListenOptions(port=port, host=host), listen_log)
-            return app
-
-        
-        if auto_reload:
-            force_reload = False
-            app = None
-
-            while auto_reload:
-                app = create_app()
-                app.run()
-                if not force_reload:
-                    auto_reload = False
-                
+        if uds:
+            Interface(module,options=ssl_options, websocket=websockets, websocket_options=websocket_options).listen(AppListenOptions(domain=uds), listen_log).run(workers=workers)  
         else:
-            app = create_app()
-            app.run(workers=workers)
+            Interface(module,options=ssl_options, websocket=websockets, websocket_options=websocket_options).listen(AppListenOptions(port=port, host=host), listen_log).run(workers=workers)  

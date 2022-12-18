@@ -99,6 +99,25 @@ class AppRequest:
     def is_ancient(self):
     def __del__(self):
 ```
+## AppListenOptions
+```python
+class AppListenOptions:
+    port: int = 0
+    host: str = None
+    options: int = 0
+    domain: str = None
+```
+## AppOptions
+```python
+class AppOptions:
+    key_file_name: str = None,
+    cert_file_name: str = None,
+    passphrase: str = None,
+    dh_params_file_name: str = None,
+    ca_file_name: str = None,
+    ssl_ciphers: str = None,
+    ssl_prefer_low_memory_usage: int = 0
+```
 
 ## WebSockets
 ```python
@@ -179,6 +198,8 @@ class SendStatus(IntEnum):
     SUCCESS = 1
     DROPPED = 2
 ```
+
+
 ## Helpers
 ```python
 async def sendfile(res, req, filename)

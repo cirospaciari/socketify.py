@@ -52,12 +52,17 @@ def uws_websocket_factory_drain_handler(ws, user_data):
         try:
             handler = handlers.drain
             if inspect.iscoroutinefunction(handler):
-                future = app.run_async(handler(ws))
-                if dispose:
-                    def when_finished(_):
-                        app._ws_factory.dispose(instances)
 
-                    future.add_done_callback(when_finished)
+                if dispose:
+                    async def wrapper(app, instances, handler, ws):
+                        try:
+                            await handler(ws)
+                        finally:
+                            app._ws_factory.dispose(instances)
+
+                    app.run_async(wrapper(app, instances, handler, ws))
+                else:
+                    app.run_async(handler(ws))
             else:
                 handler(ws)
                 if dispose:
@@ -95,12 +100,16 @@ def uws_websocket_factory_open_handler(ws, user_data):
         try:
             handler = handlers.open
             if inspect.iscoroutinefunction(handler):
-                future = app.run_async(handler(ws))
                 if dispose:
-                    def when_finished(_):
-                        app._ws_factory.dispose(instances)
+                    async def wrapper(app, instances, handler, ws):
+                        try:
+                            await handler(ws)
+                        finally:
+                            app._ws_factory.dispose(instances)
 
-                    future.add_done_callback(when_finished)
+                    app.run_async(wrapper(app, instances, handler, ws))
+                else:
+                    app.run_async(handler(ws))
             else:
                 handler(ws)
                 if dispose:
@@ -147,12 +156,16 @@ def uws_websocket_factory_message_handler(ws, message, length, opcode, user_data
 
             handler = handlers.message
             if inspect.iscoroutinefunction(handler):
-                future = app.run_async(handler(ws, data, opcode))
                 if dispose:
-                    def when_finished(_):
-                        app._ws_factory.dispose(instances)
+                    async def wrapper(app, instances, handler, ws, data):
+                        try:
+                            await handler(ws, data)
+                        finally:
+                            app._ws_factory.dispose(instances)
 
-                    future.add_done_callback(when_finished)
+                    app.run_async(wrapper(app, instances, handler, ws, data))
+                else:
+                    app.run_async(handler(ws, data))
             else:
                 handler(ws, data, opcode)
                 if dispose:
@@ -206,12 +219,16 @@ def uws_websocket_factory_pong_handler(ws, message, length, user_data):
 
             handler = handlers.pong
             if inspect.iscoroutinefunction(handler):
-                future = app.run_async(handler(ws, data))
                 if dispose:
-                    def when_finished(_):
-                        app._ws_factory.dispose(instances)
+                    async def wrapper(app, instances, handler, ws, data):
+                        try:
+                            await handler(ws, data)
+                        finally:
+                            app._ws_factory.dispose(instances)
 
-                    future.add_done_callback(when_finished)
+                    app.run_async(wrapper(app, instances, handler, ws, data))
+                else:
+                    app.run_async(handler(ws, data))
             else:
                 handler(ws, data)
                 if dispose:
@@ -260,12 +277,16 @@ def uws_websocket_factory_ping_handler(ws, message, length, user_data):
 
             handler = handlers.ping
             if inspect.iscoroutinefunction(handler):
-                future = app.run_async(handler(ws, data))
                 if dispose:
-                    def when_finished(_):
-                        app._ws_factory.dispose(instances)
+                    async def wrapper(app, instances, handler, ws, data):
+                        try:
+                            await handler(ws, data)
+                        finally:
+                            app._ws_factory.dispose(instances)
 
-                    future.add_done_callback(when_finished)
+                    app.run_async(wrapper(app, instances, handler, ws, data))
+                else:
+                    app.run_async(handler(ws, data))
             else:
                 handler(ws, data)
                 if dispose:
@@ -323,21 +344,22 @@ def uws_websocket_factory_close_handler(ws, code, message, length, user_data):
                 return
 
             if inspect.iscoroutinefunction(handler):
-                future = app.run_async(handler(ws, int(code), data))
+                async def wrapper(app, instances, handler, ws, data, code, dispose):
+                    try:
+                        await handler(ws, code, data)
+                    finally:
+                        key = ws.get_user_data_uuid()
+                        if key is not None:
+                            app._socket_refs.pop(key, None)
+                        if dispose:
+                            app._ws_factory.dispose(instances)
 
-                def when_finished(_):
-                    key = ws.get_user_data_uuid()
-                    if key is not None:
-                        SocketRefs.pop(key, None)
-                    if dispose:
-                        app._ws_factory.dispose(instances)
-
-                future.add_done_callback(when_finished)
+                app.run_async(wrapper(app, instances, handler, ws, data, int(code), dispose))
             else:
                 handler(ws, int(code), data)
                 key = ws.get_user_data_uuid()
                 if key is not None:
-                    SocketRefs.pop(key, None)
+                    app._socket_refs.pop(key, None)
                 if dispose:
                     app._ws_factory.dispose(instances)
 
@@ -365,19 +387,20 @@ def uws_websocket_close_handler(ws, code, message, length, user_data):
                 return
 
             if inspect.iscoroutinefunction(handler):
-                future = app.run_async(handler(ws, int(code), data))
-
-                def when_finished(_):
-                    key = ws.get_user_data_uuid()
-                    if key is not None:
-                        SocketRefs.pop(key, None)
-
-                future.add_done_callback(when_finished)
+                async def wrapper(app, handler, ws, data, code, dispose):
+                    try:
+                        await handler(ws, code, data)
+                    finally:
+                        key = ws.get_user_data_uuid()
+                        if key is not None:
+                            app._socket_refs.pop(key, None)
+                
+                app.run_async(wrapper(app, handler, ws, data, int(code)))
             else:
                 handler(ws, int(code), data)
                 key = ws.get_user_data_uuid()
                 if key is not None:
-                    SocketRefs.pop(key, None)
+                    app._socket_refs.pop(key, None)
 
         except Exception as err:
             logging.error(
@@ -394,12 +417,16 @@ def uws_generic_factory_method_handler(res, req, user_data):
         try:
             if inspect.iscoroutinefunction(handler):
                 response.grab_aborted_handler()
-                future = response.run_async(handler(response, request))
                 if dispose:
-                    def when_finished(_):
-                        app._factory.dispose(instances)
+                    async def wrapper(app, instances, handler, response, request):
+                      try:
+                          await handler(response, request)
+                      finally:
+                          app._factory.dispose(instances)
 
-                    future.add_done_callback(when_finished)
+                    response.run_async(wrapper(app, instances, handler, response, request))
+                else:
+                    response.run_async(handler(response, request))
             else:
                 handler(response, request)
                 if dispose:
@@ -421,12 +448,17 @@ def uws_websocket_factory_upgrade_handler(res, req, context, user_data):
             handler = handlers.upgrade
        
             if inspect.iscoroutinefunction(handler):
-                future = response.run_async(handler(response, request, context))
+                response.grab_aborted_handler()
                 if dispose:
-                    def when_finished(_):
-                        app._factory.dispose(instances)
+                    async def wrapper(app, instances, handler, response, request, context):
+                      try:
+                          await handler(response, request, context)
+                      finally:
+                          app._factadd_done_callbackory.dispose(instances)
 
-                    future.add_done_callback(when_finished)
+                    response.run_async(wrapper(app, instances, handler, response, request, context))
+                else:
+                    response.run_async(handler(response, request, context))
             else:
                 handler(response, request, context)
                 if dispose:
@@ -490,12 +522,17 @@ def uws_generic_factory_method_handler(res, req, user_data):
         try:
             if inspect.iscoroutinefunction(handler):
                 response.grab_aborted_handler()
-                future = response.run_async(handler(response, request))
+                response.grab_aborted_handler()
                 if dispose:
-                    def when_finished(_):
-                        app._factory.dispose(instances)
+                    async def wrapper(app, instances, handler, response, request):
+                      try:
+                          await handler(response, request)
+                      finally:
+                          app._factory.dispose(instances)
 
-                    future.add_done_callback(when_finished)
+                    response.run_async(wrapper(app, instances, handler, response, request))
+                else:
+                    response.run_async(handler(response, request))
             else:
                 handler(response, request)
                 if dispose:
@@ -669,10 +706,6 @@ class SendStatus(IntEnum):
     BACKPRESSURE = 0
     SUCCESS = 1
     DROPPED = 2
-
-
-# dict to keep socket data alive until closed if needed
-SocketRefs = {}
 
 
 class WebSocket:
@@ -1150,6 +1183,9 @@ class AppRequest:
         return self._headers
 
     def get_header(self, lower_case_header):
+        if self._headers is not None:
+            return self._headers.get(lower_case_header, None)
+
         if isinstance(lower_case_header, str):
             data = lower_case_header.encode("utf-8")
         elif isinstance(lower_case_header, bytes):
@@ -1763,11 +1799,13 @@ class AppResponse:
 
 
 class App:
-    def __init__(self, options=None, request_response_factory_max_items=0, websocket_factory_max_items=0):
+    def __init__(self, options=None, request_response_factory_max_items=0, websocket_factory_max_items=0, task_factory_max_items=100_000):
         socket_options_ptr = ffi.new("struct us_socket_context_options_t *")
         socket_options = socket_options_ptr[0]
         self.options = options
         self._template = None
+        # keep socket data alive for CFFI
+        self._socket_refs = {}
         if options is not None:
             self.is_ssl = True
             self.SSL = ffi.cast("int", 1)
@@ -1810,7 +1848,8 @@ class App:
         
 
         self.loop = Loop(
-            lambda loop, context, response: self.trigger_error(context, response, None)
+            lambda loop, context, response: self.trigger_error(context, response, None),
+            task_factory_max_items
         )
 
         # set async loop to be the last created (is thread_local), App must be one per thread otherwise will use only the lasted loop

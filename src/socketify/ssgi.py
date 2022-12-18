@@ -187,8 +187,8 @@ class SSGIWebSocket:
         self._close_handler = on_close_handler
 
 class SSGI:
-    def __init__(self, app, options=None, request_response_factory_max_itens=0, websocket_factory_max_itens=0):
-        self.server = App(options, request_response_factory_max_itens, websocket_factory_max_itens) 
+    def __init__(self, app, options=None, request_response_factory_max_items=0, websocket_factory_max_itens=0):
+        self.server = App(options, request_response_factory_max_items, websocket_factory_max_itens) 
         self.SERVER_PORT = None
         self.SERVER_HOST = ''
         self.SERVER_SCHEME = 'https' if self.server.options else 'http'
