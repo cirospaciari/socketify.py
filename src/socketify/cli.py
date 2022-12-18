@@ -20,7 +20,7 @@ Options:
     --ws-auto-ping BOOLEAN                              WebSocket auto ping sending  [default: True]
     --ws-idle-timeout INT                               WebSocket idle timeout  [default: 20]
     --ws-reset-idle-on-send BOOLEAN                     Reset WebSocket idle timeout on send [default: True]
-    --ws-per-message-deflate BOOLEAN                    WebSocket per-message-deflate compression [default: True]
+    --ws-per-message-deflate BOOLEAN                    WebSocket per-message-deflate compression [default: False]
     --ws-max-lifetime INT                               Websocket maximum socket lifetime in seconds before forced closure, 0 to disable [default: 0]
     --ws-max-backpressure INT                           WebSocket maximum backpressure in bytes [default: 16777216]
     --ws-close-on-backpressure-limit BOOLEAN            Close connections that hits maximum backpressure [default: False]
@@ -35,6 +35,7 @@ Options:
     --ssl-ciphers TEXT                                  Ciphers to use (see stdlib ssl module's) [default: TLSv1]
     --req-res-factory-maxitems INT                      Pre allocated instances of Response and Request objects for socketify interface [default: 0]
     --ws-factory-maxitems INT                           Pre allocated instances of WebSockets objects for socketify interface [default: 0]
+    --task-factory-maxitems INT                         Pre allocated instances of Task objects for socketify, ASGI interface [default: 100000]
 
 Example:
     python3 -m socketify main:app -w 8 -p 8181 
@@ -64,7 +65,7 @@ def is_factory(module):
     return hasattr(module, "__call__") and len(inspect.signature(module).parameters) == 0
 
 def str_bool(text):
-    text = text.lower()
+    text = str(text).lower()
     return text == "true"
      
 def load_module(file, reload=False):
@@ -166,7 +167,7 @@ def execute(args):
     port = int(options.get("--port", options.get("-p", 8000)))
     host = options.get("--host", options.get("-h", "127.0.0.1"))
     uds = options.get('--uds', None)
-    
+    task_factory_maxitems = int(options.get("--task-factory-maxitems", 100000))
     
     disable_listen_log = options.get("--disable-listen-log", False)
     websockets = options.get("--ws", "auto")
@@ -213,7 +214,7 @@ def execute(args):
 
     if websockets:
         websocket_options = {
-            'compression': int(1 if options.get('--ws-per-message-deflate', True) else 0),
+            'compression': int(1 if options.get('--ws-per-message-deflate', False) else 0),
             'max_payload_length': int(options.get('--ws-max-size', 16777216)),
             'idle_timeout': int(options.get('--ws-idle-timeout', 20)),
             'send_pings_automatically': str_bool(options.get('--ws-auto-ping', True)),
@@ -236,7 +237,7 @@ def execute(args):
             return print("socketify interface must be callable with 1 parameter def run(app: App)")
         # run app with the settings desired
         def run_app():
-            fork_app = App(ssl_options, int(options.get("--req-res-factory-maxitems", 0)), int(options.get("--ws-factory-maxitems", 0)))
+            fork_app = App(ssl_options, int(options.get("--req-res-factory-maxitems", 0)), int(options.get("--ws-factory-maxitems", 0)), task_factory_maxitems)
             module(fork_app) # call module factory
 
             if websockets: # if socketify websockets are added using --ws in socketify interface we can set here
@@ -268,6 +269,6 @@ def execute(args):
     else:
 
         if uds:
-            Interface(module,options=ssl_options, websocket=websockets, websocket_options=websocket_options).listen(AppListenOptions(domain=uds), listen_log).run(workers=workers)  
+            Interface(module,options=ssl_options, websocket=websockets, websocket_options=websocket_options, task_factory_max_items=task_factory_maxitems).listen(AppListenOptions(domain=uds), listen_log).run(workers=workers)  
         else:
-            Interface(module,options=ssl_options, websocket=websockets, websocket_options=websocket_options).listen(AppListenOptions(port=port, host=host), listen_log).run(workers=workers)  
+            Interface(module,options=ssl_options, websocket=websockets, websocket_options=websocket_options, task_factory_max_items=task_factory_maxitems).listen(AppListenOptions(port=port, host=host), listen_log).run(workers=workers)  

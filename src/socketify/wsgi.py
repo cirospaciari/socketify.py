@@ -4,7 +4,10 @@ from socketify import App
 from .asgi import ws_close, ws_upgrade, ws_open, ws_message
 from io import BytesIO
 from .native import lib, ffi
-
+import platform
+is_pypy = platform.python_implementation() == "PyPy"
+from .tasks import create_task, create_task_with_factory
+import sys
 
 @ffi.callback("void(uws_res_t*, const char*, size_t, bool, void*)")
 def wsgi_on_data_handler(res, chunk, chunk_length, is_end, user_data):
@@ -124,7 +127,7 @@ def wsgi(ssl, response, info, user_data, aborted):
                 return
 
             ssl = data_response.app.server.SSL
-            app_iter = data_response.app.app(
+            app_iter = data_response.app.wsgi(
                 data_response.environ, data_response.start_response
             )
             try:
@@ -148,7 +151,7 @@ def wsgi(ssl, response, info, user_data, aborted):
         lib.uws_res_on_data(ssl, response, wsgi_on_data_handler, data_response._ptr)
     else:
         environ["wsgi.input"] = None
-        app_iter = app.app(environ, start_response)
+        app_iter = app.wsgi(environ, start_response)
         try:
             for data in app_iter:
                 if isinstance(data, bytes):
@@ -161,14 +164,16 @@ def wsgi(ssl, response, info, user_data, aborted):
                 app_iter.close()
         lib.uws_res_end_without_body(ssl, response, 0)
 
+def is_asgi(module):
+    return hasattr(module, "__call__") and len(inspect.signature(module).parameters) == 3
 
 class _WSGI:
-    def __init__(self, app, options=None, websocket=None, websocket_options=None):
+    def __init__(self, app, options=None, websocket=None, websocket_options=None, task_factory_max_items=100_000):
         self.server = App(options)
         self.SERVER_HOST = None
         self.SERVER_PORT = None
         self.SERVER_WS_SCHEME = "wss" if self.server.options else "ws"
-        self.app = app
+        self.wsgi = app
         self.BASIC_ENVIRON = dict(os.environ)
         self.ws_compression = False
 
@@ -177,12 +182,43 @@ class _WSGI:
             self.server.SSL, self.server.app, wsgi, self._ptr
         )
         self.asgi_ws_info = None
+        
         if isinstance(websocket, dict):  # serve websocket as socketify.py
             if websocket_options:
                 websocket.update(websocket_options)
 
             self.server.ws("/*", websocket)
-        elif inspect.iscoroutine(websocket):
+        elif is_asgi(websocket):
+            self.app = websocket # set ASGI app
+            loop = self.server.loop.loop
+            # ASGI do not use app.run_async to not add any overhead from socketify.py WebFramework
+            # internally will still use custom task factory for pypy because of Loop
+            if is_pypy:
+                if task_factory_max_items > 0:
+                    factory = create_task_with_factory(task_factory_max_items)
+                    
+                    def run_task(task):
+                        factory(loop, task)
+                        loop._run_once()
+                    self._run_task = run_task
+                else:
+                    def run_task(task):
+                        create_task(loop, task)
+                        loop._run_once()
+                    self._run_task = run_task
+                
+            else:
+                if sys.version_info >= (3, 8): # name fixed to avoid dynamic name
+                    def run_task(task):
+                        loop.create_task(task, name='socketify.py-request-task')
+                        loop._run_once()
+                    self._run_task = run_task
+                else:
+                    def run_task(task):
+                        loop.create_task(task)
+                        loop._run_once()
+                    self._run_task = run_task
+                
             # detect ASGI to use as WebSocket as mixed protocol
             native_options = ffi.new("uws_socket_behavior_t *")
             native_behavior = native_options[0]
@@ -228,6 +264,7 @@ class _WSGI:
             native_behavior.ping = ffi.NULL
             native_behavior.pong = ffi.NULL
             native_behavior.close = ws_close
+            
 
             self.asgi_ws_info = lib.socketify_add_asgi_ws_handler(
                 self.server.SSL, self.server.app, native_behavior, ws_upgrade, self._ptr
@@ -276,12 +313,13 @@ class _WSGI:
 
 # "Public" WSGI interface to allow easy forks/workers
 class WSGI:
-    def __init__(self, app, options=None, websocket=None, websocket_options=None):
+    def __init__(self, app, options=None, websocket=None, websocket_options=None, task_factory_max_items=100_000):
         self.app = app
         self.options = options
         self.websocket = websocket
         self.websocket_options = websocket_options
         self.listen_options = None
+        self.task_factory_max_items = task_factory_max_items
 
     def listen(self, port_or_options, handler=None):
         self.listen_options = (port_or_options, handler)
@@ -290,7 +328,7 @@ class WSGI:
     def run(self, workers=1):
         def run_app():
             server = _WSGI(
-                self.app, self.options, self.websocket, self.websocket_options
+                self.app, self.options, self.websocket, self.websocket_options, self.task_factory_max_items
             )
             if self.listen_options:
                 (port_or_options, handler) = self.listen_options

@@ -346,7 +346,7 @@ def uws_websocket_factory_close_handler(ws, code, message, length, user_data):
             if inspect.iscoroutinefunction(handler):
                 async def wrapper(app, instances, handler, ws, data, code, dispose):
                     try:
-                        await handler(ws, code, data)
+                        return await handler(ws, code, data)
                     finally:
                         key = ws.get_user_data_uuid()
                         if key is not None:
@@ -389,7 +389,7 @@ def uws_websocket_close_handler(ws, code, message, length, user_data):
             if inspect.iscoroutinefunction(handler):
                 async def wrapper(app, handler, ws, data, code, dispose):
                     try:
-                        await handler(ws, code, data)
+                        return await handler(ws, code, data)
                     finally:
                         key = ws.get_user_data_uuid()
                         if key is not None:
@@ -473,7 +473,7 @@ def uws_websocket_factory_upgrade_handler(res, req, context, user_data):
 def uws_websocket_upgrade_handler(res, req, context, user_data):
     if user_data != ffi.NULL:
         handlers, app = ffi.from_handle(user_data)
-        response = AppResponse(res, app.loop, app.SSL, app._template)
+        response = AppResponse(res, app.loop, app.SSL, app._template, app._socket_refs)
         request = AppRequest(req)
         try:
             handler = handlers.upgrade
@@ -548,7 +548,7 @@ def uws_generic_factory_method_handler(res, req, user_data):
 def uws_generic_method_handler(res, req, user_data):
     if user_data != ffi.NULL:
         (handler, app) = ffi.from_handle(user_data)
-        response = AppResponse(res, app.loop, app.SSL, app._template)
+        response = AppResponse(res, app.loop, app.SSL, app._template, app._socket_refs)
         request = AppRequest(req)
             
         try:
@@ -1039,13 +1039,13 @@ class RequestResponseFactory:
     def __init__(self, app, max_size):
         self.factory_queue = []        
         for _ in range(0, max_size):
-            response = AppResponse(None, app.loop, app.SSL, app._template)
+            response = AppResponse(None, app.loop, app.SSL, app._template, app._socket_refs)
             request =  AppRequest(None)
             self.factory_queue.append((response, request, True))
 
     def get(self, app, res, req):
         if len(self.factory_queue) == 0:
-            response = AppResponse(res, app.loop, app.SSL, app._template)
+            response = AppResponse(res, app.loop, app.SSL, app._template, app._socket_refs)
             request =  AppRequest(req)
             return response, request, False
 
@@ -1310,9 +1310,10 @@ class AppRequest:
 
 
 class AppResponse:
-    def __init__(self, response, loop, ssl, render=None):
+    def __init__(self, response, loop, ssl, render, socket_refs):
         self.res = response
         self.SSL = ssl
+        self._socket_refs = socket_refs
         self.aborted = False
         self.loop = loop
         self._aborted_handler = None
@@ -1764,7 +1765,7 @@ class AppResponse:
             _id = uuid.uuid4()
             user_data_ptr = ffi.new_handle((user_data, _id))
             # keep alive data
-            SocketRefs[_id] = user_data_ptr
+            self._socket_refs[_id] = user_data_ptr
 
         lib.uws_res_upgrade(
             self.SSL,

@@ -83,13 +83,17 @@ class UVLoop:
             self._loop = ffi.NULL
 
     def run_nowait(self):
-        return lib.socketify_loop_run(self._loop, lib.SOCKETIFY_RUN_NOWAIT)
+        if self._loop != ffi.NULL:
+            return lib.socketify_loop_run(self._loop, lib.SOCKETIFY_RUN_NOWAIT)
         
     def run(self):
-        return lib.socketify_loop_run(self._loop, lib.SOCKETIFY_RUN_DEFAULT)
+        if self._loop != ffi.NULL:
+            return lib.socketify_loop_run(self._loop, lib.SOCKETIFY_RUN_DEFAULT)
 
     def run_once(self):
-        return lib.socketify_loop_run(self._loop, lib.SOCKETIFY_RUN_ONCE)
+        if self._loop != ffi.NULL:
+            return lib.socketify_loop_run(self._loop, lib.SOCKETIFY_RUN_ONCE)
 
     def stop(self):
-        lib.socketify_loop_stop(self._loop)
+        if self._loop != ffi.NULL:
+            lib.socketify_loop_stop(self._loop)

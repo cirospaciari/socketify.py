@@ -22,6 +22,8 @@ class SomeResource:
 
 
 app = falcon.asgi.App()
+app.ws_options.max_receive_queue = 20_000_000 # this virtual disables queue but adds overhead
+app.ws_options.enable_buffered_receiver = False # this disable queue but for now only available on cirospaciari/falcon
 app.add_route("/", SomeResource())
 # python3 -m gunicorn falcon_server:app -b 127.0.0.1:4001 -w 1 -k uvicorn.workers.UvicornWorker
 # pypy3 -m gunicorn falcon_server:app -b 127.0.0.1:4001 -w 1 -k uvicorn.workers.UvicornH11Worker

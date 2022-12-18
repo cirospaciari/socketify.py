@@ -1,12 +1,22 @@
-from socketify import App, CompressOptions, OpCode
+from socketify import App, OpCode
 from queue import SimpleQueue
 from .native import lib, ffi
 from .tasks import create_task, create_task_with_factory
 import os
 import platform
 import sys 
-
+import logging
+import uuid
 is_pypy = platform.python_implementation() == "PyPy"
+async def task_wrapper(task):
+    try:
+        return await task
+    except Exception as error:
+        try:
+            # just log in console the error to call attention
+            logging.error("Uncaught Exception: %s" % str(error))
+        finally:
+            return None
 
 EMPTY_RESPONSE = {"type": "http.request", "body": b"", "more_body": False}
 
@@ -19,7 +29,7 @@ def ws_message(ws, message, length, opcode, user_data):
         message = message.decode("utf8")
 
     socket_data.message(ws, message, OpCode(opcode))
-
+    
 
 @ffi.callback("void(uws_websocket_t*, int, const char*, size_t, void*)")
 def ws_close(ws, code, message, length, user_data):
@@ -68,6 +78,7 @@ def ws_upgrade(ssl, response, info, socket_context, user_data, aborted):
         extensions = ffi.unpack(info.extensions, info.extensions_size).decode("utf8")
     compress = app.ws_compression
     ws = ASGIWebSocket(app.server.loop)
+    
     scope = {
         "type": "websocket",
         "asgi": {"version": "3.0", "spec_version": "2.3"},
@@ -107,12 +118,12 @@ def ws_upgrade(ssl, response, info, socket_context, user_data, aborted):
                         len(data),
                         int(OpCode.BINARY),
                         int(compress),
-                        0,
+                        1,
                     )
                 else:
                     data = options.get("text", "").encode("utf8")
                     lib.socketify_ws_cork_send_with_options(
-                        ssl, ws.ws, data, len(data), int(OpCode.TEXT), int(compress), 0
+                        ssl, ws.ws, data, len(data), int(OpCode.TEXT), int(compress), 1
                     )
                 return True
             return False
@@ -147,7 +158,12 @@ def ws_upgrade(ssl, response, info, socket_context, user_data, aborted):
                 sec_web_socket_extensions_data = extensions
             else:
                 sec_web_socket_extensions_data = b""
-
+            _id = uuid.uuid4()
+            
+            app.server._socket_refs[_id] = ws
+            def unregister():
+                app.server._socket_refs.pop(_id, None)
+            ws.unregister = unregister
             lib.uws_res_upgrade(
                 ssl,
                 response,
@@ -249,6 +265,7 @@ class ASGIWebSocket:
         self._code = None
         self._message = None
         self._ptr = ffi.new_handle(self)
+        self.unregister = None
 
     def accept(self):
         self.accept_future = self.loop.create_future()
@@ -287,6 +304,8 @@ class ASGIWebSocket:
             future.set_result(
                 {"type": "websocket.disconnect", "code": code, "message": message}
             )
+        if self.unregister is not None:
+            self.unregister()
 
     def message(self, ws, value, opcode):
         self.ws = ws
@@ -478,7 +497,7 @@ def asgi(ssl, response, info, user_data, aborted):
     
 
 class _ASGI:
-    def __init__(self, app, options=None, websocket=True, websocket_options=None, task_factory_max_items=0):
+    def __init__(self, app, options=None, websocket=True, websocket_options=None, task_factory_max_items=100_000):
         self.server = App(options)
         self.SERVER_PORT = None
         self.SERVER_HOST = ""
@@ -493,24 +512,26 @@ class _ASGI:
                 factory = create_task_with_factory(task_factory_max_items)
                 
                 def run_task(task):
-                    factory(loop, task)
+                    factory(loop, task_wrapper(task))
                     loop._run_once()
                 self._run_task = run_task
             else:
                 def run_task(task):
-                    create_task(loop, task)
+                    create_task(loop, task_wrapper(task))
                     loop._run_once()
                 self._run_task = run_task
             
         else:
             if sys.version_info >= (3, 8): # name fixed to avoid dynamic name
                 def run_task(task):
-                    loop.create_task(task, name='socketify.py-request-task')
+                    future = loop.create_task(task_wrapper(task), name='socketify.py-request-task')
+                    future._log_destroy_pending = False
                     loop._run_once()
                 self._run_task = run_task
             else:
                 def run_task(task):
-                    loop.create_task(task)
+                    future = loop.create_task(task_wrapper(task))
+                    future._log_destroy_pending = False
                     loop._run_once()
                 self._run_task = run_task
             
