@@ -1549,7 +1549,10 @@ class AppResponse:
 
     def render(self, *args, **kwargs):
         if self._render:
-            self.cork_end(self._render.render(*args, **kwargs))
+            def render(res):
+                res.write_header(b'Content-Type', b'text/html')
+                res.end(self._render.render(*args, **kwargs))
+            self.cork(render)
             return self
         raise RuntimeError("No registered templated engine")
 
