@@ -55,26 +55,29 @@ We created and adapted the full C API from [uNetworking/uWebSockets](https://git
 Join Github [`Discussions`](https://github.com/cirospaciari/socketify.py/discussions) or [`Discord`](https://discord.socketify.dev/) for help and have a look at the development progress.
 
 ## :zap: Benchmarks
-HTTP requests per second (Linux x64)
+Socketify WebFramework HTTP requests per second (Linux x64)
 
-![image](https://raw.githubusercontent.com/cirospaciari/socketify.py/main/misc/bench-bar-graph.svg)
+![image](https://raw.githubusercontent.com/cirospaciari/socketify.py/main/misc/bench-bar-graph-general.png)
+
+WSGI Server requests per second (Linux x64)
+
+![image](https://raw.githubusercontent.com/cirospaciari/socketify.py/main/misc/bench-bar-graph-wsgi.png)
+
+ASGI Server requests per second (Linux x64)
+
+![image](https://raw.githubusercontent.com/cirospaciari/socketify.py/main/misc/bench-bar-graph-asgi.png)
 
 WebSocket messages per second (Linux x64)
 
-![image](https://raw.githubusercontent.com/cirospaciari/socketify.py/main/misc/ws-bar-graph.svg)
+![image](https://raw.githubusercontent.com/cirospaciari/socketify.py/main/misc/bench-bar-graph-ws.png)
 
 
-Socketify got almost 900k messages/s with PyPy3 and 860k with Python3 the same performance as [Bun](https://bun.sh) that also uses uWebSockets, Falcon at 35k messages/s and Falcon with PyPy3 improves into 56k messages/s, node.js manages 192k.
-
-Runtime versions: PyPy3 7.3.9, Python 3.10.7, node v16.17.0, bun v0.2.2<br/>
-Framework versions: gunicorn 20.1.0 + uvicorn 0.19.0, socketify alpha, gunicorn 20.1.0 + falcon 3.1.0, robyn 0.18.3<br/>
-Http tested with oha -c 40 -z 5s http://localhost:8000/ (1 run for warm-up and 3 runs average for testing)<br/>
+Http tested with TFB tool plaintext benchmark<br/>
 WebSocket tested with [Bun.sh](https://bun.sh) bench chat-client <br/>
-Source code in [bench](https://github.com/cirospaciari/socketify.py/tree/main/bench)<br/>
+Source code in [bench](https://github.com/cirospaciari/socketify.py/tree/main/bench) and in [TechEmPower](https://github.com/TechEmpower/FrameworkBenchmarks)<br/>
 
 Machine OS: Debian GNU/Linux bookworm/sid x86_64 Kernel: 6.0.0-2-amd64 CPU: Intel i7-7700HQ (8) @ 3.800GHz Memory: 32066MiB 
 
-> Today socketify has get 30% performance hit due to workarounds between asyncio + libuv, so we will got even faster! See more info in [this issue](https://github.com/cirospaciari/socketify.py/issues/18), Python3 and PyPy3 performance will improve when we migrate to [HPy](https://github.com/cirospaciari/socketify.py/issues/16). In TechEmPower paintext benchmarks we are the fastest in active web framework for Python/PyPy with more than 2 millions of req/s, followed by [Robyn](https://github.com/sansyrox/robyn) with almost 1.2 million req/s and [Falcon](https://github.com/falconry/falcon/tree/master/falcon) using meinheld with about 560k req/s.
 ## 📦 Installation
 For macOS x64 & Silicon, Linux x64, Windows
 
