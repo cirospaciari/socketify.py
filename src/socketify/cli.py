@@ -1,5 +1,6 @@
 import inspect
 import os
+import logging
 from . import App, AppOptions, AppListenOptions
 help = """
 Usage: python -m socketify APP [OPTIONS] 
@@ -81,7 +82,8 @@ def load_module(file, reload=False):
         if is_factory(module):
             app = app()
         return app
-    except:
+    except Exception as error:
+        logging.exception(error)
         return None
 def execute(args):
     arguments_length = len(args)

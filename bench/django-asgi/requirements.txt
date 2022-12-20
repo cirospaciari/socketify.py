@@ -1,0 +1,2 @@
+django==4.1.4
+git+https://github.com/cirospaciari/socketify.py.git@main#socketify
