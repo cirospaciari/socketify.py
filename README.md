@@ -69,7 +69,7 @@ ASGI Server requests per second (Linux x64)
 
 WebSocket messages per second (Linux x64)
 
-![image](https://raw.githubusercontent.com/cirospaciari/socketify.py/main/misc/bech-bar-graph-ws.png)
+![image](https://raw.githubusercontent.com/cirospaciari/socketify.py/main/misc/bench-bar-graph-websockets.png)
 
 
 Http tested with TFB tool plaintext benchmark<br/>
