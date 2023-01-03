@@ -498,13 +498,15 @@ def asgi(ssl, response, info, user_data, aborted):
     
 
 class _ASGI:
-    def __init__(self, app, options=None, websocket=True, websocket_options=None, task_factory_max_items=100_000):
+    def __init__(self, app, options=None, websocket=True, websocket_options=None, task_factory_max_items=100_000, lifespan=True):
         self.server = App(options, task_factory_max_items=0)
         self.SERVER_PORT = None
         self.SERVER_HOST = ""
         self.SERVER_SCHEME = "https" if self.server.options else "http"
         self.SERVER_WS_SCHEME = "wss" if self.server.options else "ws"
         self.task_factory_max_items = task_factory_max_items
+        self.lifespan = lifespan
+
         loop = self.server.loop.loop
         # ASGI do not use app.run_async to not add any overhead from socketify.py WebFramework
         # internally will still use custom task factory for pypy because of Loop
@@ -614,6 +616,11 @@ class _ASGI:
         return self
 
     def run(self):
+        if not self.lifespan:
+            print("No lifespan!")
+            self.server.run()  
+            return self
+
         scope = {"type": "lifespan", "asgi": {"version": "3.0", "spec_version": "2.3"}}
         
         lifespan_loop = Loop(lambda loop, error, response:  logging.error("Uncaught Exception: %s" % str(error)))
@@ -712,6 +719,7 @@ class ASGI:
         websocket=True,
         websocket_options=None,
         task_factory_max_items=100_000, #default = 100k = +20mib in memory
+        lifespan=True
     ):
         self.app = app
         self.options = options
@@ -719,6 +727,7 @@ class ASGI:
         self.websocket_options = websocket_options
         self.listen_options = None
         self.task_factory_max_items = task_factory_max_items
+        self.lifespan = lifespan
 
     def listen(self, port_or_options, handler=None):
         self.listen_options = (port_or_options, handler)

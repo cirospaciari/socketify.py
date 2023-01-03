@@ -313,13 +313,14 @@ class _WSGI:
 
 # "Public" WSGI interface to allow easy forks/workers
 class WSGI:
-    def __init__(self, app, options=None, websocket=None, websocket_options=None, task_factory_max_items=100_000):
+    def __init__(self, app, options=None, websocket=None, websocket_options=None, task_factory_max_items=100_000, lifespan=False):
         self.app = app
         self.options = options
         self.websocket = websocket
         self.websocket_options = websocket_options
         self.listen_options = None
         self.task_factory_max_items = task_factory_max_items
+        # lifespan is not supported in WSGI
 
     def listen(self, port_or_options, handler=None):
         self.listen_options = (port_or_options, handler)

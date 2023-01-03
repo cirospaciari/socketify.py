@@ -591,6 +591,11 @@ def uws_generic_listen_handler(listen_socket, config, user_data):
         config.port = lib.us_socket_local_port(app.SSL, listen_socket)
         if hasattr(app, "_listen_handler") and hasattr(app._listen_handler, "__call__"):
             app.socket = listen_socket
+            host = ""
+            try:
+                host = ffi.string(config.host).decode("utf8")
+            except:
+                pass
             app._listen_handler(
                 None
                 
@@ -599,7 +604,7 @@ def uws_generic_listen_handler(listen_socket, config, user_data):
                     port=int(config.port),
                     host=None
                     if config.host == ffi.NULL or listen_socket == ffi.NULL
-                    else ffi.string(config.host).decode("utf8"),
+                    else host,
                     options=int(config.options),
                 )
             )

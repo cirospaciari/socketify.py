@@ -169,6 +169,9 @@ def execute(args):
     port = int(options.get("--port", options.get("-p", 8000)))
     host = options.get("--host", options.get("-h", "127.0.0.1"))
     uds = options.get('--uds', None)
+    lifespan = options.get('--lifespan', "auto")
+    lifespan=False if lifespan == "off" or lifespan is not True else True
+    
     task_factory_maxitems = int(options.get("--task-factory-maxitems", 100000))
     
     disable_listen_log = options.get("--disable-listen-log", False)
@@ -239,6 +242,7 @@ def execute(args):
             return print("socketify interface must be callable with 1 parameter def run(app: App)")
         # run app with the settings desired
         def run_app():
+            # Add lifespan when lifespan hooks are implemented
             fork_app = App(ssl_options, int(options.get("--req-res-factory-maxitems", 0)), int(options.get("--ws-factory-maxitems", 0)), task_factory_maxitems)
             module(fork_app) # call module factory
 
@@ -271,6 +275,6 @@ def execute(args):
     else:
 
         if uds:
-            Interface(module,options=ssl_options, websocket=websockets, websocket_options=websocket_options, task_factory_max_items=task_factory_maxitems).listen(AppListenOptions(domain=uds), listen_log).run(workers=workers)  
+            Interface(module,options=ssl_options, websocket=websockets, websocket_options=websocket_options, task_factory_max_items=task_factory_maxitems, lifespan=lifespan).listen(AppListenOptions(domain=uds), listen_log).run(workers=workers)  
         else:
-            Interface(module,options=ssl_options, websocket=websockets, websocket_options=websocket_options, task_factory_max_items=task_factory_maxitems).listen(AppListenOptions(port=port, host=host), listen_log).run(workers=workers)  
+            Interface(module,options=ssl_options, websocket=websockets, websocket_options=websocket_options, task_factory_max_items=task_factory_maxitems, lifespan=lifespan).listen(AppListenOptions(port=port, host=host), listen_log).run(workers=workers)  
