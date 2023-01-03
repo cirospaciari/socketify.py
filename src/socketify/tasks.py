@@ -153,7 +153,7 @@ class RequestTask:
 
     def __del__(self):
 
-        if self._state == _PENDING and self._log_destroy_pending:
+        if self._state == _PENDING and self._log_destroy_pending and self._loop:
             context = {
                 "task": self,
                 "message": "Task was destroyed but it is pending!",

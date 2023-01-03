@@ -598,7 +598,7 @@ def uws_generic_listen_handler(listen_socket, config, user_data):
                 else AppListenOptions(
                     port=int(config.port),
                     host=None
-                    if config.host == ffi.NULL
+                    if config.host == ffi.NULL or listen_socket == ffi.NULL
                     else ffi.string(config.host).decode("utf8"),
                     options=int(config.options),
                 )

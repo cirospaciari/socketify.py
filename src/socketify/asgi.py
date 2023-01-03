@@ -1,4 +1,4 @@
-from socketify import App, OpCode
+from socketify import App, OpCode, Loop
 from queue import SimpleQueue
 from .native import lib, ffi
 from .tasks import create_task, create_task_with_factory
@@ -7,6 +7,7 @@ import platform
 import sys 
 import logging
 import uuid
+import asyncio
 is_pypy = platform.python_implementation() == "PyPy"
 async def task_wrapper(task):
     try:
@@ -613,8 +614,86 @@ class _ASGI:
         return self
 
     def run(self):
-        # scope = {"type": "lifespan", "asgi": {"version": "3.0", "spec_version": "2.3"}}
-        self.server.run()  # run app on the main process too :)
+        scope = {"type": "lifespan", "asgi": {"version": "3.0", "spec_version": "2.3"}}
+        
+        lifespan_loop = Loop(lambda loop, error, response:  logging.error("Uncaught Exception: %s" % str(error)))
+        is_starting = True
+        is_stopped = False
+        status = 0 # 0 starting, 1 ok, 2 error, 3 stoping, 4 stopped, 5 stopped with error, 6 no lifespan
+        status_message = ""
+        stop_future = lifespan_loop.create_future()
+        async def send(options):
+            nonlocal status, status_message, is_stopped
+            type = options["type"]
+            status_message = options.get("message", "")
+            if type == "lifespan.startup.complete":
+                status = 1
+            elif type == "lifespan.startup.failed":
+                is_stopped = True
+                status = 2
+            elif type == "lifespan.shutdown.complete":
+                is_stopped = True
+                status = 4
+            elif type == "lifespan.shutdown.failed":
+                is_stopped = True
+                status = 5
+
+        async def receive():
+            nonlocal is_starting, is_stopped
+            while not is_stopped:
+                if is_starting:
+                    is_starting = False
+                    return {
+                        "type": "lifespan.startup",
+                        "asgi": {"version": "3.0", "spec_version": "2.3"},
+                    }
+                return await stop_future
+
+        async def task_wrapper(task):
+            nonlocal status
+            try:
+                return await task
+            except Exception as error:
+                try:
+                    # just log in console the error to call attention
+                    logging.error("Uncaught Exception: %s" % str(error))
+                    status = 6 # no more lifespan
+                finally:
+                    return None
+
+        # start lifespan
+        lifespan_loop.ensure_future(task_wrapper(self.app(scope, receive, send)))
+
+        # run until start or fail
+        while status == 0: 
+            lifespan_loop.run_once()
+
+        # failed to start
+        if status == 2:
+            logging.error("Startup failed: %s" % str(status_message))
+            return self
+
+        # run app
+        self.server.run()  
+        
+        # no more lifespan events
+        if status == 6:
+            return self
+        
+        # signal stop
+        status = 3
+        stop_future.set_result({
+            "type": "lifespan.shutdown",
+            "asgi": {"version": "3.0", "spec_version": "2.3"},
+        })
+
+         # run until end or fail
+        while status == 3:
+            lifespan_loop.run_once()
+
+        # failed to stop
+        if status == 5:
+            logging.error("Shutdown failed: %s" % str(status_message))
         return self
 
     def __del__(self):
@@ -666,7 +745,7 @@ class ASGI:
                 run_task()
 
         # fork limiting the cpu count - 1
-        for i in range(1, workers):
+        for _ in range(1, workers):
             create_fork()
 
         run_task()  # run app on the main process too :)

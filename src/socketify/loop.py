@@ -79,6 +79,18 @@ class Loop:
     def ensure_future(self, task):
         return asyncio.ensure_future(task, loop=self.loop)
 
+    def run_until_complete(self, task=None):
+        self.started = True
+        if task is not None:
+            future = self.ensure_future(task)
+        else:
+            future = None    
+        self.loop.call_soon(self._keep_alive)
+        self.loop.run_until_complete()
+        # clean up uvloop
+        self.uv_loop.stop()
+        return future
+
     def run(self, task=None):
         self.started = True
         if task is not None:

@@ -1,55 +1,89 @@
-# https://github.com/Tinche/aiofiles
-# https://github.com/uNetworking/uWebSockets/issues/1426
+from socketify.template import *
 
-# import os.path
+# https://github.com/chtd/psycopg2cffi/
+# https://github.com/tlocke/pg8000
+# https://www.psycopg.org/docs/advanced.html#asynchronous-support (works in cffi version too)
+# https://github.com/sass/libsass-python
 
-# DLL_EXPORT typedef void (*uws_listen_domain_handler)(struct us_listen_socket_t *listen_socket, const char* domain, size_t domain_length, int options, void *user_data);
-# DLL_EXPORT typedef void (*uws_filter_handler)(uws_res_t *response, int, void *user_data);
+# @memo() # generate an static string after first execution aka skipping re-rendering when props are unchanged 
+# def title(message):
+#     return h1(message, classes="title-light")
 
-# DLL_EXPORT void uws_app_listen_domain(int ssl, uws_app_t *app, const char *domain,size_t server_name_length,_listen_domain_handler handler, void *user_data);
-# DLL_EXPORT void uws_app_listen_domain_with_options(int ssl, uws_app_t *app, const char *domain,size_t servere_length, int options, uws_listen_domain_handler handler, void *user_data);
-# DLL_EXPORT void uws_app_domain(int ssl, uws_app_t *app, const char* server_name, size_t server_name_length);
-# DLL_EXPORT void uws_filter(int ssl, uws_app_t *app, uws_filter_handler handler, void *user_data);
+# @memo(maxsize=128)
+def htemplate(message, left_message, right_message):
 
-
-from socketify import App, AppOptions, OpCode, CompressOptions
-import asyncio
-
-
-def ws_open(ws):
-    print("A WebSocket got connected!")
-    ws.send("Hello World!", OpCode.TEXT)
-
-
-def ws_message(ws, message, opcode):
-    print(message, opcode)
-    # Ok is false if backpressure was built up, wait for drain
-    ok = ws.send(message, opcode)
+    return (
+        h1(message),
+        span(
+            children=(
+                span(left_message, classes=("text-light", "align-left")),
+                span(right_message, classes=("text-light", "align-right")),
+            ),
+        ),
+    )
 
 
-async def ws_upgrade(res, req, socket_context):
-    key = req.get_header("sec-websocket-key")
-    protocol = req.get_header("sec-websocket-protocol")
-    extensions = req.get_header("sec-websocket-extensions")
-    await asyncio.sleep(2)
-    res.upgrade(key, protocol, extensions, socket_context)
+# <!DOCTYPE html>
+# <html lang="en">
+# <head>
+#     <meta charset="UTF-8">
+#     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+#     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+#     <title>Document</title>
+# </head>
+# <body>
+# </body>
+# </html>
+def html5():
+    return (
+        doctype(),
+        html(lang="en", children=(
+            head(children=(
+                # meta(charset="UTF-8")
+                # meta(http_equiv="X-UA-Compatible",content="IE=edge")
+                # meta(name="vieport",content="width=device-width, initial-scale=1.0")
+                title("Document")
+            )),
+            body()
+        ))
+    )
 
+# print(render_tostring(html5()))
+# from mako.template import Template
 
-app = App()
-app.ws(
-    "/*",
-    {
-        "compression": CompressOptions.SHARED_COMPRESSOR,
-        "max_payload_length": 16 * 1024 * 1024,
-        "idle_timeout": 12,
-        "open": ws_open,
-        "message": ws_message,
-        "upgrade": ws_upgrade,
-    },
-)
-app.any("/", lambda res, req: res.end("Nothing to see here!"))
-app.listen(
-    3000,
-    lambda config: print("Listening on port http://localhost:%d now\n" % (config.port)),
-)
-app.run()
+# template = Template(
+#     "<h1>${message}</h1><span><span classes=\"text-light align-left\">${left_message}</span><span classes=\"text-light align-right\">${right_message}</span></span>"
+# )
+
+# from jinja2 import Environment, BaseLoader
+# rtemplate = Environment(loader=BaseLoader()).from_string("<h1>{{ message }}</h1><span><span classes=\"text-light align-left\">{{ left_message }}</span><span classes=\"text-light align-right\">{{ right_message }}</span></span>")
+
+# print(
+#     render_tostring(htemplate(
+#         message="Hello, World!",
+#         left_message="Text in Left",
+#         right_message="Text in Right",
+#     ))
+# )
+# print(
+#     render_tostring(htemplate(
+#         message="Hello, World!",
+#         left_message="Text in Left",
+#         right_message="Text in Right",
+#     ))
+# )
+
+# for i in range(1_000_000):
+#     render_tostring(htemplate(message="Hello, World!", left_message="Text in Left", right_message="Text in Right"))
+    # template.render(message="Hello, World!", left_message="Text in Left", right_message="Text in Right")
+    # rtemplate.render(message="Hello, World!", left_message="Text in Left", right_message="Text in Right")
+
+# print(
+#     render(
+#         html(
+#             message="Hello, World!",
+#             left_message="Text in Left",
+#             right_message="Text in Right",
+#         )
+#     )
+# )
