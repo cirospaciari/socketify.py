@@ -285,7 +285,7 @@ class _WSGI:
                 "SERVER_PORT": str(self.SERVER_PORT),
                 "SERVER_SOFTWARE": "WSGIServer/0.2",
                 "wsgi.input": None,
-                "wsgi.errors": None,
+                "wsgi.errors": sys.stderr,
                 "wsgi.version": (1, 0),
                 "wsgi.run_once": False,
                 "wsgi.url_scheme": "https" if self.server.options else "http",
