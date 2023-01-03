@@ -82,16 +82,16 @@ Machine OS: Debian GNU/Linux bookworm/sid x86_64 Kernel: 6.0.0-2-amd64 CPU: Inte
 For macOS x64 & Silicon, Linux x64, Windows
 
 ```bash
-pip install git+https://github.com/cirospaciari/socketify.py.git
+pip install socketify
 #or specify PyPy3
-pypy3 -m pip install git+https://github.com/cirospaciari/socketify.py.git
+pypy3 -m pip install socketify
 #or in editable mode
-pypy3 -m pip install -e git+https://github.com/cirospaciari/socketify.py.git@main#egg=socketify
+pypy3 -m pip install -e socketify
 ```
 
 Using install via requirements.txt
 ```text
-git+https://github.com/cirospaciari/socketify.py.git@main#socketify
+socketify
 ```
 ```bash
 pip install -r ./requirements.txt 
