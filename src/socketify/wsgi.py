@@ -153,7 +153,6 @@ def wsgi(ssl, response, info, user_data, aborted):
         next_header = ffi.cast("socketify_header*", next_header.next)
 
     environ["CONTENT_TYPE"] = environ.get("HTTP_CONTENT_TYPE", None)
-    environ["CONTENT_LENGTH"] = environ.get("HTTP_CONTENT_LENGTH", "0")
 
     def start_response(status, headers):
         if isinstance(status, str):
@@ -216,7 +215,7 @@ def wsgi(ssl, response, info, user_data, aborted):
                 return
 
             ssl = data_response.app.server.SSL
-            
+            data_response.environ["CONTENT_LENGTH"] = str(data_response.buffer.getbuffer().nbytes)
             app_iter = data_response.app.wsgi(
                 data_response.environ, data_response.start_response
             )
@@ -386,7 +385,7 @@ class _WSGI:
                 "SERVER_PROTOCOL": "HTTP/1.1",
                 "REMOTE_HOST": "",
                 "CONTENT_LENGTH": "0",
-                "CONTENT_TYPE": "0",
+                "CONTENT_TYPE": "",
                 'wsgi.input_terminated': True
             }
         )
