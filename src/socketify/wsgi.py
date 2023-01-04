@@ -2,7 +2,7 @@ import os
 import inspect
 from socketify import App
 from .asgi import ws_close, ws_upgrade, ws_open, ws_message
-from io import BytesIO
+from io import BytesIO, BufferedReader
 from .native import lib, ffi
 import platform
 is_pypy = platform.python_implementation() == "PyPy"
@@ -22,6 +22,92 @@ def wsgi_on_data_handler(res, chunk, chunk_length, is_end, user_data):
             data_response._ptr,
         )
 
+class WSGIBody:
+    def __init__(self, buffer):
+        self.buf = buffer
+        self.reader = BufferedReader(buffer)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        ret = self.readline()
+        if not ret:
+            raise StopIteration()
+        return ret
+
+    next = __next__
+
+    def getsize(self, size):
+        if size is None:
+            return sys.maxsize
+        elif not isinstance(size, int):
+            raise TypeError("size must be an integral type")
+        elif size < 0:
+            return sys.maxsize
+        return size
+
+    def read(self, size=None):
+        size = self.getsize(size)
+        if size == 0:
+            return b""
+
+        if size < self.buf.tell():
+            data = self.buf.getvalue()
+            ret, rest = data[:size], data[size:]
+            self.buf = BytesIO()
+            self.buf.write(rest)
+            return ret
+
+        while size > self.buf.tell():
+            data = self.reader.read(1024)
+            if not data:
+                break
+            self.buf.write(data)
+
+        data = self.buf.getvalue()
+        ret, rest = data[:size], data[size:]
+        self.buf = BytesIO()
+        self.buf.write(rest)
+        return ret
+
+    def readline(self, size=None):
+        size = self.getsize(size)
+        if size == 0:
+            return b""
+
+        data = self.buf.getvalue()
+        self.buf = BytesIO()
+
+        ret = []
+        while 1:
+            idx = data.find(b"\n", 0, size)
+            idx = idx + 1 if idx >= 0 else size if len(data) >= size else 0
+            if idx:
+                ret.append(data[:idx])
+                self.buf.write(data[idx:])
+                break
+
+            ret.append(data)
+            size -= len(data)
+            data = self.reader.read(min(1024, size))
+            if not data:
+                break
+
+        return b"".join(ret)
+
+    def readlines(self, size=None):
+        ret = []
+        data = self.read()
+        while data:
+            pos = data.find(b"\n")
+            if pos < 0:
+                ret.append(data)
+                data = b""
+            else:
+                line, data = data[:pos + 1], data[pos + 1:]
+                ret.append(line)
+        return ret
 
 class WSGIDataResponse:
     def __init__(self, app, environ, start_response, aborted, buffer, on_data):
@@ -65,6 +151,9 @@ def wsgi(ssl, response, info, user_data, aborted):
         # this conversion should be optimized in future
         environ[f"HTTP_{name.replace('-', '_').upper()}"] = value
         next_header = ffi.cast("socketify_header*", next_header.next)
+
+    environ["CONTENT_TYPE"] = environ.get("HTTP_CONTENT_TYPE", None)
+    environ["CONTENT_LENGTH"] = environ.get("HTTP_CONTENT_LENGTH", "0")
 
     def start_response(status, headers):
         if isinstance(status, str):
@@ -120,13 +209,14 @@ def wsgi(ssl, response, info, user_data, aborted):
     # check for body
     if bool(info.has_content):
         WSGI_INPUT = BytesIO()
-        environ["wsgi.input"] = WSGI_INPUT
+        environ["wsgi.input"] = WSGIBody(WSGI_INPUT)
 
         def on_data(data_response, response):
             if bool(data_response.aborted[0]):
                 return
 
             ssl = data_response.app.server.SSL
+            
             app_iter = data_response.app.wsgi(
                 data_response.environ, data_response.start_response
             )
@@ -295,6 +385,9 @@ class _WSGI:
                 "SCRIPT_NAME": "",
                 "SERVER_PROTOCOL": "HTTP/1.1",
                 "REMOTE_HOST": "",
+                "CONTENT_LENGTH": "0",
+                "CONTENT_TYPE": "0",
+                'wsgi.input_terminated': True
             }
         )
         self.server.listen(port_or_options, handler)

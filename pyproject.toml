@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "socketify"
-version = "0.0.1"
+version = "0.0.2"
 authors = [
   { name="Ciro Spaciari", email="ciro.spaciari@gmail.com" },
 ]
