@@ -22,7 +22,7 @@ Options:
     --ws-idle-timeout INT                               WebSocket idle timeout  [default: 20]
     --ws-reset-idle-on-send BOOLEAN                     Reset WebSocket idle timeout on send [default: True]
     --ws-per-message-deflate BOOLEAN                    WebSocket per-message-deflate compression [default: False]
-    --ws-max-lifetime INT                               Websocket maximum socket lifetime in seconds before forced closure, 0 to disable [default: 0]
+    --ws-max-lifetime INT                               Websocket maximum socket lifetime in minutes before forced closure, 0 to disable [default: 0]
     --ws-max-backpressure INT                           WebSocket maximum backpressure in bytes [default: 16777216]
     --ws-close-on-backpressure-limit BOOLEAN            Close connections that hits maximum backpressure [default: False]
     --lifespan [auto|on|off]                            Lifespan implementation.  [default: auto]
