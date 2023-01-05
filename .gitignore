@@ -5,3 +5,4 @@ __pycache__
 *.o
 node_modules/
 yarn.lock
+.vscode
