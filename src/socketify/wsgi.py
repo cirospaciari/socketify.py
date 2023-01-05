@@ -353,7 +353,7 @@ class _WSGI:
             native_behavior.ping = ffi.NULL
             native_behavior.pong = ffi.NULL
             native_behavior.close = ws_close
-            
+            native_behavior.subscription = ffi.NULL
 
             self.asgi_ws_info = lib.socketify_add_asgi_ws_handler(
                 self.server.SSL, self.server.app, native_behavior, ws_upgrade, self._ptr

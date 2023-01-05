@@ -13,10 +13,9 @@ app.ws(
         "idle_timeout": 12,
         "open": ws_open,
         "message": ws_message,
-        "drain": lambda ws: print(
-            "WebSocket backpressure: %s", ws.get_buffered_amount()
-        ),
+        'drain': lambda ws: print(f'WebSocket backpressure: {ws.get_buffered_amount()}'),
         "close": lambda ws, code, message: print("WebSocket closed"),
+        "subscription": lambda ws, topic, subscriptions, subscriptions_before: print(f'subscription/unsubscription on topic {topic} {subscriptions} {subscriptions_before}'),
     },
 )
 ```

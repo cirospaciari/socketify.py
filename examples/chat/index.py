@@ -110,7 +110,6 @@ def ws_message(ws, message, opcode):
                     history = history[::100]
             
             #broadcast
-            ws.send(message_data, OpCode.TEXT)
             ws.publish(room, message_data, OpCode.TEXT)
 
     except:

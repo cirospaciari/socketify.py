@@ -8,11 +8,8 @@ def ws_open(ws):
 
 
 def ws_message(ws, message, opcode):
-    # Ok is false if backpressure was built up, wait for drain
-    ok = ws.send(message, opcode)
     # Broadcast this message
     ws.publish("broadcast", message, opcode)
-
 
 app = App()
 app.ws(
@@ -20,11 +17,12 @@ app.ws(
     {
         "compression": CompressOptions.SHARED_COMPRESSOR,
         "max_payload_length": 16 * 1024 * 1024,
-        "idle_timeout": 12,
+        "idle_timeout": 60,
         "open": ws_open,
         "message": ws_message,
         # The library guarantees proper unsubscription at close
         "close": lambda ws, code, message: print("WebSocket closed"),
+        "subscription": lambda ws, topic, subscriptions, subscriptions_before: print(f'subscription/unsubscription on topic {topic} {subscriptions} {subscriptions_before}'),
     },
 )
 app.any("/", lambda res, req: res.end("Nothing to see here!"))
