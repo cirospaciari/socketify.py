@@ -57,6 +57,13 @@ auth_router.get("/another", middleware(another_middie, home))
 other_router = MiddlewareRouter(app, auth, another_middie)
 other_router.get("/another_way", home)
 
+# you can also use middlewares when using the decorator router
+private = app.router("/api", auth, another_middie)
+
+# will serve in /api/users and use auth_middleware
+@private.get("/users")
+def get_users(res, req, user):
+   res.cork_end("Hello private API!")
 
 app.listen(
     3000,

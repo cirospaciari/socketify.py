@@ -17,6 +17,7 @@ from .loop import Loop
 from .status_codes import status_codes
 from .helpers import static_route
 from dataclasses import dataclass
+from .helpers import DecoratorRouter
 
 mimetypes.init()
 
@@ -2158,6 +2159,9 @@ class App:
         self._request_extension = None
         self._response_extension = None
         self._ws_extension = None
+        
+    def router(self, prefix: str="", *middlewares):
+        return DecoratorRouter(self, prefix, middlewares)
         
     def register(self, extension):
         if self._request_extension is None:

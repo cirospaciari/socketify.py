@@ -25,7 +25,17 @@ def extension(request, response, ws):
 # extensions must be registered before routes
 app.register(extension)
 
-async def home(res, req):
+def auth_middleware(res, req, data):
+    token = req.get_query("token")
+    print("token?", token)
+    req.token = token
+    return { "name": "Test" } if token else { "name", "Anonymous" }
+
+router = app.router("", auth_middleware)
+
+@router.get("/")
+async def home(res, req, data=None):
+    print(data)
     print("token", req.token)
     cart = await req.get_cart()
     print("cart", cart)
@@ -34,7 +44,7 @@ async def home(res, req):
     print("token", req.token)
     res.send("Hello World!")
 
-app.get("/", home)
+
 app.listen(
     3000,
     lambda config: print("Listening on port http://localhost:%d now\n" % config.port),

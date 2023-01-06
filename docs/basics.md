@@ -184,7 +184,7 @@ def route_handler(res, req):
 
 
 ## Using ujson, orjson or any custom JSON serializer
-socketify by default uses built in `json` module with have great performance on PyPy, but if you wanna to use another module instead of the default you can just register using `app.json_serializer(module)`
+socketify by default uses built-in `json` module with has great performance on PyPy, but if you wanna use another module instead of the default you can just register using `app.json_serializer(module)`
 
 ```python
 from socketify import App
