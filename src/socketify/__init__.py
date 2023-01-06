@@ -5,7 +5,8 @@ from .socketify import (
     OpCode,
     SendStatus,
     CompressOptions,
-    Loop
+    Loop,
+    AppExtension
 )
 from .asgi import (
     ASGI

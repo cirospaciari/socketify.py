@@ -4,6 +4,7 @@
 class App:
     def __init__(self, options=None):
     def template(self, template_engine):
+    def json_serializer(self, json_serializer):
     def static(self, route, directory):
     def get(self, path, handler):
     def post(self, path, handler):
@@ -34,7 +35,7 @@ class App:
 ## AppResponse
 ```python
 class AppResponse:
-    def __init__(self, response, loop, ssl, render=None):
+    def __init__(self, response, app):
     def cork(self, callback):
     def set_cookie(self, name, value, options={}):
     def run_async(self, task):
@@ -81,7 +82,7 @@ class AppResponse:
 ## AppRequest
 ```python
 class AppRequest:
-    def __init__(self, request):
+    def __init__(self, request, app):
     def get_cookie(self, name):
     def get_url(self):
     def get_full_url(self):
@@ -123,7 +124,7 @@ class AppOptions:
 ```python
 
 class WebSocket:
-    def __init__(self, websocket, ssl, loop):
+    def __init__(self, websocket, app):
 
     # uuid for socket data, used to free data after socket closes
     def get_user_data_uuid(self):

@@ -34,10 +34,11 @@
 - Max Backpressure, Max Timeout, Max Payload and Idle Timeout Support
 - Automatic Ping / Pong Support
 - Per Socket Data
-- Middlewares
-- Templates Support (examples with [`Mako`](https://github.com/cirospaciari/socketify.py/tree/main/examples/template_mako.py) and [`Jinja2`](https://github.com/cirospaciari/socketify.py/tree/main/examples/template_jinja2.py))
-- ASGI Server with pub/sub extension for Falcon
-- WSGI Server
+- [`Middlewares`](https://docs.socketify.dev/middlewares.html)
+- [`Templates`](https://docs.socketify.dev/templates.html) Support (examples with [`Mako`](https://github.com/cirospaciari/socketify.py/tree/main/examples/template_mako.py) and [`Jinja2`](https://github.com/cirospaciari/socketify.py/tree/main/examples/template_jinja2.py))
+- [`ASGI Server`](https://docs.socketify.dev/cli.html)
+- [`WSGI Server`](https://docs.socketify.dev/cli.html)
+- [`Plugins/Extensions`](https://docs.socketify.dev/extensions.html)
 
 ## :mag_right: Upcoming Features
 - In-Memory Cache Tools

@@ -1,5 +1,5 @@
 ## GraphiQL Support
-In /src/examples/helper/graphiql.py we implemented an helper for using graphiQL with strawberry.
+In [`/src/examples/helper/graphiql.py`](https://github.com/cirospaciari/socketify.py/blob/main/examples/graphiql.py) we implemented an helper for using graphiQL with strawberry.
 
 ### Usage
 ```python

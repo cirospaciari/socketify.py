@@ -49,4 +49,4 @@ You probably want shared compressor if dealing with larger JSON messages, or 4kb
 
 idle_timeout is roughly the amount of seconds that may pass between messages. Being idle for more than this, and the connection is severed. This means you should make your clients send small ping messages every now and then, to keep the connection alive. The server will automatically send pings in case it needs to.
 
-### Next [SSL](ssl.md)
+### Next [Plugins / Extensions](extensions.md)

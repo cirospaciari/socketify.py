@@ -201,9 +201,6 @@ def wsgi(ssl, response, info, user_data, aborted):
             lib.uws_res_write_header(
                 ssl, response, key_data, len(key_data), value_data, len(value_data)
             )
-        lib.uws_res_write_header(
-            ssl, response, b'Server', 6, b'socketify.py', 12
-        )
 
     # check for body
     if bool(info.has_content):

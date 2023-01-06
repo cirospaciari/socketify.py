@@ -182,6 +182,22 @@ def route_handler(res, req):
         res.run_async(sendfile(res, req, "my_text"))
 ```
 
+
+## Using ujson, orjson or any custom JSON serializer
+socketify by default uses built in `json` module with have great performance on PyPy, but if you wanna to use another module instead of the default you can just register using `app.json_serializer(module)`
+
+```python
+from socketify import App
+import ujson
+app = App()
+
+# set json serializer to ujson
+# json serializer must have dumps and loads functions
+app.json_serializer(ujson)
+
+app.get("/", lambda res, req: res.end({"Hello":"World!"}))
+```
+
 ## Raw socket pointer
 
 If for some reason you need the raw socket pointer you can use `res.get_native_handle()` and will get an CFFI handler.
