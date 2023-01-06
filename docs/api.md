@@ -3,6 +3,7 @@
 
 class App:
     def __init__(self, options=None):
+    def register(self, extension):
     def template(self, template_engine):
     def json_serializer(self, json_serializer):
     def static(self, route, directory):

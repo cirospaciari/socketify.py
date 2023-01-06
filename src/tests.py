@@ -41,8 +41,7 @@ app.listen(
 )
 app.run()
 
-# uws_websocket_upgrade_handler
-# uws_generic_method_handler
+
 # uws_websocket_drain_handler
 # uws_websocket_subscription_handler
 # uws_websocket_open_handler
@@ -50,4 +49,3 @@ app.run()
 # uws_websocket_pong_handler
 # uws_websocket_ping_handler
 # uws_websocket_close_handler
-# uws_websocket_subscription_handler
