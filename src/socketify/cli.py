@@ -170,8 +170,7 @@ def execute(args):
     host = options.get("--host", options.get("-h", "127.0.0.1"))
     uds = options.get('--uds', None)
     lifespan = options.get('--lifespan', "auto")
-    lifespan=False if lifespan == "off" or lifespan is not True else True
-    
+    lifespan = False if lifespan == "off" else True
     task_factory_maxitems = int(options.get("--task-factory-maxitems", 100000))
     
     disable_listen_log = options.get("--disable-listen-log", False)
