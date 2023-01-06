@@ -152,7 +152,7 @@ def wsgi(ssl, response, info, user_data, aborted):
         environ[f"HTTP_{name.replace('-', '_').upper()}"] = value
         next_header = ffi.cast("socketify_header*", next_header.next)
 
-    environ["CONTENT_TYPE"] = environ.get("HTTP_CONTENT_TYPE", None)
+    environ["CONTENT_TYPE"] = environ.get("HTTP_CONTENT_TYPE", "")
 
     def start_response(status, headers):
         if isinstance(status, str):

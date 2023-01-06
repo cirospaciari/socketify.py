@@ -618,7 +618,6 @@ class _ASGI:
 
     def run(self):
         if not self.lifespan:
-            print("No lifespan!")
             self.server.run()  
             return self
 
@@ -742,6 +741,7 @@ class ASGI:
                 self.websocket,
                 self.websocket_options,
                 self.task_factory_max_items,
+                self.lifespan
             )
             if self.listen_options:
                 (port_or_options, handler) = self.listen_options
