@@ -188,6 +188,7 @@ void uws_missing_server_name(int ssl, uws_app_t *app, uws_missing_server_handler
 void uws_filter(int ssl, uws_app_t *app, uws_filter_handler handler, void *user_data);
 
 
+void uws_res_close(int ssl, uws_res_t *res);
 void uws_res_end(int ssl, uws_res_t *res, const char *data, size_t length, bool close_connection);
 void uws_res_pause(int ssl, uws_res_t *res);
 void uws_res_resume(int ssl, uws_res_t *res);
