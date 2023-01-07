@@ -8,6 +8,7 @@ import platform
 is_pypy = platform.python_implementation() == "PyPy"
 from .tasks import create_task, create_task_with_factory
 import sys
+import logging
 
 @ffi.callback("void(uws_res_t*, const char*, size_t, bool, void*)")
 def wsgi_on_data_handler(res, chunk, chunk_length, is_end, user_data):
@@ -154,13 +155,23 @@ def wsgi(ssl, response, info, user_data, aborted):
 
     environ["CONTENT_TYPE"] = environ.get("HTTP_CONTENT_TYPE", "")
 
-    def start_response(status, headers):
-        if isinstance(status, str):
-            data = status.encode("utf-8")
+    headers_set = None
+    headers_written = False
+    status_text = None
+    def write_headers(headers):
+        nonlocal headers_written, headers_set, status_text
+        if headers_written or not headers_set:
+            return
+
+        headers_written = True
+        
+        if isinstance(status_text, str):
+            data = status_text.encode("utf-8")
             lib.uws_res_write_status(ssl, response, data, len(data))
-        elif isinstance(status, bytes):
-            lib.uws_res_write_status(ssl, response, status, len(status))
-            
+        elif isinstance(status_text, bytes):
+            lib.uws_res_write_status(ssl, response, status_text, len(status_text))
+        
+
         for (key, value) in headers:
             if isinstance(key, str):
             # this is faster than using .lower()
@@ -201,6 +212,32 @@ def wsgi(ssl, response, info, user_data, aborted):
             lib.uws_res_write_header(
                 ssl, response, key_data, len(key_data), value_data, len(value_data)
             )
+    def start_response(status, headers, exc_info=None):
+        nonlocal headers_set, status_text
+        if exc_info:
+            try:
+                if headers_written:
+                    # Re-raise original exception if headers sent
+                    raise exc_info[1].with_traceback(exc_info[2])
+            finally:
+                exc_info = None # avoid dangling circular ref
+        elif headers_set:
+            raise AssertionError("Headers already set!")
+
+        
+        headers_set = headers
+        status_text = status
+        
+        def write(data):
+            if not headers_written:
+                write_headers(headers_set)
+                
+            if isinstance(data, bytes):
+                lib.uws_res_write(ssl, response, data, len(data))
+            elif isinstance(data, str):
+                data = data.encode("utf-8")
+                lib.uws_res_write(ssl, response, data, len(data))
+        return write
 
     # check for body
     if bool(info.has_content):
@@ -218,16 +255,23 @@ def wsgi(ssl, response, info, user_data, aborted):
             )
             try:
                 for data in app_iter:
+                    if data and not headers_written:
+                        write_headers(headers_set)
+
                     if isinstance(data, bytes):
                         lib.uws_res_write(ssl, response, data, len(data))
                     elif isinstance(data, str):
                         data = data.encode("utf-8")
                         lib.uws_res_write(ssl, response, data, len(data))
                     
-                    
+            except Exception as error:
+                logging.exception(error)
             finally:
                 if hasattr(app_iter, "close"):
                     app_iter.close()
+
+            if not headers_written:
+                write_headers(headers_set)
             lib.uws_res_end_without_body(ssl, response, 0)
 
         data_response = WSGIDataResponse(
@@ -240,14 +284,22 @@ def wsgi(ssl, response, info, user_data, aborted):
         app_iter = app.wsgi(environ, start_response)
         try:
             for data in app_iter:
+                if data and not headers_written:
+                    write_headers(headers_set)
+
                 if isinstance(data, bytes):
                     lib.uws_res_write(ssl, response, data, len(data))
                 elif isinstance(data, str):
                     data = data.encode("utf-8")
                     lib.uws_res_write(ssl, response, data, len(data))
+        except Exception as error:
+                logging.exception(error)
         finally:
             if hasattr(app_iter, "close"):
                 app_iter.close()
+
+        if not headers_written:
+            write_headers(headers_set)         
         lib.uws_res_end_without_body(ssl, response, 0)
 
 def is_asgi(module):
