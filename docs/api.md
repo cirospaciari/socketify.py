@@ -3,6 +3,7 @@
 
 class App:
     def __init__(self, options=None):
+    def router(self, prefix: str="", *middlewares):
     def register(self, extension):
     def template(self, template_engine):
     def json_serializer(self, json_serializer):
@@ -55,6 +56,8 @@ class AppResponse:
     def get_remote_address(self):
     def get_proxied_remote_address_bytes(self):
     def get_proxied_remote_address(self):
+    def cork_send(self, message: any, content_type: str = b'text/plain', status : str | bytes | int = b'200 OK', headers=None, end_connection=False):
+    def send(self, message: any, content_type: str = b'text/plain', status : str | bytes | int = b'200 OK', headers=None, end_connection=False):
     def end(self, message, end_connection=False):
     def pause(self):
     def resume(self):

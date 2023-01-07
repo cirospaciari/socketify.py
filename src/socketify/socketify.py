@@ -54,6 +54,7 @@ def uws_websocket_factory_drain_handler(ws, user_data):
             if inspect.iscoroutinefunction(handler):
 
                 if dispose:
+
                     async def wrapper(app, instances, handler, ws):
                         try:
                             await handler(ws)
@@ -69,10 +70,11 @@ def uws_websocket_factory_drain_handler(ws, user_data):
                     app._ws_factory.dispose(instances)
         except Exception as err:
             if dispose:
-                    app._ws_factory.dispose(instances)
+                app._ws_factory.dispose(instances)
             logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
+
 
 @ffi.callback("void(uws_websocket_t*, void*)")
 def uws_websocket_drain_handler(ws, user_data):
@@ -90,61 +92,124 @@ def uws_websocket_drain_handler(ws, user_data):
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
 
+
 @ffi.callback("void(uws_websocket_t*, const char *, size_t, int, int, void*)")
-def uws_websocket_factory_subscription_handler(ws, topic_name, topic_name_length, new_number_of_subscriber,  old_number_of_subscriber, user_data):
+def uws_websocket_factory_subscription_handler(
+    ws,
+    topic_name,
+    topic_name_length,
+    new_number_of_subscriber,
+    old_number_of_subscriber,
+    user_data,
+):
     if user_data != ffi.NULL:
         handlers, app = ffi.from_handle(user_data)
         instances = app._ws_factory.get(app, ws)
         ws, dispose = instances
         try:
-              
+
             if topic_name == ffi.NULL:
                 topic = None
             else:
                 topic = ffi.unpack(topic_name, topic_name_length).decode("utf-8")
 
-
             handler = handlers.subscription
             if inspect.iscoroutinefunction(handler):
 
                 if dispose:
-                    async def wrapper(app, instances, handler, ws, topic, new_number_of_subscriber, old_number_of_subscriber):
+
+                    async def wrapper(
+                        app,
+                        instances,
+                        handler,
+                        ws,
+                        topic,
+                        new_number_of_subscriber,
+                        old_number_of_subscriber,
+                    ):
                         try:
-                            await handler(ws, topic, new_number_of_subscriber, old_number_of_subscriber)
+                            await handler(
+                                ws,
+                                topic,
+                                new_number_of_subscriber,
+                                old_number_of_subscriber,
+                            )
                         finally:
                             app._ws_factory.dispose(instances)
 
-                    app.run_async(wrapper(app, instances, handler, ws, topic, int(new_number_of_subscriber), int(old_number_of_subscriber)))
+                    app.run_async(
+                        wrapper(
+                            app,
+                            instances,
+                            handler,
+                            ws,
+                            topic,
+                            int(new_number_of_subscriber),
+                            int(old_number_of_subscriber),
+                        )
+                    )
                 else:
-                    app.run_async(handler(ws, topic, int(new_number_of_subscriber), int(old_number_of_subscriber)))
+                    app.run_async(
+                        handler(
+                            ws,
+                            topic,
+                            int(new_number_of_subscriber),
+                            int(old_number_of_subscriber),
+                        )
+                    )
             else:
-                handler(ws, topic, int(new_number_of_subscriber), int(old_number_of_subscriber))
+                handler(
+                    ws,
+                    topic,
+                    int(new_number_of_subscriber),
+                    int(old_number_of_subscriber),
+                )
                 if dispose:
                     app._ws_factory.dispose(instances)
         except Exception as err:
             if dispose:
-                    app._ws_factory.dispose(instances)
+                app._ws_factory.dispose(instances)
             logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
 
+
 @ffi.callback("void(uws_websocket_t*, const char *, size_t, int, int, void*)")
-def uws_websocket_subscription_handler(ws, topic_name, topic_name_length, new_number_of_subscriber,  old_number_of_subscriber, user_data):
+def uws_websocket_subscription_handler(
+    ws,
+    topic_name,
+    topic_name_length,
+    new_number_of_subscriber,
+    old_number_of_subscriber,
+    user_data,
+):
     if user_data != ffi.NULL:
         try:
             handlers, app = ffi.from_handle(user_data)
             ws = WebSocket(ws, app)
             handler = handlers.subscription
-            
+
             if topic_name == ffi.NULL:
                 topic = None
             else:
                 topic = ffi.unpack(topic_name, topic_name_length).decode("utf-8")
 
             if inspect.iscoroutinefunction(handler):
-                app.run_async(handler(ws, topic, int(new_number_of_subscriber), int(old_number_of_subscriber)))
+                app.run_async(
+                    handler(
+                        ws,
+                        topic,
+                        int(new_number_of_subscriber),
+                        int(old_number_of_subscriber),
+                    )
+                )
             else:
-                handler(ws, topic, int(new_number_of_subscriber), int(old_number_of_subscriber))
+                handler(
+                    ws,
+                    topic,
+                    int(new_number_of_subscriber),
+                    int(old_number_of_subscriber),
+                )
         except Exception as err:
             logging.error(
                 "Uncaught Exception: %s" % str(err)
@@ -161,6 +226,7 @@ def uws_websocket_factory_open_handler(ws, user_data):
             handler = handlers.open
             if inspect.iscoroutinefunction(handler):
                 if dispose:
+
                     async def wrapper(app, instances, handler, ws):
                         try:
                             await handler(ws)
@@ -176,10 +242,11 @@ def uws_websocket_factory_open_handler(ws, user_data):
                     app._ws_factory.dispose(instances)
         except Exception as err:
             if dispose:
-                    app._ws_factory.dispose(instances)
+                app._ws_factory.dispose(instances)
             logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
+
 
 @ffi.callback("void(uws_websocket_t*, void*)")
 def uws_websocket_open_handler(ws, user_data):
@@ -217,6 +284,7 @@ def uws_websocket_factory_message_handler(ws, message, length, opcode, user_data
             handler = handlers.message
             if inspect.iscoroutinefunction(handler):
                 if dispose:
+
                     async def wrapper(app, instances, handler, ws, data):
                         try:
                             await handler(ws, data)
@@ -233,10 +301,11 @@ def uws_websocket_factory_message_handler(ws, message, length, opcode, user_data
 
         except Exception as err:
             if dispose:
-               app._ws_factory.dispose(instances)
+                app._ws_factory.dispose(instances)
             logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
+
 
 @ffi.callback("void(uws_websocket_t*, const char*, size_t, uws_opcode_t, void*)")
 def uws_websocket_message_handler(ws, message, length, opcode, user_data):
@@ -280,6 +349,7 @@ def uws_websocket_factory_pong_handler(ws, message, length, user_data):
             handler = handlers.pong
             if inspect.iscoroutinefunction(handler):
                 if dispose:
+
                     async def wrapper(app, instances, handler, ws, data):
                         try:
                             await handler(ws, data)
@@ -296,10 +366,12 @@ def uws_websocket_factory_pong_handler(ws, message, length, user_data):
 
         except Exception as err:
             if dispose:
-               app._ws_factory.dispose(instances)
+                app._ws_factory.dispose(instances)
             logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
+
+
 @ffi.callback("void(uws_websocket_t*, const char*, size_t, void*)")
 def uws_websocket_pong_handler(ws, message, length, user_data):
     if user_data != ffi.NULL:
@@ -338,6 +410,7 @@ def uws_websocket_factory_ping_handler(ws, message, length, user_data):
             handler = handlers.ping
             if inspect.iscoroutinefunction(handler):
                 if dispose:
+
                     async def wrapper(app, instances, handler, ws, data):
                         try:
                             await handler(ws, data)
@@ -354,10 +427,11 @@ def uws_websocket_factory_ping_handler(ws, message, length, user_data):
 
         except Exception as err:
             if dispose:
-               app._ws_factory.dispose(instances)
+                app._ws_factory.dispose(instances)
             logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
+
 
 @ffi.callback("void(uws_websocket_t*, const char*, size_t, void*)")
 def uws_websocket_ping_handler(ws, message, length, user_data):
@@ -404,6 +478,7 @@ def uws_websocket_factory_close_handler(ws, code, message, length, user_data):
                 return
 
             if inspect.iscoroutinefunction(handler):
+
                 async def wrapper(app, instances, handler, ws, data, code, dispose):
                     try:
                         return await handler(ws, code, data)
@@ -414,7 +489,9 @@ def uws_websocket_factory_close_handler(ws, code, message, length, user_data):
                         if dispose:
                             app._ws_factory.dispose(instances)
 
-                app.run_async(wrapper(app, instances, handler, ws, data, int(code), dispose))
+                app.run_async(
+                    wrapper(app, instances, handler, ws, data, int(code), dispose)
+                )
             else:
                 handler(ws, int(code), data)
                 key = ws.get_user_data_uuid()
@@ -427,6 +504,7 @@ def uws_websocket_factory_close_handler(ws, code, message, length, user_data):
             logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
+
 
 @ffi.callback("void(uws_websocket_t*, int, const char*, size_t, void*)")
 def uws_websocket_close_handler(ws, code, message, length, user_data):
@@ -447,6 +525,7 @@ def uws_websocket_close_handler(ws, code, message, length, user_data):
                 return
 
             if inspect.iscoroutinefunction(handler):
+
                 async def wrapper(app, handler, ws, data, code, dispose):
                     try:
                         return await handler(ws, code, data)
@@ -454,7 +533,7 @@ def uws_websocket_close_handler(ws, code, message, length, user_data):
                         key = ws.get_user_data_uuid()
                         if key is not None:
                             app._socket_refs.pop(key, None)
-                
+
                 app.run_async(wrapper(app, handler, ws, data, int(code)))
             else:
                 handler(ws, int(code), data)
@@ -478,13 +557,16 @@ def uws_generic_factory_method_handler(res, req, user_data):
             if inspect.iscoroutinefunction(handler):
                 response.grab_aborted_handler()
                 if dispose:
-                    async def wrapper(app, instances, handler, response, request):
-                      try:
-                          await handler(response, request)
-                      finally:
-                          app._factory.dispose(instances)
 
-                    response.run_async(wrapper(app, instances, handler, response, request))
+                    async def wrapper(app, instances, handler, response, request):
+                        try:
+                            await handler(response, request)
+                        finally:
+                            app._factory.dispose(instances)
+
+                    response.run_async(
+                        wrapper(app, instances, handler, response, request)
+                    )
                 else:
                     response.run_async(handler(response, request))
             else:
@@ -498,6 +580,7 @@ def uws_generic_factory_method_handler(res, req, user_data):
             if dispose:
                 app._factory.dispose(instances)
 
+
 @ffi.callback("void(uws_res_t*, uws_req_t*, uws_socket_context_t*, void*)")
 def uws_websocket_factory_upgrade_handler(res, req, context, user_data):
     if user_data != ffi.NULL:
@@ -506,17 +589,22 @@ def uws_websocket_factory_upgrade_handler(res, req, context, user_data):
         (response, request, dispose) = instances
         try:
             handler = handlers.upgrade
-       
+
             if inspect.iscoroutinefunction(handler):
                 response.grab_aborted_handler()
                 if dispose:
-                    async def wrapper(app, instances, handler, response, request, context):
-                      try:
-                          await handler(response, request, context)
-                      finally:
-                          app._factadd_done_callbackory.dispose(instances)
 
-                    response.run_async(wrapper(app, instances, handler, response, request, context))
+                    async def wrapper(
+                        app, instances, handler, response, request, context
+                    ):
+                        try:
+                            await handler(response, request, context)
+                        finally:
+                            app._factadd_done_callbackory.dispose(instances)
+
+                    response.run_async(
+                        wrapper(app, instances, handler, response, request, context)
+                    )
                 else:
                     response.run_async(handler(response, request, context))
             else:
@@ -528,6 +616,7 @@ def uws_websocket_factory_upgrade_handler(res, req, context, user_data):
             app.trigger_error(err, response, request)
             if dispose:
                 app._factory.dispose(instances)
+
 
 @ffi.callback("void(uws_res_t*, uws_req_t*, uws_socket_context_t*, void*)")
 def uws_websocket_upgrade_handler_with_extension(res, req, context, user_data):
@@ -554,6 +643,7 @@ def uws_websocket_upgrade_handler_with_extension(res, req, context, user_data):
         except Exception as err:
             response.grab_aborted_handler()
             app.trigger_error(err, response, request)
+
 
 @ffi.callback("void(uws_res_t*, uws_req_t*, uws_socket_context_t*, void*)")
 def uws_websocket_upgrade_handler(res, req, context, user_data):
@@ -610,13 +700,16 @@ def uws_generic_factory_method_handler(res, req, user_data):
                 response.grab_aborted_handler()
                 response.grab_aborted_handler()
                 if dispose:
-                    async def wrapper(app, instances, handler, response, request):
-                      try:
-                          await handler(response, request)
-                      finally:
-                          app._factory.dispose(instances)
 
-                    response.run_async(wrapper(app, instances, handler, response, request))
+                    async def wrapper(app, instances, handler, response, request):
+                        try:
+                            await handler(response, request)
+                        finally:
+                            app._factory.dispose(instances)
+
+                    response.run_async(
+                        wrapper(app, instances, handler, response, request)
+                    )
                 else:
                     response.run_async(handler(response, request))
             else:
@@ -629,6 +722,7 @@ def uws_generic_factory_method_handler(res, req, user_data):
             app.trigger_error(err, response, request)
             if dispose:
                 app._factory.dispose(instances)
+
 
 @ffi.callback("void(uws_res_t*, uws_req_t*, void*)")
 def uws_generic_method_handler_with_extension(res, req, user_data):
@@ -644,7 +738,7 @@ def uws_generic_method_handler_with_extension(res, req, user_data):
         app._request_extension.set_properties(request)
         # bind methods to request
         app._request_extension.bind_methods(request)
-            
+
         try:
             if inspect.iscoroutinefunction(handler):
                 response.grab_aborted_handler()
@@ -654,6 +748,7 @@ def uws_generic_method_handler_with_extension(res, req, user_data):
         except Exception as err:
             response.grab_aborted_handler()
             app.trigger_error(err, response, request)
+
 
 @ffi.callback("void(uws_res_t*, uws_req_t*, void*)")
 def uws_generic_method_handler(res, req, user_data):
@@ -661,7 +756,7 @@ def uws_generic_method_handler(res, req, user_data):
         (handler, app) = ffi.from_handle(user_data)
         response = AppResponse(res, app)
         request = AppRequest(req, app)
-            
+
         try:
             if inspect.iscoroutinefunction(handler):
                 response.grab_aborted_handler()
@@ -673,25 +768,22 @@ def uws_generic_method_handler(res, req, user_data):
             app.trigger_error(err, response, request)
 
 
-
-
 @ffi.callback("void(struct us_listen_socket_t*, const char*, size_t,int, void*)")
-def uws_generic_listen_domain_handler(listen_socket, domain, length, _options, user_data):
+def uws_generic_listen_domain_handler(
+    listen_socket, domain, length, _options, user_data
+):
     domain = ffi.unpack(domain, length).decode("utf8")
     if listen_socket == ffi.NULL:
         raise RuntimeError("Failed to listen on domain %s" % domain)
 
     if user_data != ffi.NULL:
-        
+
         app = ffi.from_handle(user_data)
         if hasattr(app, "_listen_handler") and hasattr(app._listen_handler, "__call__"):
             app.socket = listen_socket
-            app._listen_handler(
-                AppListenOptions(
-                    domain=domain,
-                    options=int(_options)
-                )
-            )
+            app._listen_handler(AppListenOptions(domain=domain, options=int(_options)))
+
+
 @ffi.callback("void(struct us_listen_socket_t*, uws_app_listen_config_t, void*)")
 def uws_generic_listen_handler(listen_socket, config, user_data):
     if listen_socket == ffi.NULL:
@@ -709,7 +801,6 @@ def uws_generic_listen_handler(listen_socket, config, user_data):
                 pass
             app._listen_handler(
                 None
-                
                 if config == ffi.NULL
                 else AppListenOptions(
                     port=int(config.port),
@@ -917,7 +1008,9 @@ class WebSocket:
             else:
                 return False
 
-            return bool(lib.uws_ws_is_subscribed(self.app.SSL, self.ws, data, len(data)))
+            return bool(
+                lib.uws_ws_is_subscribed(self.app.SSL, self.ws, data, len(data))
+            )
         except:
             return False
 
@@ -1007,7 +1100,9 @@ class WebSocket:
                 data = self.app._json_serializer.dumps(message).encode("utf-8")
 
             return SendStatus(
-                lib.uws_ws_send_fragment(self.app.SSL, self.ws, data, len(data), compress)
+                lib.uws_ws_send_fragment(
+                    self.app.SSL, self.ws, data, len(data), compress
+                )
             )
         except:
             return None
@@ -1114,6 +1209,7 @@ class WebSocket:
         self.ws = ffi.NULL
         self._ptr = ffi.NULL
 
+
 class AppResponse:
     def __init__(self, response, app):
         self.res = response
@@ -1135,7 +1231,9 @@ class AppResponse:
         if not self.aborted:
             self.grab_aborted_handler()
             self._cork_handler = callback
-            lib.uws_res_cork(self.app.SSL, self.res, uws_generic_cork_handler, self._ptr)
+            lib.uws_res_cork(
+                self.app.SSL, self.res, uws_generic_cork_handler, self._ptr
+            )
 
     def set_cookie(self, name, value, options):
         if options is None:
@@ -1351,9 +1449,11 @@ class AppResponse:
 
     def render(self, *args, **kwargs):
         if self.app._template:
+
             def render(res):
-                res.write_header(b'Content-Type', b'text/html')
+                res.write_header(b"Content-Type", b"text/html")
                 res.end(self.app._template.render(*args, **kwargs))
+
             self.cork(render)
             return self
         raise RuntimeError("No registered templated engine")
@@ -1404,6 +1504,55 @@ class AppResponse:
         except Exception:  # invalid utf-8
             return None
 
+    def cork_send(
+        self,
+        message,
+        content_type: str | bytes = b"text/plain",
+        status: str | bytes | int = b"200 OK",
+        headers=None,
+        end_connection=False,
+    ):
+        self.cork(
+            lambda res: res.send(message, content_type, status, headers, end_connection)
+        )
+        return self
+
+    def send(
+        self,
+        message: any,
+        content_type: str | bytes = b"text/plain",
+        status: str | bytes | int = b"200 OK",
+        headers=None,
+        end_connection=False,
+    ):
+        if self.aborted:
+            return self
+
+        self.write_status(status)
+        self.write_header(b"Content-Type", content_type)
+
+        if headers is not None:
+            for name, value in headers:
+                self.write_header(name, value)
+        try:
+            if self._write_jar is not None:
+                self.write_header("Set-Cookie", self._write_jar.output(header=""))
+                self._write_jar = None
+            if isinstance(message, str):
+                data = message.encode("utf-8")
+            elif isinstance(message, bytes):
+                data = message
+            elif message is None:
+                self.end_without_body(end_connection)
+                return self
+            else:
+                data = self.app._json_serializer.dumps(message).encode("utf-8")
+            lib.uws_res_end(
+                self.app.SSL, self.res, data, len(data), 1 if end_connection else 0
+            )
+        finally:
+            return self
+
     def end(self, message, end_connection=False):
         try:
             if self.aborted:
@@ -1445,10 +1594,14 @@ class AppResponse:
     def write_status(self, status_or_status_text):
         if not self.aborted:
             if isinstance(status_or_status_text, int):
-                if bool(lib.socketify_res_write_int_status(self.app.SSL, self.res, status_or_status_text)):
+                if bool(
+                    lib.socketify_res_write_int_status(
+                        self.app.SSL, self.res, status_or_status_text
+                    )
+                ):
                     return self
                 raise RuntimeError(
-                            '"%d" Is not an valid Status Code' % status_or_status_text
+                    '"%d" Is not an valid Status Code' % status_or_status_text
                 )
 
             elif isinstance(status_or_status_text, str):
@@ -1456,7 +1609,9 @@ class AppResponse:
             elif isinstance(status_or_status_text, bytes):
                 data = status_or_status_text
             else:
-                data = self.app._json_serializer.dumps(status_or_status_text).encode("utf-8")
+                data = self.app._json_serializer.dumps(status_or_status_text).encode(
+                    "utf-8"
+                )
 
             lib.uws_res_write_status(self.app.SSL, self.res, data, len(data))
         return self
@@ -1485,7 +1640,12 @@ class AppResponse:
             else:
                 value_data = self.app._json_serializer.dumps(value).encode("utf-8")
             lib.uws_res_write_header(
-                self.app.SSL, self.res, key_data, len(key_data), value_data, len(value_data)
+                self.app.SSL,
+                self.res,
+                key_data,
+                len(key_data),
+                value_data,
+                len(value_data),
             )
         return self
 
@@ -1493,7 +1653,9 @@ class AppResponse:
         if not self.aborted:
             if self._write_jar is not None:
                 self.write_header("Set-Cookie", self._write_jar.output(header=""))
-            lib.uws_res_end_without_body(self.app.SSL, self.res, 1 if end_connection else 0)
+            lib.uws_res_end_without_body(
+                self.app.SSL, self.res, 1 if end_connection else 0
+            )
         return self
 
     def write(self, message):
@@ -1618,7 +1780,7 @@ class WSBehaviorHandlers:
 
 class WebSocketFactory:
     def __init__(self, app, max_size):
-        self.factory_queue = []        
+        self.factory_queue = []
         self.app = app
         self.max_size = max_size
         self.dispose = self._dispose
@@ -1630,9 +1792,9 @@ class WebSocketFactory:
         self.get = self._get_with_extension
         if len(self.app._ws_extension.properties) > 0:
             self.dispose = self._dispose_with_extension
-    
+
     def _populate_with_extension(self):
-        self.factory_queue = [] 
+        self.factory_queue = []
         for _ in range(0, self.max_size):
             websocket = WebSocket(None, self.app)
             # bind methods to websocket
@@ -1642,11 +1804,10 @@ class WebSocketFactory:
             self.factory_queue.append((websocket, True))
 
     def _populate(self):
-        self.factory_queue = [] 
+        self.factory_queue = []
         for _ in range(0, self.max_size):
             websocket = WebSocket(None, self.app)
             self.factory_queue.append((websocket, True))
-
 
     def _get_with_extension(self, app, ws):
         if len(self.factory_queue) == 0:
@@ -1661,7 +1822,6 @@ class WebSocketFactory:
         (websocket, _) = instances
         websocket.ws = ws
         return instances
-    
 
     def _get(self, app, ws):
         if len(self.factory_queue) == 0:
@@ -1672,10 +1832,10 @@ class WebSocketFactory:
         (websocket, _) = instances
         websocket.ws = ws
         return instances
-    
+
     def _dispose_with_extension(self, instances):
         (websocket, _) = instances
-        #dispose ws        
+        # dispose ws
         websocket.ws = None
         websocket._cork_handler = None
         websocket._for_each_topic_handler = None
@@ -1688,7 +1848,7 @@ class WebSocketFactory:
 
     def _dispose(self, instances):
         (websocket, _) = instances
-        #dispose ws        
+        # dispose ws
         websocket.ws = None
         websocket._cork_handler = None
         websocket._for_each_topic_handler = None
@@ -1697,9 +1857,10 @@ class WebSocketFactory:
         websocket.got_socket_data = False
         self.factory_queue.append(instances)
 
+
 class RequestResponseFactory:
     def __init__(self, app, max_size):
-        self.factory_queue = []        
+        self.factory_queue = []
         self.app = app
         self.max_size = max_size
         self.dispose = self._dispose
@@ -1712,14 +1873,14 @@ class RequestResponseFactory:
         self.get = self._get_with_extension
 
     def _populate_with_extension(self):
-        self.factory_queue = [] 
+        self.factory_queue = []
         for _ in range(0, self.max_size):
             response = AppResponse(None, self.app)
             # set default value in properties
             self.app._response_extension.set_properties(response)
             # bind methods to response
             self.app._response_extension.bind_methods(response)
-            request =  AppRequest(None, self.app)
+            request = AppRequest(None, self.app)
             # set default value in properties
             self.app._request_extension.set_properties(request)
             # bind methods to request
@@ -1727,10 +1888,10 @@ class RequestResponseFactory:
             self.factory_queue.append((response, request, True))
 
     def _populate(self):
-        self.factory_queue = [] 
+        self.factory_queue = []
         for _ in range(0, self.max_size):
             response = AppResponse(None, self.app)
-            request =  AppRequest(None, self.app)
+            request = AppRequest(None, self.app)
             self.factory_queue.append((response, request, True))
 
     def _get_with_extension(self, app, res, req):
@@ -1740,7 +1901,7 @@ class RequestResponseFactory:
             self.app._response_extension.set_properties(response)
             # bind methods to response
             self.app._response_extension.bind_methods(response)
-            request =  AppRequest(req, app)
+            request = AppRequest(req, app)
             # set default value in properties
             self.app._request_extension.set_properties(request)
             # bind methods to request
@@ -1756,7 +1917,7 @@ class RequestResponseFactory:
     def _get(self, app, res, req):
         if len(self.factory_queue) == 0:
             response = AppResponse(res, app)
-            request =  AppRequest(req, app)
+            request = AppRequest(req, app)
             return response, request, False
 
         instances = self.factory_queue.pop()
@@ -1767,7 +1928,7 @@ class RequestResponseFactory:
 
     def _dispose_with_extension(self, instances):
         (res, req, _) = instances
-        #dispose res        
+        # dispose res
         res.res = None
         res.aborted = False
         res._aborted_handler = None
@@ -1782,7 +1943,7 @@ class RequestResponseFactory:
         res._data = None
         # set default value in properties
         self.app._response_extension.set_properties(res)
-        #dispose req
+        # dispose req
         req.req = None
         req.read_jar = None
         req.jar_parsed = False
@@ -1799,7 +1960,7 @@ class RequestResponseFactory:
 
     def _dispose(self, instances):
         (res, req, _) = instances
-        #dispose res        
+        # dispose res
         res.res = None
         res.aborted = False
         res._aborted_handler = None
@@ -1812,7 +1973,7 @@ class RequestResponseFactory:
         res._chunkFuture = None
         res._dataFuture = None
         res._data = None
-        #dispose req
+        # dispose req
         req.req = None
         req.read_jar = None
         req.jar_parsed = False
@@ -1824,6 +1985,7 @@ class RequestResponseFactory:
         req._full_url = None
         req._method = None
         self.factory_queue.append(instances)
+
 
 class AppRequest:
     def __init__(self, request, app):
@@ -2049,6 +2211,7 @@ class AppRequest:
         self.req = ffi.NULL
         self._ptr = ffi.NULL
 
+
 class AppExtension:
     def __init__(self):
         self.properties = []
@@ -2059,7 +2222,7 @@ class AppExtension:
         for (name, method) in self.methods:
             """
             Bind the function *func* to *instance*, with either provided name *as_name*
-            or the existing name of *func*. The provided *func* should accept the 
+            or the existing name of *func*. The provided *func* should accept the
             instance as the first argument, i.e. "self".
             """
             bound_method = method.__get__(instance, instance.__class__)
@@ -2069,19 +2232,24 @@ class AppExtension:
         for (name, property) in self.properties:
             setattr(instance, name, property)
 
-
     def method(self, method: callable):
         self.empty = False
         self.methods.append((method.__name__, method))
         return method
 
-    def property(self, name: str, default_value: any=None):
+    def property(self, name: str, default_value: any = None):
         self.empty = False
         self.properties.append((name, default_value))
 
 
 class App:
-    def __init__(self, options=None, request_response_factory_max_items=0, websocket_factory_max_items=0, task_factory_max_items=100_000):
+    def __init__(
+        self,
+        options=None,
+        request_response_factory_max_items=0,
+        websocket_factory_max_items=0,
+        task_factory_max_items=100_000,
+    ):
         socket_options_ptr = ffi.new("struct us_socket_context_options_t *")
         socket_options = socket_options_ptr[0]
         self.options = options
@@ -2127,11 +2295,10 @@ class App:
         else:
             self.is_ssl = False
             self.SSL = ffi.cast("int", 0)
-        
 
         self.loop = Loop(
             lambda loop, context, response: self.trigger_error(context, response, None),
-            task_factory_max_items
+            task_factory_max_items,
         )
 
         # set async loop to be the last created (is thread_local), App must be one per thread otherwise will use only the lasted loop
@@ -2146,23 +2313,28 @@ class App:
         self.error_handler = None
         self._missing_server_handler = None
 
-        if request_response_factory_max_items and request_response_factory_max_items >= 1:
-            self._factory = RequestResponseFactory(self, request_response_factory_max_items)
-        else: 
+        if (
+            request_response_factory_max_items
+            and request_response_factory_max_items >= 1
+        ):
+            self._factory = RequestResponseFactory(
+                self, request_response_factory_max_items
+            )
+        else:
             self._factory = None
 
         if websocket_factory_max_items and websocket_factory_max_items >= 1:
             self._ws_factory = WebSocketFactory(self, websocket_factory_max_items)
-        else: 
+        else:
             self._ws_factory = None
         self._json_serializer = json
         self._request_extension = None
         self._response_extension = None
         self._ws_extension = None
-        
-    def router(self, prefix: str="", *middlewares):
+
+    def router(self, prefix: str = "", *middlewares):
         return DecoratorRouter(self, prefix, middlewares)
-        
+
     def register(self, extension):
         if self._request_extension is None:
             self._request_extension = AppExtension()
@@ -2173,14 +2345,16 @@ class App:
 
         extension(self._request_extension, self._response_extension, self._ws_extension)
 
-        if self._factory is not None and (not self._request_extension.empty or not self._response_extension.empty):
+        if self._factory is not None and (
+            not self._request_extension.empty or not self._response_extension.empty
+        ):
             self._factory.update_extensions()
         if self._ws_factory is not None and not self._ws_extension.empty:
             self._ws_factory.update_extensions()
 
     def template(self, template_engine):
         self._template = template_engine
-    
+
     def json_serializer(self, json_serializer):
         self._json_serializer = json_serializer
 
@@ -2193,7 +2367,9 @@ class App:
         self.handlers.append(user_data)  # Keep alive handler
         if self._factory:
             handler = uws_generic_factory_method_handler
-        elif self._response_extension and (not self._response_extension.empty or not self._request_extension.empty):
+        elif self._response_extension and (
+            not self._response_extension.empty or not self._request_extension.empty
+        ):
             handler = uws_generic_method_handler_with_extension
         else:
             handler = uws_generic_method_handler
@@ -2212,7 +2388,9 @@ class App:
         self.handlers.append(user_data)  # Keep alive handler
         if self._factory:
             handler = uws_generic_factory_method_handler
-        elif self._response_extension and (not self._response_extension.empty or not self._request_extension.empty):
+        elif self._response_extension and (
+            not self._response_extension.empty or not self._request_extension.empty
+        ):
             handler = uws_generic_method_handler_with_extension
         else:
             handler = uws_generic_method_handler
@@ -2231,7 +2409,9 @@ class App:
         self.handlers.append(user_data)  # Keep alive handler
         if self._factory:
             handler = uws_generic_factory_method_handler
-        elif self._response_extension and (not self._response_extension.empty or not self._request_extension.empty):
+        elif self._response_extension and (
+            not self._response_extension.empty or not self._request_extension.empty
+        ):
             handler = uws_generic_method_handler_with_extension
         else:
             handler = uws_generic_method_handler
@@ -2250,7 +2430,9 @@ class App:
         self.handlers.append(user_data)  # Keep alive handler
         if self._factory:
             handler = uws_generic_factory_method_handler
-        elif self._response_extension and (not self._response_extension.empty or not self._request_extension.empty):
+        elif self._response_extension and (
+            not self._response_extension.empty or not self._request_extension.empty
+        ):
             handler = uws_generic_method_handler_with_extension
         else:
             handler = uws_generic_method_handler
@@ -2269,7 +2451,9 @@ class App:
         self.handlers.append(user_data)  # Keep alive handler
         if self._factory:
             handler = uws_generic_factory_method_handler
-        elif self._response_extension and (not self._response_extension.empty or not self._request_extension.empty):
+        elif self._response_extension and (
+            not self._response_extension.empty or not self._request_extension.empty
+        ):
             handler = uws_generic_method_handler_with_extension
         else:
             handler = uws_generic_method_handler
@@ -2288,11 +2472,12 @@ class App:
         self.handlers.append(user_data)  # Keep alive handler
         if self._factory:
             handler = uws_generic_factory_method_handler
-        elif self._response_extension and (not self._response_extension.empty or not self._request_extension.empty):
+        elif self._response_extension and (
+            not self._response_extension.empty or not self._request_extension.empty
+        ):
             handler = uws_generic_method_handler_with_extension
         else:
             handler = uws_generic_method_handler
-
 
         lib.uws_app_put(
             self.SSL,
@@ -2308,11 +2493,12 @@ class App:
         self.handlers.append(user_data)  # Keep alive handler
         if self._factory:
             handler = uws_generic_factory_method_handler
-        elif self._response_extension and (not self._response_extension.empty or not self._request_extension.empty):
+        elif self._response_extension and (
+            not self._response_extension.empty or not self._request_extension.empty
+        ):
             handler = uws_generic_method_handler_with_extension
         else:
             handler = uws_generic_method_handler
-
 
         lib.uws_app_head(
             self.SSL,
@@ -2328,11 +2514,12 @@ class App:
         self.handlers.append(user_data)  # Keep alive handler
         if self._factory:
             handler = uws_generic_factory_method_handler
-        elif self._response_extension and (not self._response_extension.empty or not self._request_extension.empty):
+        elif self._response_extension and (
+            not self._response_extension.empty or not self._request_extension.empty
+        ):
             handler = uws_generic_method_handler_with_extension
         else:
             handler = uws_generic_method_handler
-
 
         lib.uws_app_connect(
             self.SSL,
@@ -2348,7 +2535,9 @@ class App:
         self.handlers.append(user_data)  # Keep alive handler
         if self._factory:
             handler = uws_generic_factory_method_handler
-        elif self._response_extension and (not self._response_extension.empty or not self._request_extension.empty):
+        elif self._response_extension and (
+            not self._response_extension.empty or not self._request_extension.empty
+        ):
             handler = uws_generic_method_handler_with_extension
         else:
             handler = uws_generic_method_handler
@@ -2367,11 +2556,12 @@ class App:
         self.handlers.append(user_data)  # Keep alive handler
         if self._factory:
             handler = uws_generic_factory_method_handler
-        elif self._response_extension and (not self._response_extension.empty or not self._request_extension.empty):
+        elif self._response_extension and (
+            not self._response_extension.empty or not self._request_extension.empty
+        ):
             handler = uws_generic_method_handler_with_extension
         else:
             handler = uws_generic_method_handler
-
 
         lib.uws_app_any(
             self.SSL,
@@ -2583,7 +2773,9 @@ class App:
 
             if self._factory:
                 native_behavior.upgrade = uws_websocket_factory_upgrade_handler
-            elif self._response_extension and (not self._response_extension.empty or not self._request_extension.empty):
+            elif self._response_extension and (
+                not self._response_extension.empty or not self._request_extension.empty
+            ):
                 native_behavior.upgrade = uws_websocket_upgrade_handler_with_extension
             else:
                 native_behavior.upgrade = uws_websocket_upgrade_handler
@@ -2592,46 +2784,73 @@ class App:
 
         if open_handler:
             handlers.open = open_handler
-            native_behavior.open = uws_websocket_factory_open_handler if self._ws_factory else uws_websocket_open_handler
+            native_behavior.open = (
+                uws_websocket_factory_open_handler
+                if self._ws_factory
+                else uws_websocket_open_handler
+            )
         else:
             native_behavior.open = ffi.NULL
 
         if message_handler:
             handlers.message = message_handler
-            native_behavior.message = uws_websocket_factory_message_handler if self._ws_factory else uws_websocket_message_handler
+            native_behavior.message = (
+                uws_websocket_factory_message_handler
+                if self._ws_factory
+                else uws_websocket_message_handler
+            )
         else:
             native_behavior.message = ffi.NULL
 
         if drain_handler:
             handlers.drain = drain_handler
-            native_behavior.drain = uws_websocket_factory_drain_handler if self._ws_factory else uws_websocket_drain_handler
+            native_behavior.drain = (
+                uws_websocket_factory_drain_handler
+                if self._ws_factory
+                else uws_websocket_drain_handler
+            )
         else:
             native_behavior.drain = ffi.NULL
 
         if ping_handler:
             handlers.ping = ping_handler
-            native_behavior.ping = uws_websocket_factory_ping_handler if self._ws_factory else uws_websocket_ping_handler
+            native_behavior.ping = (
+                uws_websocket_factory_ping_handler
+                if self._ws_factory
+                else uws_websocket_ping_handler
+            )
         else:
             native_behavior.ping = ffi.NULL
 
         if pong_handler:
             handlers.pong = pong_handler
-            native_behavior.pong = uws_websocket_factory_pong_handler if self._ws_factory else uws_websocket_pong_handler
+            native_behavior.pong = (
+                uws_websocket_factory_pong_handler
+                if self._ws_factory
+                else uws_websocket_pong_handler
+            )
         else:
             native_behavior.pong = ffi.NULL
 
         if close_handler:
             handlers.close = close_handler
-            native_behavior.close = uws_websocket_factory_close_handler if self._ws_factory else uws_websocket_close_handler
+            native_behavior.close = (
+                uws_websocket_factory_close_handler
+                if self._ws_factory
+                else uws_websocket_close_handler
+            )
         else:  # always keep an close
             native_behavior.close = uws_websocket_close_handler
 
         if subscription_handler:
             handlers.subscription = subscription_handler
-            native_behavior.subscription = uws_websocket_factory_subscription_handler if self._ws_factory else uws_websocket_subscription_handler
+            native_behavior.subscription = (
+                uws_websocket_factory_subscription_handler
+                if self._ws_factory
+                else uws_websocket_subscription_handler
+            )
         else:  # always keep an close
             native_behavior.subscription = ffi.NULL
-
 
         user_data = ffi.new_handle((handlers, self))
         self.handlers.append(user_data)  # Keep alive handlers
@@ -2683,8 +2902,16 @@ class App:
             )
         else:
             if port_or_options.domain:
-                domain = port_or_options.domain.encode('utf8')
-                lib.uws_app_listen_domain_with_options(self.SSL, self.app, domain, len(domain), int(port_or_options.options), uws_generic_listen_domain_handler, self._ptr)
+                domain = port_or_options.domain.encode("utf8")
+                lib.uws_app_listen_domain_with_options(
+                    self.SSL,
+                    self.app,
+                    domain,
+                    len(domain),
+                    int(port_or_options.options),
+                    uws_generic_listen_domain_handler,
+                    self._ptr,
+                )
             else:
                 native_options = ffi.new("uws_app_listen_config_t *")
                 options = native_options[0]
@@ -2698,7 +2925,7 @@ class App:
                 self.native_options_listen = native_options  # Keep alive native_options
                 lib.uws_app_listen_with_config(
                     self.SSL, self.app, options, uws_generic_listen_handler, self._ptr
-            )
+                )
 
         return self
 
@@ -2758,23 +2985,22 @@ class App:
                     pass
 
     def dispose(self):
-        if self.app: #only destroy if exists
+        if self.app:  # only destroy if exists
             self.close()
             lib.uws_app_destroy(self.SSL, self.app)
             self.app = None
 
         if self.loop:
-           self.loop.dispose()
-           self.loop = None
-        
+            self.loop.dispose()
+            self.loop = None
+
     def __del__(self):
-        if self.app: #only destroy if exists
+        if self.app:  # only destroy if exists
             self.close()
             lib.uws_app_destroy(self.SSL, self.app)
         if self.loop:
             self.loop.dispose()
             self.loop = None
-            
 
 
 @dataclass
@@ -2794,16 +3020,19 @@ class AppListenOptions:
         if not isinstance(self.options, int):
             raise RuntimeError("options must be an int")
         if self.domain and (self.host or self.port != 0):
-            raise RuntimeError("if domain is specified, host and port will be no effect")
-        
+            raise RuntimeError(
+                "if domain is specified, host and port will be no effect"
+            )
+
+
 @dataclass
 class AppOptions:
-    key_file_name: str = None,
-    cert_file_name: str = None,
-    passphrase: str = None,
-    dh_params_file_name: str = None,
-    ca_file_name: str = None,
-    ssl_ciphers: str = None,
+    key_file_name: str = (None,)
+    cert_file_name: str = (None,)
+    passphrase: str = (None,)
+    dh_params_file_name: str = (None,)
+    ca_file_name: str = (None,)
+    ssl_ciphers: str = (None,)
     ssl_prefer_low_memory_usage: int = 0
 
     def __post_init__(self):

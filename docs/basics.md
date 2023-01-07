@@ -7,7 +7,14 @@ This section is to show the basics of `AppResponse` and `AppRequest`
 `res.write(message)` were message can be String, bytes or an Object that can be converted to json, send the message to the response without ending.
 
 `res.cork_end(message, end_connection=False)` or `res.end(message, end_connection=False)` were message can be String, bytes or an Object that can be converted to json, send the message to the response and end the response.
+
 The above `res.end()` or `res.cork_end()` call will actually call three separate send functions; res.write_status, res.write_header and whatever it does itself. By wrapping the call in `res.cork` or `res.cork_end` you make sure these three send functions are efficient and only result in one single send syscall and one single SSL block if using SSL.
+
+
+`res.send(message, content_type=b'text/plain, status=b'200 OK', headers=None, end_connection=False)` and `res.cork_send(message, content_type=b'text/plain', status=b'200 OK', headers=None, end_connection=False)`
+combines `res.write_status()`, `res.write_headers()`, and `res.end()` in a way that is easier to use, if you want to send all in one call just using named parameters. Headers can receive any iterator of iterators/tuple like `iter(tuple(str, str))` where the first value is the header name and the following the value, using `res.cork_send` will make sure to send all the
+data in a corked state.
+    
 
 Using `res.write_continue()` writes HTTP/1.1 100 Continue as response
 
@@ -51,8 +58,24 @@ def not_found(res, req):
     res.write_status(404).end("Not Found")
 
 def ok(res, req):
-    res.write_status("200 OK").end("Not Found")
+    res.write_status("200 OK").end("OK")
 ```
+
+### Using send
+```python
+def not_found(res, req):
+    res.send("Not Found", status=404)
+
+def ok(res, req):
+    res.send("OK", status="200 OK")
+
+def json(res, req):
+    res.send({"Hello", "World!"})
+
+def with_headers(res, req):
+    res.send({"Hello": "World!"}, headers=(("X-Rate-Limit-Remaining", "10"), (b'Another-Headers', b'Value')))
+```
+
 
 ### Check the URL or Method
 `req.get_full_url()` will return the path with query string

@@ -12,7 +12,7 @@
 - [Templates](templates.md)
 - [GraphiQL](graphiql.md)
 - [WebSockets and Backpressure](websockets-backpressure.md)
-- [SSL](ssl.md)
 - [Plugins / Extensions](extensions.md)
+- [SSL](ssl.md)
 - [CLI, ASGI and WSGI](cli.md)
 - [API Reference](api.md)

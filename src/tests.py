@@ -14,12 +14,6 @@ def extension(request, response, ws):
     async def get_cart(self):
         return [{ "quantity": 10, "name": "T-Shirt" }]
 
-    @response.method
-    def send(self, content: any, content_type: str = b'text/plain', status=200):
-        self.write_header(b'Content-Type', content_type)
-        self.write_status(status)
-        self.end(content)
-
     request.property("token", "testing")
 
 # extensions must be registered before routes
@@ -31,18 +25,18 @@ def auth_middleware(res, req, data):
     req.token = token
     return { "name": "Test" } if token else { "name", "Anonymous" }
 
-router = app.router("", auth_middleware)
+router = app.router("")
 
 @router.get("/")
-async def home(res, req, data=None):
-    print(data)
-    print("token", req.token)
-    cart = await req.get_cart()
-    print("cart", cart)
-    user = await req.get_user()
-    print("user", user)
-    print("token", req.token)
-    res.send("Hello World!")
+def home(res, req, data=None):
+    # print(data)
+    # print("token", req.token)
+    # cart = await req.get_cart()
+    # print("cart", cart)
+    # user = await req.get_user()
+    # print("user", user)
+    # print("token", req.token)
+    res.send({"Hello": "World!"}, headers=(("X-Rate-Limit-Remaining", "10"), (b'Another-Headers', b'Value')))
 
 
 app.listen(

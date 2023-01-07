@@ -52,4 +52,4 @@ def extension(request, response, ws):
 app.register(extension)
 ```
 
-### Next [CLI, ASGI and WSGI](cli.md)
+### Next [SSL](ssl.md)
