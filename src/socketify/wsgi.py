@@ -266,8 +266,9 @@ def wsgi(ssl, response, info, user_data, aborted):
         WSGI_INPUT = BytesIO()
         environ["wsgi.input"] = WSGIBody(WSGI_INPUT)
         failed_chunks = None
+        last_offset = -1
         def on_data(data_response, response):
-            nonlocal failed_chunks
+            nonlocal failed_chunks, last_offset
             if bool(data_response.aborted[0]):
                 return
 
@@ -303,6 +304,7 @@ def wsgi(ssl, response, info, user_data, aborted):
                                 )
                                 # this should be very very rare fot HTTP
                                 if not bool(result.ok):
+                                    last_offset = int(lib.uws_res_get_write_offset(ssl, response))
                                     failed_chunks = []
                                     # just mark the chunks
                                     failed_chunks.append(data)
@@ -362,6 +364,7 @@ def wsgi(ssl, response, info, user_data, aborted):
                             )
                             # this should be very very rare fot HTTP
                             if not bool(result.ok):
+                                last_offset = int(lib.uws_res_get_write_offset(ssl, response))
                                 failed_chunks = []
                                 # just mark the chunks
                                 failed_chunks.append(data)
@@ -378,6 +381,9 @@ def wsgi(ssl, response, info, user_data, aborted):
             write_headers(headers_set)         
         if is_chunked:
             lib.uws_res_end_without_body(ssl, response, 0)
+        # elif failed_chunks: # have failed chunks, so go async
+            
+        #     pass
         elif result is None or not bool(result.has_responded): # not reachs Content-Length
             logging.error(AssertionError("Content-Length do not match sended content"))
             lib.uws_res_close(
