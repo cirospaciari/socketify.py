@@ -18,6 +18,7 @@ from .status_codes import status_codes
 from .helpers import static_route
 from dataclasses import dataclass
 from .helpers import DecoratorRouter
+from typing import Union
 
 mimetypes.init()
 
@@ -71,6 +72,27 @@ def uws_websocket_factory_drain_handler(ws, user_data):
         except Exception as err:
             if dispose:
                 app._ws_factory.dispose(instances)
+            logging.error(
+                "Uncaught Exception: %s" % str(err)
+            )  # just log in console the error to call attention
+
+
+@ffi.callback("void(uws_websocket_t*, void*)")
+def uws_websocket_drain_handler_with_extension(ws, user_data):
+    if user_data != ffi.NULL:
+        try:
+            handlers, app = ffi.from_handle(user_data)
+            ws = WebSocket(ws, app)
+            # bind methods to websocket
+            app._ws_extension.set_properties(ws)
+            # set default value in properties
+            app._ws_extension.bind_methods(ws)
+            handler = handlers.drain
+            if inspect.iscoroutinefunction(handler):
+                app.run_async(handler(ws))
+            else:
+                handler(ws)
+        except Exception as err:
             logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
@@ -216,6 +238,52 @@ def uws_websocket_subscription_handler(
             )  # just log in console the error to call attention
 
 
+@ffi.callback("void(uws_websocket_t*, const char *, size_t, int, int, void*)")
+def uws_websocket_subscription_handler_with_extension(
+    ws,
+    topic_name,
+    topic_name_length,
+    new_number_of_subscriber,
+    old_number_of_subscriber,
+    user_data,
+):
+    if user_data != ffi.NULL:
+        try:
+            handlers, app = ffi.from_handle(user_data)
+            ws = WebSocket(ws, app)
+            # bind methods to websocket
+            app._ws_extension.set_properties(ws)
+            # set default value in properties
+            app._ws_extension.bind_meth
+            handler = handlers.subscription
+
+            if topic_name == ffi.NULL:
+                topic = None
+            else:
+                topic = ffi.unpack(topic_name, topic_name_length).decode("utf-8")
+
+            if inspect.iscoroutinefunction(handler):
+                app.run_async(
+                    handler(
+                        ws,
+                        topic,
+                        int(new_number_of_subscriber),
+                        int(old_number_of_subscriber),
+                    )
+                )
+            else:
+                handler(
+                    ws,
+                    topic,
+                    int(new_number_of_subscriber),
+                    int(old_number_of_subscriber),
+                )
+        except Exception as err:
+            logging.error(
+                "Uncaught Exception: %s" % str(err)
+            )  # just log in console the error to call attention
+
+
 @ffi.callback("void(uws_websocket_t*, void*)")
 def uws_websocket_factory_open_handler(ws, user_data):
     if user_data != ffi.NULL:
@@ -243,6 +311,28 @@ def uws_websocket_factory_open_handler(ws, user_data):
         except Exception as err:
             if dispose:
                 app._ws_factory.dispose(instances)
+            logging.error(
+                "Uncaught Exception: %s" % str(err)
+            )  # just log in console the error to call attention
+
+
+@ffi.callback("void(uws_websocket_t*, void*)")
+def uws_websocket_open_handler_with_extension(ws, user_data):
+
+    if user_data != ffi.NULL:
+        try:
+            handlers, app = ffi.from_handle(user_data)
+            ws = WebSocket(ws, app)
+            # bind methods to websocket
+            app._ws_extension.set_properties(ws)
+            # set default value in properties
+            app._ws_extension.bind_meth
+            handler = handlers.open
+            if inspect.iscoroutinefunction(handler):
+                app.run_async(handler(ws))
+            else:
+                handler(ws)
+        except Exception as err:
             logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
@@ -302,6 +392,39 @@ def uws_websocket_factory_message_handler(ws, message, length, opcode, user_data
         except Exception as err:
             if dispose:
                 app._ws_factory.dispose(instances)
+            logging.error(
+                "Uncaught Exception: %s" % str(err)
+            )  # just log in console the error to call attention
+
+
+@ffi.callback("void(uws_websocket_t*, const char*, size_t, uws_opcode_t, void*)")
+def uws_websocket_message_handler_with_extension(
+    ws, message, length, opcode, user_data
+):
+    if user_data != ffi.NULL:
+        try:
+            handlers, app = ffi.from_handle(user_data)
+            ws = WebSocket(ws, app)
+            # bind methods to websocket
+            app._ws_extension.set_properties(ws)
+            # set default value in properties
+            app._ws_extension.bind_meth
+
+            if message == ffi.NULL:
+                data = None
+            else:
+                data = ffi.unpack(message, length)
+            opcode = OpCode(opcode)
+            if opcode == OpCode.TEXT:
+                data = data.decode("utf-8")
+
+            handler = handlers.message
+            if inspect.iscoroutinefunction(handler):
+                app.run_async(handler(ws, data, opcode))
+            else:
+                handler(ws, data, opcode)
+
+        except Exception as err:
             logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
@@ -373,6 +496,32 @@ def uws_websocket_factory_pong_handler(ws, message, length, user_data):
 
 
 @ffi.callback("void(uws_websocket_t*, const char*, size_t, void*)")
+def uws_websocket_pong_handler_with_extension(ws, message, length, user_data):
+    if user_data != ffi.NULL:
+        try:
+            handlers, app = ffi.from_handle(user_data)
+            ws = WebSocket(ws, app)
+            # bind methods to websocket
+            app._ws_extension.set_properties(ws)
+            # set default value in properties
+            app._ws_extension.bind_meth
+            if message == ffi.NULL:
+                data = None
+            else:
+                data = ffi.unpack(message, length)
+
+            handler = handlers.pong
+            if inspect.iscoroutinefunction(handler):
+                app.run_async(handler(ws, data))
+            else:
+                handler(ws, data)
+        except Exception as err:
+            logging.error(
+                "Uncaught Exception: %s" % str(err)
+            )  # just log in console the error to call attention
+
+
+@ffi.callback("void(uws_websocket_t*, const char*, size_t, void*)")
 def uws_websocket_pong_handler(ws, message, length, user_data):
     if user_data != ffi.NULL:
         try:
@@ -428,6 +577,34 @@ def uws_websocket_factory_ping_handler(ws, message, length, user_data):
         except Exception as err:
             if dispose:
                 app._ws_factory.dispose(instances)
+            logging.error(
+                "Uncaught Exception: %s" % str(err)
+            )  # just log in console the error to call attention
+
+
+@ffi.callback("void(uws_websocket_t*, const char*, size_t, void*)")
+def uws_websocket_ping_handler_with_extension(ws, message, length, user_data):
+    if user_data != ffi.NULL:
+        try:
+            handlers, app = ffi.from_handle(user_data)
+            ws = WebSocket(ws, app)
+            # bind methods to websocket
+            app._ws_extension.set_properties(ws)
+            # set default value in properties
+            app._ws_extension.bind_meth
+
+            if message == ffi.NULL:
+                data = None
+            else:
+                data = ffi.unpack(message, length)
+
+            handler = handlers.ping
+            if inspect.iscoroutinefunction(handler):
+                app.run_async(handler(ws, data))
+            else:
+                handler(ws, data)
+
+        except Exception as err:
             logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
@@ -499,6 +676,51 @@ def uws_websocket_factory_close_handler(ws, code, message, length, user_data):
                     app._socket_refs.pop(key, None)
                 if dispose:
                     app._ws_factory.dispose(instances)
+
+        except Exception as err:
+            logging.error(
+                "Uncaught Exception: %s" % str(err)
+            )  # just log in console the error to call attention
+
+
+@ffi.callback("void(uws_websocket_t*, int, const char*, size_t, void*)")
+def uws_websocket_close_handler_with_extension(ws, code, message, length, user_data):
+    if user_data != ffi.NULL:
+        try:
+            handlers, app = ffi.from_handle(user_data)
+            # pass to free data on WebSocket if needed
+            ws = WebSocket(ws, app)
+            # bind methods to websocket
+            app._ws_extension.set_properties(ws)
+            # set default value in properties
+            app._ws_extension.bind_meth
+
+            if message == ffi.NULL:
+                data = None
+            else:
+                data = ffi.unpack(message, length)
+
+            handler = handlers.close
+
+            if handler is None:
+                return
+
+            if inspect.iscoroutinefunction(handler):
+
+                async def wrapper(app, handler, ws, data, code, dispose):
+                    try:
+                        return await handler(ws, code, data)
+                    finally:
+                        key = ws.get_user_data_uuid()
+                        if key is not None:
+                            app._socket_refs.pop(key, None)
+
+                app.run_async(wrapper(app, handler, ws, data, int(code)))
+            else:
+                handler(ws, int(code), data)
+                key = ws.get_user_data_uuid()
+                if key is not None:
+                    app._socket_refs.pop(key, None)
 
         except Exception as err:
             logging.error(
@@ -1506,11 +1728,11 @@ class AppResponse:
 
     def cork_send(
         self,
-        message,
-        content_type: str | bytes = b"text/plain",
-        status: str | bytes | int = b"200 OK",
+        message: any,
+        content_type: Union[str, bytes] = b"text/plain",
+        status: Union[str, bytes, int] = b"200 OK",
         headers=None,
-        end_connection=False,
+        end_connection: bool = False,
     ):
         self.cork(
             lambda res: res.send(message, content_type, status, headers, end_connection)
@@ -1520,10 +1742,10 @@ class AppResponse:
     def send(
         self,
         message: any,
-        content_type: str | bytes = b"text/plain",
-        status: str | bytes | int = b"200 OK",
+        content_type: Union[str, bytes] = b"text/plain",
+        status: Union[str, bytes, int] = b"200 OK",
         headers=None,
-        end_connection=False,
+        end_connection: bool = False,
     ):
         if self.aborted:
             return self
@@ -2779,71 +3001,101 @@ class App:
                 native_behavior.upgrade = uws_websocket_upgrade_handler_with_extension
             else:
                 native_behavior.upgrade = uws_websocket_upgrade_handler
+
         else:
             native_behavior.upgrade = ffi.NULL
 
         if open_handler:
             handlers.open = open_handler
-            native_behavior.open = (
-                uws_websocket_factory_open_handler
-                if self._ws_factory
-                else uws_websocket_open_handler
-            )
+
+            if self._factory:
+                native_behavior.open = uws_websocket_factory_open_handler
+            elif self._ws_extension and not self._ws_extension.empty:
+                native_behavior.open = uws_websocket_open_handler_with_extension
+            else:
+                native_behavior.open = uws_websocket_open_handler
+
         else:
             native_behavior.open = ffi.NULL
 
         if message_handler:
             handlers.message = message_handler
-            native_behavior.message = (
-                uws_websocket_factory_message_handler
-                if self._ws_factory
-                else uws_websocket_message_handler
-            )
+
+            if self._factory:
+                native_behavior.message = uws_websocket_factory_message_handler
+            elif self._ws_extension and not self._ws_extension.empty:
+                native_behavior.message = uws_websocket_message_handler_with_extension
+            else:
+                native_behavior.message = uws_websocket_message_handler
+
         else:
             native_behavior.message = ffi.NULL
 
         if drain_handler:
             handlers.drain = drain_handler
-            native_behavior.drain = (
-                uws_websocket_factory_drain_handler
-                if self._ws_factory
-                else uws_websocket_drain_handler
-            )
-        else:
+
+            if self._factory:
+                native_behavior.drain = uws_websocket_factory_drain_handler
+            elif self._ws_extension and not self._ws_extension.empty:
+                native_behavior.drain = uws_websocket_drain_handler_with_extension
+            else:
+                native_behavior.drain = uws_websocket_drain_handler
+
             native_behavior.drain = ffi.NULL
 
         if ping_handler:
             handlers.ping = ping_handler
-            native_behavior.ping = (
-                uws_websocket_factory_ping_handler
-                if self._ws_factory
-                else uws_websocket_ping_handler
-            )
+
+            if self._factory:
+                native_behavior.ping = uws_websocket_factory_ping_handler
+            elif self._ws_extension and not self._ws_extension.empty:
+                native_behavior.ping = uws_websocket_ping_handler_with_extension
+            else:
+                native_behavior.ping = uws_websocket_ping_handler
+
         else:
             native_behavior.ping = ffi.NULL
 
         if pong_handler:
             handlers.pong = pong_handler
-            native_behavior.pong = (
-                uws_websocket_factory_pong_handler
-                if self._ws_factory
-                else uws_websocket_pong_handler
-            )
+
+            if self._factory:
+                native_behavior.pong = uws_websocket_factory_pong_handler
+            elif self._ws_extension and not self._ws_extension.empty:
+                native_behavior.pong = uws_websocket_pong_handler_with_extension
+            else:
+                native_behavior.pong = uws_websocket_pong_handler
+
         else:
             native_behavior.pong = ffi.NULL
 
         if close_handler:
             handlers.close = close_handler
-            native_behavior.close = (
-                uws_websocket_factory_close_handler
-                if self._ws_factory
-                else uws_websocket_close_handler
-            )
+
+            if self._factory:
+                native_behavior.close = uws_websocket_factory_close_handler
+            elif self._ws_extension and not self._ws_extension.empty:
+                native_behavior.close = uws_websocket_close_handler_with_extension
+            else:
+                native_behavior.close = uws_websocket_close_handler
+
         else:  # always keep an close
             native_behavior.close = uws_websocket_close_handler
 
         if subscription_handler:
             handlers.subscription = subscription_handler
+
+            if self._factory:
+                native_behavior.subscription = (
+                    uws_websocket_factory_subscription_handler
+                )
+            elif self._ws_extension and not self._ws_extension.empty:
+                native_behavior.subscription = (
+                    uws_websocket_subscription_handler_with_extension
+                )
+            else:
+                native_behavior.subscription = uws_websocket_subscription_handler
+
             native_behavior.subscription = (
                 uws_websocket_factory_subscription_handler
                 if self._ws_factory
