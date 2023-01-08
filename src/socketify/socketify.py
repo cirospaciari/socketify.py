@@ -2476,11 +2476,13 @@ class App:
         request_response_factory_max_items=0,
         websocket_factory_max_items=0,
         task_factory_max_items=100_000,
+        lifespan=True
     ):
         socket_options_ptr = ffi.new("struct us_socket_context_options_t *")
         socket_options = socket_options_ptr[0]
         self.options = options
         self._template = None
+        self.lifespan = lifespan
         # keep socket data alive for CFFI
         self._socket_refs = {}
         if options is not None:
@@ -2558,7 +2560,16 @@ class App:
         self._request_extension = None
         self._response_extension = None
         self._ws_extension = None
+        self._on_start_handler  = None
 
+    def on_start(self, method: callable):
+        self._on_start_handler  = method
+        return method
+    
+    def on_shutdown(self, method: callable):
+        self._on_shutdown_handler  = method
+        return method
+    
     def router(self, prefix: str = "", *middlewares):
         return DecoratorRouter(self, prefix, middlewares)
 
@@ -3115,6 +3126,24 @@ class App:
         return self
 
     def listen(self, port_or_options=None, handler=None):
+        if self.lifespan:
+                async def task_wrapper(task):
+                    try:
+                        if inspect.iscoroutinefunction(task):
+                            await task()
+                        else:
+                            task()
+                    except Exception as error:
+                        try:
+                            self.trigger_error(error, None, None)
+                        finally:
+                            return None
+
+                # start lifespan
+                if self._on_start_handler:
+                    self.loop.run_until_complete(task_wrapper(self._on_start_handler))
+
+        # actual listen to server
         self._listen_handler = handler
         if port_or_options is None:
             lib.uws_app_listen(
@@ -3198,6 +3227,22 @@ class App:
 
         signal.signal(signal.SIGINT, lambda sig, frame: self.close())
         self.loop.run()
+        if self.lifespan:
+            async def task_wrapper(task):
+                try:
+                    if inspect.iscoroutinefunction(task):
+                        await task()
+                    else:
+                        task()
+                except Exception as error:
+                    try:
+                        self.trigger_error(error, None, None)
+                    finally:
+                        return None
+            # shutdown lifespan
+            if self._on_shutdown_handler:
+                self.loop.run_until_complete(task_wrapper(self._on_shutdown_handler))
+
         return self
 
     def close(self):

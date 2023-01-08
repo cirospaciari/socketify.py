@@ -241,8 +241,7 @@ def execute(args):
             return print("socketify interface must be callable with 1 parameter def run(app: App)")
         # run app with the settings desired
         def run_app():
-            # Add lifespan when lifespan hooks are implemented
-            fork_app = App(ssl_options, int(options.get("--req-res-factory-maxitems", 0)), int(options.get("--ws-factory-maxitems", 0)), task_factory_maxitems)
+            fork_app = App(ssl_options, int(options.get("--req-res-factory-maxitems", 0)), int(options.get("--ws-factory-maxitems", 0)), task_factory_maxitems, lifespan)
             module(fork_app) # call module factory
 
             if websockets: # if socketify websockets are added using --ws in socketify interface we can set here

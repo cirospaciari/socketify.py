@@ -233,4 +233,37 @@ If you need to access the raw pointer of `libuv` you can use `app.get_native_han
 HttpRequest object being stack-allocated and only valid in one single callback invocation so only valid in the first "segment" before the first await. 
 If you just want to preserve headers, url, method, cookies and query string you can use `req.preserve()` to copy all data and keep it in the request object, but will be some performance penalty.
 
+
+# Lifespan / Lifecycle events
+You can use socketify start and shutdown events to create/clean thread pools, connections pools, etc when the application starts or shutdown itself.
+
+If any exception occurs in the start event the application will continue and start normally,
+if you want to fail a start you need to catch the exception and use `sys.exit(1)` to shut down prematurely.
+
+Both `app.on_start` and `app.on_shutdown` can be sync or async.
+
+
+```python
+from socketify import App
+
+def run(app: App)
+    @app.on_start
+    async def on_start():
+        print("wait...")
+        await asyncio.sleep(1)
+        print("start!")
+
+    @app.on_shutdown
+    async def on_shutdown():
+        print("wait...")
+        await asyncio.sleep(1)
+        print("shutdown!")
+
+    router = app.router()
+
+    @router.get("/")
+    def home(res, req):
+        res.send("Hello, World!")
+
+```
 ### Next [Upload and Post](upload-post.md)

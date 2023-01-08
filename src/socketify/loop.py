@@ -86,7 +86,7 @@ class Loop:
         else:
             future = None    
         self.loop.call_soon(self._keep_alive)
-        self.loop.run_until_complete()
+        self.loop.run_until_complete(future)
         # clean up uvloop
         self.uv_loop.stop()
         return future
