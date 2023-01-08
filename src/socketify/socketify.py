@@ -1751,7 +1751,6 @@ class AppResponse:
             return self
 
         self.write_status(status)
-        self.write_header(b"Content-Type", content_type)
 
         if headers is not None:
             for name, value in headers:
@@ -1762,13 +1761,19 @@ class AppResponse:
                 self._write_jar = None
             if isinstance(message, str):
                 data = message.encode("utf-8")
+                self.write_header(b"Content-Type", content_type)
             elif isinstance(message, bytes):
+                self.write_header(b"Content-Type", content_type)
                 data = message
             elif message is None:
+                self.write_header(b"Content-Type", content_type)
                 self.end_without_body(end_connection)
                 return self
             else:
                 data = self.app._json_serializer.dumps(message).encode("utf-8")
+                # ignores content_type should always be json here
+                self.write_header(b"Content-Type", b'application/json')
+            
             lib.uws_res_end(
                 self.app.SSL, self.res, data, len(data), 1 if end_connection else 0
             )
