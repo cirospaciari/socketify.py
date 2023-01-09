@@ -17,7 +17,10 @@
 </p>
 
 
+## :bookmark_tabs: Documentation
+See the full docs in [docs.socketify.dev](https://docs.socketify.dev) or in [/docs/README.md](docs/README.md)
 
+Also take a look in the examples in [/examples](https://github.com/cirospaciari/socketify.py/tree/main/examples)
 ## 💡 Features
 
 - WebSocket with pub/sub support
@@ -212,5 +215,3 @@ We don't use uvloop, because uvloop don't support Windows and PyPy3 at this mome
 ## :dizzy: CFFI vs Cython vs HPy
 Cython performs really well on Python3 but really bad on PyPy3, CFFI are chosen for better support PyPy3 until we got our hands on an stable [`HPy`](https://hpyproject.org/) integration.
 
-## :bookmark_tabs: Documentation
-See the full docs in [docs.socketify.dev](https://docs.socketify.dev) or in [/docs/README.md](docs/README.md)
