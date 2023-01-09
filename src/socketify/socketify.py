@@ -2561,6 +2561,7 @@ class App:
         self._response_extension = None
         self._ws_extension = None
         self._on_start_handler  = None
+        self._on_shutdown_handler = None
 
     def on_start(self, method: callable):
         self._on_start_handler  = method
@@ -3253,6 +3254,10 @@ class App:
         self.loop.stop()
         return self
 
+    def on_error(self, handler):
+        self.set_error_handler(handler)
+        return handler
+
     def set_error_handler(self, handler):
         if hasattr(handler, "__call__"):
             self.error_handler = handler
@@ -3271,6 +3276,7 @@ class App:
         else:
             try:
                 if inspect.iscoroutinefunction(self.error_handler):
+                    print("coroutine!", error)
                     self.run_async(
                         self.error_handler(error, response, request), response
                     )

@@ -5,7 +5,8 @@ class App:
     def __init__(self, options=None, request_response_factory_max_items=0, websocket_factory_max_items=0, task_factory_max_items=100_000, lifespan=True):
 
     def on_start(self, method: callable):
-    def on_shutdown(self, method: callable):    
+    def on_shutdown(self, method: callable):
+    def on_error(self, method: callable):    
     def router(self, prefix: str="", *middlewares):
     def register(self, extension):
     def template(self, template_engine):

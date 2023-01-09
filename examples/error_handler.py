@@ -9,11 +9,12 @@ def xablau(res, req):
 
 
 async def async_xablau(res, req):
-    await asyncio.sleep(1)
     raise RuntimeError("Async Xablau!")
 
 
+
 # this can be async no problems
+@app.on_error
 def on_error(error, res, req):
     # here you can log properly the error and do a pretty response to your clients
     print("Somethind goes %s" % str(error))
@@ -27,7 +28,8 @@ def on_error(error, res, req):
 app.get("/", xablau)
 app.get("/async", async_xablau)
 
-app.set_error_handler(on_error)
+# you can also use set_error_handler
+# app.set_error_handler(on_error)
 
 app.listen(
     3000,

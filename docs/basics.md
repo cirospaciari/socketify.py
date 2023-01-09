@@ -246,7 +246,8 @@ Both `app.on_start` and `app.on_shutdown` can be sync or async.
 ```python
 from socketify import App
 
-def run(app: App)
+def run(app: App):
+    
     @app.on_start
     async def on_start():
         print("wait...")
@@ -264,6 +265,36 @@ def run(app: App)
     @router.get("/")
     def home(res, req):
         res.send("Hello, World!")
+
+```
+
+# Error handler events
+You can set a error handler to give the user an custom 500 page and/or for logging properly
+
+Using `app.set_error_handler(on_error)` or `app.on_error` decorator.
+
+
+```python
+from socketify import App
+
+def run(app: App):
+
+    @app.on_error
+    def on_error(error, res, req):
+        # here you can log properly the error and do a pretty response to your clients
+        print("Somethind goes %s" % str(error))
+        # response and request can be None if the error is in an async function
+        if res != None:
+            # if response exists try to send something
+            res.write_status(500)
+            res.end("Sorry we did something wrong")
+
+    router = app.router()
+
+    @router.get("/")
+    def home(res, req):
+        raise RuntimeError("Oops!")
+
 
 ```
 ### Next [Upload and Post](upload-post.md)
