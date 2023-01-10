@@ -18,7 +18,7 @@
 <br/>
 
 Socketify.py is a reliable, high-performance Python web framework for building large-scale app backends and microservices.
-With no precedents websocket performance and an really fast HTTP server that can delivery encrypted TLS 1.3 quicker than most alternative servers can do even unencrypted, cleartext messaging.
+With no precedents websocket performance and a really fast HTTP server that can delivery encrypted TLS 1.3 quicker than most alternative servers can do even unencrypted, cleartext messaging.
 
 ## Summary
 
