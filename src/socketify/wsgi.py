@@ -301,7 +301,7 @@ def wsgi(ssl, response, info, user_data, aborted):
                                     ffi.cast("uintmax_t", content_length),
                                     0,
                                 )
-                                # this should be very very rare fot HTTP
+                                # this should be very very rare for HTTP
                                 if not bool(result.ok):
                                     failed_chunks = []
                                     # just mark the chunks
