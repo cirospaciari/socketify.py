@@ -192,7 +192,9 @@ Don't hesitate sending a mail if you are in need of advice, support, or having o
 Special thank's to [uNetworking AB](https://github.com/uNetworking) to develop [uWebSockets](https://github.com/uNetworking/uWebSockets), [uSockets](https://github.com/uNetworking/uSockets) and allow us to bring this features and performance to Python and PyPy
 
 ## :heart: Sponsors
-If you like to see this project thrive, you can sponsor us on GitHub too. We need all the help we can get 
+If you like to see this project thrive, you can sponsor us on GitHub too. We need all the help we can get.
+
+Thank you [`Otavio Augusto`](https://github.com/middlebaws) to be the first sponsor of this project!
 
 <a href="https://github.com/sponsors/cirospaciari/" target="_blank"><img src="https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&link=https://github.com/sponsors/cirospaciari"/></a>
 
