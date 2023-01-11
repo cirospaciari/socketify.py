@@ -78,7 +78,7 @@ WebSocket messages per second (Linux x64)
 
 Http tested with TFB tool plaintext benchmark<br/>
 WebSocket tested with [Bun.sh](https://bun.sh) bench chat-client <br/>
-Source code in [bench](https://github.com/cirospaciari/socketify.py/tree/main/bench) and in [TechEmPower](https://github.com/TechEmpower/FrameworkBenchmarks)<br/>
+Source code in [TechEmPower](https://github.com/TechEmpower/FrameworkBenchmarks) and for websockets in [bench](https://github.com/cirospaciari/socketify.py/tree/main/bench)<br/>
 
 Machine OS: Debian GNU/Linux bookworm/sid x86_64 Kernel: 6.0.0-2-amd64 CPU: Intel i7-7700HQ (8) @ 3.800GHz Memory: 32066MiB 
 
