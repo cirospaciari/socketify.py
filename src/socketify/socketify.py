@@ -3335,16 +3335,17 @@ class AppListenOptions:
 
 @dataclass
 class AppOptions:
-    key_file_name: str = (None,)
-    cert_file_name: str = (None,)
-    passphrase: str = (None,)
-    dh_params_file_name: str = (None,)
-    ca_file_name: str = (None,)
-    ssl_ciphers: str = (None,)
+    key_file_name: str = None
+    cert_file_name: str = None
+    passphrase: str = None
+    dh_params_file_name: str = None
+    ca_file_name: str = None
+    ssl_ciphers: str = None
     ssl_prefer_low_memory_usage: int = 0
 
     def __post_init__(self):
         NoneType = type(None)
+
         if not isinstance(self.key_file_name, (NoneType, str)):
             raise RuntimeError("key_file_name must be a str if specified")
         if not isinstance(self.cert_file_name, (NoneType, str)):
