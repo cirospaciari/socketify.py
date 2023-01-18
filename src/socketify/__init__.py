@@ -9,8 +9,8 @@ from .socketify import (
     CompressOptions,
     Loop,
     AppExtension,
-    AppRequest,
-    AppResponse
+    AppRequest as Request,
+    AppResponse as Response
 )
 from .asgi import (
     ASGI
