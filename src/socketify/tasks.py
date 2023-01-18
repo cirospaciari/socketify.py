@@ -89,7 +89,9 @@ class RequestTask:
     # status is still pending
     _log_destroy_pending = True
 
-    def __init__(self, coro, loop, default_done_callback=None, no_register=False, context=None):
+    def __init__(
+        self, coro, loop, default_done_callback=None, no_register=False, context=None
+    ):
         """Initialize the future.
 
         The optional event_loop argument allows explicitly setting the event
@@ -590,10 +592,12 @@ def create_task_with_factory(task_factory_max_items=100_000):
         if len(items) == 0:
             return create_task(loop, coro, default_done_callback)
         task = items.pop()
+
         def done(f):
             if default_done_callback is not None:
-                default_done_callback(f)    
+                default_done_callback(f)
             items.append(f)
+
         task._reuse(coro, loop, done)
         return task
 

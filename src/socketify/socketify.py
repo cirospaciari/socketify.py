@@ -4,9 +4,6 @@ from http import cookies
 import inspect
 from io import BytesIO
 import json
-import mimetypes
-import os
-import platform
 import signal
 import uuid
 from urllib.parse import parse_qs, quote_plus, unquote_plus
@@ -19,8 +16,6 @@ from .helpers import static_route
 from dataclasses import dataclass
 from .helpers import DecoratorRouter
 from typing import Union
-
-mimetypes.init()
 
 
 @ffi.callback("void(const char*, size_t, void*)")
@@ -1772,8 +1767,8 @@ class AppResponse:
             else:
                 data = self.app._json_serializer.dumps(message).encode("utf-8")
                 # ignores content_type should always be json here
-                self.write_header(b"Content-Type", b'application/json')
-            
+                self.write_header(b"Content-Type", b"application/json")
+
             lib.uws_res_end(
                 self.app.SSL, self.res, data, len(data), 1 if end_connection else 0
             )
@@ -2476,7 +2471,7 @@ class App:
         request_response_factory_max_items=0,
         websocket_factory_max_items=0,
         task_factory_max_items=100_000,
-        lifespan=True
+        lifespan=True,
     ):
         socket_options_ptr = ffi.new("struct us_socket_context_options_t *")
         socket_options = socket_options_ptr[0]
@@ -2560,17 +2555,17 @@ class App:
         self._request_extension = None
         self._response_extension = None
         self._ws_extension = None
-        self._on_start_handler  = None
+        self._on_start_handler = None
         self._on_shutdown_handler = None
 
     def on_start(self, method: callable):
-        self._on_start_handler  = method
+        self._on_start_handler = method
         return method
-    
+
     def on_shutdown(self, method: callable):
-        self._on_shutdown_handler  = method
+        self._on_shutdown_handler = method
         return method
-    
+
     def router(self, prefix: str = "", *middlewares):
         return DecoratorRouter(self, prefix, middlewares)
 
@@ -3128,21 +3123,22 @@ class App:
 
     def listen(self, port_or_options=None, handler=None):
         if self.lifespan:
-                async def task_wrapper(task):
-                    try:
-                        if inspect.iscoroutinefunction(task):
-                            await task()
-                        else:
-                            task()
-                    except Exception as error:
-                        try:
-                            self.trigger_error(error, None, None)
-                        finally:
-                            return None
 
-                # start lifespan
-                if self._on_start_handler:
-                    self.loop.run_until_complete(task_wrapper(self._on_start_handler))
+            async def task_wrapper(task):
+                try:
+                    if inspect.iscoroutinefunction(task):
+                        await task()
+                    else:
+                        task()
+                except Exception as error:
+                    try:
+                        self.trigger_error(error, None, None)
+                    finally:
+                        return None
+
+            # start lifespan
+            if self._on_start_handler:
+                self.loop.run_until_complete(task_wrapper(self._on_start_handler))
 
         # actual listen to server
         self._listen_handler = handler
@@ -3229,6 +3225,7 @@ class App:
         signal.signal(signal.SIGINT, lambda sig, frame: self.close())
         self.loop.run()
         if self.lifespan:
+
             async def task_wrapper(task):
                 try:
                     if inspect.iscoroutinefunction(task):
@@ -3240,6 +3237,7 @@ class App:
                         self.trigger_error(error, None, None)
                     finally:
                         return None
+
             # shutdown lifespan
             if self._on_shutdown_handler:
                 self.loop.run_until_complete(task_wrapper(self._on_shutdown_handler))
@@ -3276,7 +3274,6 @@ class App:
         else:
             try:
                 if inspect.iscoroutinefunction(self.error_handler):
-                    print("coroutine!", error)
                     self.run_async(
                         self.error_handler(error, response, request), response
                     )

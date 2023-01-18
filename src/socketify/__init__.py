@@ -1,3 +1,5 @@
+import asyncio
+
 from .socketify import (
     App,
     AppOptions,

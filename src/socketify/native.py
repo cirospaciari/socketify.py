@@ -401,5 +401,3 @@ library_path = os.path.join(
 
 
 lib = ffi.dlopen(library_path)
-
-

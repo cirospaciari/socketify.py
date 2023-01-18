@@ -5,10 +5,12 @@ from .asgi import ws_close, ws_upgrade, ws_open, ws_message
 from io import BytesIO, BufferedReader
 from .native import lib, ffi
 import platform
+
 is_pypy = platform.python_implementation() == "PyPy"
 from .tasks import create_task, create_task_with_factory
 import sys
 import logging
+
 
 @ffi.callback("void(uws_res_t*, const char*, size_t, bool, void*)")
 def wsgi_on_data_handler(res, chunk, chunk_length, is_end, user_data):
@@ -22,6 +24,7 @@ def wsgi_on_data_handler(res, chunk, chunk_length, is_end, user_data):
             wsgi_corked_response_start_handler,
             data_response._ptr,
         )
+
 
 class WSGIBody:
     def __init__(self, buffer):
@@ -106,9 +109,10 @@ class WSGIBody:
                 ret.append(data)
                 data = b""
             else:
-                line, data = data[:pos + 1], data[pos + 1:]
+                line, data = data[: pos + 1], data[pos + 1 :]
                 ret.append(line)
         return ret
+
 
 class WSGIDataResponse:
     def __init__(self, app, environ, start_response, aborted, buffer, on_data):
@@ -119,6 +123,7 @@ class WSGIDataResponse:
         self.environ = environ
         self.app = app
         self.start_response = start_response
+
 
 @ffi.callback("void(uws_res_t*, void*)")
 def wsgi_corked_response_start_handler(res, user_data):
@@ -158,23 +163,23 @@ def wsgi(ssl, response, info, user_data, aborted):
     headers_set = None
     headers_written = False
     status_text = None
+
     def write_headers(headers):
         nonlocal headers_written, headers_set, status_text
         if headers_written or not headers_set:
             return
 
         headers_written = True
-        
+
         if isinstance(status_text, str):
             data = status_text.encode("utf-8")
             lib.uws_res_write_status(ssl, response, data, len(data))
         elif isinstance(status_text, bytes):
             lib.uws_res_write_status(ssl, response, status_text, len(status_text))
-        
 
         for (key, value) in headers:
             if isinstance(key, str):
-            # this is faster than using .lower()
+                # this is faster than using .lower()
                 if (
                     key == "content-length"
                     or key == "Content-Length"
@@ -194,7 +199,6 @@ def wsgi(ssl, response, info, user_data, aborted):
                     continue  # auto
                 key_data = key
 
-            
             if isinstance(value, str):
                 value_data = value.encode("utf-8")
             elif isinstance(value, bytes):
@@ -208,10 +212,11 @@ def wsgi(ssl, response, info, user_data, aborted):
                     ffi.cast("uint64_t", value),
                 )
                 continue
-            
+
             lib.uws_res_write_header(
                 ssl, response, key_data, len(key_data), value_data, len(value_data)
             )
+
     def start_response(status, headers, exc_info=None):
         nonlocal headers_set, status_text
         if exc_info:
@@ -220,23 +225,23 @@ def wsgi(ssl, response, info, user_data, aborted):
                     # Re-raise original exception if headers sent
                     raise exc_info[1].with_traceback(exc_info[2])
             finally:
-                exc_info = None # avoid dangling circular ref
+                exc_info = None  # avoid dangling circular ref
         elif headers_set:
             raise AssertionError("Headers already set!")
 
-        
         headers_set = headers
         status_text = status
-        
+
         def write(data):
             if not headers_written:
                 write_headers(headers_set)
-                
+
             if isinstance(data, bytes):
                 lib.uws_res_write(ssl, response, data, len(data))
             elif isinstance(data, str):
                 data = data.encode("utf-8")
                 lib.uws_res_write(ssl, response, data, len(data))
+
         return write
 
     # check for body
@@ -249,7 +254,9 @@ def wsgi(ssl, response, info, user_data, aborted):
                 return
 
             ssl = data_response.app.server.SSL
-            data_response.environ["CONTENT_LENGTH"] = str(data_response.buffer.getbuffer().nbytes)
+            data_response.environ["CONTENT_LENGTH"] = str(
+                data_response.buffer.getbuffer().nbytes
+            )
             app_iter = data_response.app.wsgi(
                 data_response.environ, data_response.start_response
             )
@@ -263,7 +270,7 @@ def wsgi(ssl, response, info, user_data, aborted):
                     elif isinstance(data, str):
                         data = data.encode("utf-8")
                         lib.uws_res_write(ssl, response, data, len(data))
-                    
+
             except Exception as error:
                 logging.exception(error)
             finally:
@@ -293,20 +300,31 @@ def wsgi(ssl, response, info, user_data, aborted):
                     data = data.encode("utf-8")
                     lib.uws_res_write(ssl, response, data, len(data))
         except Exception as error:
-                logging.exception(error)
+            logging.exception(error)
         finally:
             if hasattr(app_iter, "close"):
                 app_iter.close()
 
         if not headers_written:
-            write_headers(headers_set)         
+            write_headers(headers_set)
         lib.uws_res_end_without_body(ssl, response, 0)
 
+
 def is_asgi(module):
-    return hasattr(module, "__call__") and len(inspect.signature(module).parameters) == 3
+    return (
+        hasattr(module, "__call__") and len(inspect.signature(module).parameters) == 3
+    )
+
 
 class _WSGI:
-    def __init__(self, app, options=None, websocket=None, websocket_options=None, task_factory_max_items=100_000):
+    def __init__(
+        self,
+        app,
+        options=None,
+        websocket=None,
+        websocket_options=None,
+        task_factory_max_items=100_000,
+    ):
         self.server = App(options, task_factory_max_items=0)
         self.SERVER_HOST = None
         self.SERVER_PORT = None
@@ -320,43 +338,50 @@ class _WSGI:
             self.server.SSL, self.server.app, wsgi, self._ptr
         )
         self.asgi_ws_info = None
-        
+
         if isinstance(websocket, dict):  # serve websocket as socketify.py
             if websocket_options:
                 websocket.update(websocket_options)
 
             self.server.ws("/*", websocket)
         elif is_asgi(websocket):
-            self.app = websocket # set ASGI app
+            self.app = websocket  # set ASGI app
             loop = self.server.loop.loop
             # ASGI do not use app.run_async to not add any overhead from socketify.py WebFramework
             # internally will still use custom task factory for pypy because of Loop
             if is_pypy:
                 if task_factory_max_items > 0:
                     factory = create_task_with_factory(task_factory_max_items)
-                    
+
                     def run_task(task):
                         factory(loop, task)
                         loop._run_once()
+
                     self._run_task = run_task
                 else:
+
                     def run_task(task):
                         create_task(loop, task)
                         loop._run_once()
+
                     self._run_task = run_task
-                
+
             else:
-                if sys.version_info >= (3, 8): # name fixed to avoid dynamic name
+                if sys.version_info >= (3, 8):  # name fixed to avoid dynamic name
+
                     def run_task(task):
-                        loop.create_task(task, name='socketify.py-request-task')
+                        loop.create_task(task, name="socketify.py-request-task")
                         loop._run_once()
+
                     self._run_task = run_task
                 else:
+
                     def run_task(task):
                         loop.create_task(task)
                         loop._run_once()
+
                     self._run_task = run_task
-                
+
             # detect ASGI to use as WebSocket as mixed protocol
             native_options = ffi.new("uws_socket_behavior_t *")
             native_behavior = native_options[0]
@@ -435,7 +460,7 @@ class _WSGI:
                 "REMOTE_HOST": "",
                 "CONTENT_LENGTH": "0",
                 "CONTENT_TYPE": "",
-                'wsgi.input_terminated': True
+                "wsgi.input_terminated": True,
             }
         )
         self.server.listen(port_or_options, handler)
@@ -454,7 +479,15 @@ class _WSGI:
 
 # "Public" WSGI interface to allow easy forks/workers
 class WSGI:
-    def __init__(self, app, options=None, websocket=None, websocket_options=None, task_factory_max_items=100_000, lifespan=False):
+    def __init__(
+        self,
+        app,
+        options=None,
+        websocket=None,
+        websocket_options=None,
+        task_factory_max_items=100_000,
+        lifespan=False,
+    ):
         self.app = app
         self.options = options
         self.websocket = websocket
@@ -470,7 +503,11 @@ class WSGI:
     def run(self, workers=1):
         def run_app():
             server = _WSGI(
-                self.app, self.options, self.websocket, self.websocket_options, self.task_factory_max_items
+                self.app,
+                self.options,
+                self.websocket,
+                self.websocket_options,
+                self.task_factory_max_items,
             )
             if self.listen_options:
                 (port_or_options, handler) = self.listen_options
