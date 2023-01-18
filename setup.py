@@ -58,7 +58,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="socketify",
-    version="0.0.7",
+    version="0.0.8",
     platforms=["any"],
     author="Ciro Spaciari",
     author_email="ciro.spaciari@gmail.com",
