@@ -102,6 +102,16 @@ linux:
 	$(CXX) -I ./src -I ../uWebSockets/src -I ../uWebSockets/uSockets/src -I ../uWebSockets/capi -I ../uWebSockets/uSockets/lsquic/include -I ../uWebSockets/uSockets/boringssl/include -DUWS_WITH_PROXY -pthread -fPIC -std=c++17 -c -O3 ./src/$(LIBRARY_NAME).cpp
 	$(CXX) -shared -static-libstdc++ -static-libgcc -s -o ../$(LIBRARY_NAME)_linux_$(ARCH).so  $(LIBRARY_NAME).o ../uWebSockets/uSockets/uSockets_linux_$(ARCH).a ../uWebSockets/uSockets/boringssl/$(ARCH)/ssl/libssl.a ../uWebSockets/uSockets/boringssl/$(ARCH)/crypto/libcrypto.a ../uWebSockets/uSockets/lsquic/src/liblsquic/liblsquic.a -flto  -fPIC -lz -luv
 
+linux-uws-socketify:
+	# build uWebSockets
+	cd ../uWebSockets/uSockets && $(CC) -I src -I lsquic/include -I boringssl/include -DUWS_WITH_PROXY -DLIBUS_USE_OPENSSL -DLIBUS_USE_LIBUV -DLIBUS_USE_QUIC -pthread -fPIC -std=c11 -O3 -c src/*.c src/eventing/*.c src/crypto/*.c
+	cd ../uWebSockets/uSockets && $(CXX) -I boringssl/include -DUWS_WITH_PROXY -DLIBUS_USE_OPENSSL -DLIBUS_USE_LIBUV -DLIBUS_USE_QUIC -pthread -fPIC -std=c++17 -O3 -c src/crypto/*.cpp
+	cd ../uWebSockets/uSockets && $(AR) rvs uSockets_linux_$(ARCH).a *.o
+
+	# build CAPI + libsocketify
+	$(CXX) -I ./src -I ../uWebSockets/src -I ../uWebSockets/uSockets/src -I ../uWebSockets/capi -I ../uWebSockets/uSockets/lsquic/include -I ../uWebSockets/uSockets/boringssl/include -DUWS_WITH_PROXY -pthread -fPIC -std=c++17 -c -O3 ./src/$(LIBRARY_NAME).cpp
+	$(CXX) -shared -static-libstdc++ -static-libgcc -s -o ../$(LIBRARY_NAME)_linux_$(ARCH).so  $(LIBRARY_NAME).o ../uWebSockets/uSockets/uSockets_linux_$(ARCH).a ../uWebSockets/uSockets/boringssl/$(ARCH)/ssl/libssl.a ../uWebSockets/uSockets/boringssl/$(ARCH)/crypto/libcrypto.a ../uWebSockets/uSockets/lsquic/src/liblsquic/liblsquic.a -flto  -fPIC -lz -luv
+
 linux-socketify-only:
 	# build CAPI + libsocketify
 	$(CXX) -I ./src -I ../uWebSockets/src -I ../uWebSockets/uSockets/src -I ../uWebSockets/capi -I ../uWebSockets/uSockets/lsquic/include -I ../uWebSockets/uSockets/boringssl/include -DUWS_WITH_PROXY -pthread -fPIC -std=c++17 -c -O3 ./src/$(LIBRARY_NAME).cpp

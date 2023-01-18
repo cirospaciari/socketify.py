@@ -222,7 +222,7 @@ def async_middleware(*functions):
 class DecoratorRouter:
     def __init__(self, app, prefix: str = "", *middlewares):
         self.app = app
-        self.middlewares = middlewares
+        self.middlewares = list(*middlewares)
         self.prefix = prefix
 
     def get(self, path):
@@ -230,7 +230,7 @@ class DecoratorRouter:
 
         def decorator(handler):
             if len(self.middlewares) > 0:
-                middies = list(*self.middlewares)
+                middies = list(self.middlewares)
                 middies.append(handler)
                 self.app.get(path, middleware(*middies))
             else:
@@ -244,7 +244,7 @@ class DecoratorRouter:
 
         def decorator(handler):
             if len(self.middlewares) > 0:
-                middies = list(*self.middlewares)
+                middies = list(self.middlewares)
                 middies.append(handler)
                 self.app.post(path, middleware(*middies))
             else:
@@ -257,7 +257,7 @@ class DecoratorRouter:
 
         def decorator(handler):
             if len(self.middlewares) > 0:
-                middies = list(*self.middlewares)
+                middies = list(self.middlewares)
                 middies.append(handler)
                 self.app.options(path, middleware(*middies))
             else:
@@ -270,7 +270,7 @@ class DecoratorRouter:
 
         def decorator(handler):
             if len(self.middlewares) > 0:
-                middies = list(*self.middlewares)
+                middies = list(self.middlewares)
                 middies.append(handler)
                 self.app.delete(path, middleware(*middies))
             else:
@@ -283,7 +283,7 @@ class DecoratorRouter:
 
         def decorator(handler):
             if len(self.middlewares) > 0:
-                middies = list(*self.middlewares)
+                middies = list(self.middlewares)
                 middies.append(handler)
                 self.app.patch(path, middleware(*middies))
             else:
@@ -296,7 +296,7 @@ class DecoratorRouter:
 
         def decorator(handler):
             if len(self.middlewares) > 0:
-                middies = list(*self.middlewares)
+                middies = list(self.middlewares)
                 middies.append(handler)
                 self.app.put(path, middleware(*middies))
             else:
@@ -309,7 +309,7 @@ class DecoratorRouter:
 
         def decorator(handler):
             if len(self.middlewares) > 0:
-                middies = list(*self.middlewares)
+                middies = list(self.middlewares)
                 middies.append(handler)
                 self.app.head(path, middleware(*middies))
             else:
@@ -322,7 +322,7 @@ class DecoratorRouter:
 
         def decorator(handler):
             if len(self.middlewares) > 0:
-                middies = list(*self.middlewares)
+                middies = list(self.middlewares)
                 middies.append(handler)
                 self.app.connect(path, middleware(*middies))
             else:
@@ -335,7 +335,7 @@ class DecoratorRouter:
 
         def decorator(handler):
             if len(self.middlewares) > 0:
-                middies = list(*self.middlewares)
+                middies = list(self.middlewares)
                 middies.append(handler)
                 self.app.trace(path, middleware(*middies))
             else:
@@ -348,7 +348,7 @@ class DecoratorRouter:
 
         def decorator(handler):
             if len(self.middlewares) > 0:
-                middies = list(*self.middlewares)
+                middies = list(self.middlewares)
                 middies.append(handler)
                 self.app.any(path, middleware(*middies))
             else:
