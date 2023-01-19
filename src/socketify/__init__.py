@@ -9,6 +9,7 @@ from .socketify import (
     CompressOptions,
     Loop,
     AppExtension,
+    WebSocket,
     AppRequest as Request,
     AppResponse as Response
 )
