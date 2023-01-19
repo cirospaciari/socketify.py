@@ -137,6 +137,8 @@ class WebSocket:
     # uuid for socket data, used to free data after socket closes
     def get_user_data_uuid(self):
     def get_user_data(self):
+    # clone the current instance to preserve it (you need to watch for closed connections when using it)
+    def clone(self):
     def get_buffered_amount(self):
     def subscribe(self, topic):
     def unsubscribe(self, topic):
