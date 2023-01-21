@@ -1143,7 +1143,6 @@ class WebSocket:
         self.socket_data = None
         self.got_socket_data = False
 
-
     def clone(self):
         # clone and preserve this websocket in another instance
         return WebSocket(self.websocket, self.app)
@@ -2480,47 +2479,74 @@ class App:
     ):
         socket_options_ptr = ffi.new("struct us_socket_context_options_t *")
         socket_options = socket_options_ptr[0]
-        self.options = options
+        self._options = options
         self._template = None
         self.lifespan = lifespan
         # keep socket data alive for CFFI
         self._socket_refs = {}
+        self._native_options = []
         if options is not None:
             self.is_ssl = True
             self.SSL = ffi.cast("int", 1)
-            socket_options.key_file_name = (
+
+            key_filename = (
                 ffi.NULL
                 if options.key_file_name is None
                 else ffi.new("char[]", options.key_file_name.encode("utf-8"))
             )
-            socket_options.cert_file_name = (
+            self._native_options.append(key_filename)
+            socket_options.key_file_name = key_filename
+
+            cert_file_name = (
                 ffi.NULL
                 if options.cert_file_name is None
                 else ffi.new("char[]", options.cert_file_name.encode("utf-8"))
             )
-            socket_options.passphrase = (
+
+            self._native_options.append(cert_file_name)
+            socket_options.cert_file_name = cert_file_name
+
+
+            passphrase = (
                 ffi.NULL
                 if options.passphrase is None
                 else ffi.new("char[]", options.passphrase.encode("utf-8"))
             )
-            socket_options.dh_params_file_name = (
+
+            self._native_options.append(passphrase)
+            socket_options.passphrase = passphrase
+
+            dh_params_file_name = (
                 ffi.NULL
                 if options.dh_params_file_name is None
                 else ffi.new("char[]", options.dh_params_file_name.encode("utf-8"))
             )
-            socket_options.ca_file_name = (
+
+            self._native_options.append(dh_params_file_name)
+            socket_options.dh_params_file_name = dh_params_file_name
+
+            ca_file_name = (
                 ffi.NULL
                 if options.ca_file_name is None
                 else ffi.new("char[]", options.ca_file_name.encode("utf-8"))
             )
-            socket_options.ssl_ciphers = (
+
+            self._native_options.append(ca_file_name)
+            socket_options.ca_file_name = ca_file_name
+
+            ssl_ciphers = (
                 ffi.NULL
                 if options.ssl_ciphers is None
                 else ffi.new("char[]", options.ssl_ciphers.encode("utf-8"))
             )
+
+            self._native_options.append(ssl_ciphers)
+            socket_options.ssl_ciphers = ssl_ciphers
+
             socket_options.ssl_prefer_low_memory_usage = ffi.cast(
                 "int", options.ssl_prefer_low_memory_usage
             )
+
         else:
             self.is_ssl = False
             self.SSL = ffi.cast("int", 0)
