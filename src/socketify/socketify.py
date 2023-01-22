@@ -1145,7 +1145,7 @@ class WebSocket:
 
     def clone(self):
         # clone and preserve this websocket in another instance
-        return WebSocket(self.websocket, self.app)
+        return WebSocket(self.ws, self.app)
 
     def trigger_for_each_topic_handler(self, topic):
         if hasattr(self, "_for_each_topic_handler") and hasattr(
