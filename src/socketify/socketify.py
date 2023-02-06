@@ -1639,6 +1639,12 @@ class AppResponse:
         )
         return self
 
+    def close(self):
+        lib.uws_res_close(
+            self.app.SSL, self.res
+        )
+        return self
+
     def try_end(self, message, total_size, end_connection=False):
         try:
             if self.aborted:

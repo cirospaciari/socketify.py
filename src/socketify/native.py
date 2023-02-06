@@ -187,7 +187,7 @@ void uws_add_server_name_with_options(int ssl, uws_app_t *app, const char *hostn
 void uws_missing_server_name(int ssl, uws_app_t *app, uws_missing_server_handler handler, void *user_data);
 void uws_filter(int ssl, uws_app_t *app, uws_filter_handler handler, void *user_data);
 
-
+void uws_res_close(int ssl, uws_res_t *res);
 void uws_res_end(int ssl, uws_res_t *res, const char *data, size_t length, bool close_connection);
 void uws_res_pause(int ssl, uws_res_t *res);
 void uws_res_resume(int ssl, uws_res_t *res);
