@@ -38,11 +38,12 @@ class App:
 
 ```
 
-## AppResponse
+## Response
 ```python
-class AppResponse:
+class Response:
     def __init__(self, response, app):
     def cork(self, callback):
+    def close(self):
     def set_cookie(self, name, value, options={}):
     def run_async(self, task):
     async def get_form_urlencoded(self, encoding="utf-8"):
@@ -87,9 +88,9 @@ class AppResponse:
     def __del__(self):
 ```
 
-## AppRequest
+## Request
 ```python
-class AppRequest:
+class Request:
     def __init__(self, request, app):
     def get_cookie(self, name):
     def get_url(self):
