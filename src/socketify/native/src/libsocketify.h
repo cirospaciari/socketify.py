@@ -138,6 +138,10 @@ DLL_EXPORT socksocketify_asgi_ws_app_info* socketify_add_asgi_ws_handler(int ssl
 DLL_EXPORT void socketify_destroy_asgi_ws_app_info(socksocketify_asgi_ws_app_info* app);
 DLL_EXPORT void socketify_ws_cork_send(int ssl, uws_websocket_t *ws, const char* data, size_t length, uws_opcode_t opcode);
 DLL_EXPORT void socketify_ws_cork_send_with_options(int ssl, uws_websocket_t *ws, const char* data, size_t length, uws_opcode_t opcode, bool compress, bool fin);
+DLL_EXPORT void socketify_res_send_int_code(int ssl, uws_res_t *res, const char* content_data, size_t content_data_size, int code, const char *content_type, size_t content_type_size, bool close_connection);
+DLL_EXPORT void socketify_res_send(int ssl, uws_res_t *res, const char *content_data, size_t content_data_size, const char *status_code, size_t status_code_size, const char *content_type, size_t content_type_size, bool close_connection);
+DLL_EXPORT void socketify_res_cork_send_int_code(int ssl, uws_res_t *res, const char* content_data, size_t content_data_size, int code, const char *content_type, size_t content_type_size, bool close_connection);
+DLL_EXPORT void socketify_res_cork_send(int ssl, uws_res_t *res, const char *content_data, size_t content_data_size, const char *status_code, size_t status_code_size, const char *content_type, size_t content_type_size, bool close_connection);
 #endif
 #ifdef __cplusplus
 }

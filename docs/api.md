@@ -61,7 +61,7 @@ class AppResponse:
     def get_proxied_remote_address_bytes(self):
     def get_proxied_remote_address(self):
     def cork_send(self, message: any, content_type: str = b'text/plain', status : str | bytes | int = b'200 OK', headers=None, end_connection=False):
-    def send(self, message: any, content_type: str = b'text/plain', status : str | bytes | int = b'200 OK', headers=None, end_connection=False):
+    def send(self, message: any = b"", content_type: str = b'text/plain', status : str | bytes | int = b'200 OK', headers=None, end_connection=False):
     def end(self, message, end_connection=False):
     def pause(self):
     def resume(self):

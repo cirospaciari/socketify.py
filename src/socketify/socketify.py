@@ -1733,6 +1733,7 @@ class AppResponse:
         headers=None,
         end_connection: bool = False,
     ):
+        # TODO: use socketify_res_cork_send_int_code and socketify_res_cork_send after optimize headers
         self.cork(
             lambda res: res.send(message, content_type, status, headers, end_connection)
         )
@@ -1740,42 +1741,107 @@ class AppResponse:
 
     def send(
         self,
-        message: any,
+        message: any = b"",
         content_type: Union[str, bytes] = b"text/plain",
         status: Union[str, bytes, int] = b"200 OK",
-        headers=None,
+        headers = None,
         end_connection: bool = False,
     ):
-        if self.aborted:
-            return self
 
-        self.write_status(status)
-
+        # TODO: optimize headers
         if headers is not None:
             for name, value in headers:
                 self.write_header(name, value)
         try:
+
+            # TODO: optimize Set-Cookie
             if self._write_jar is not None:
                 self.write_header("Set-Cookie", self._write_jar.output(header=""))
                 self._write_jar = None
+
             if isinstance(message, str):
                 data = message.encode("utf-8")
-                self.write_header(b"Content-Type", content_type)
             elif isinstance(message, bytes):
-                self.write_header(b"Content-Type", content_type)
                 data = message
             elif message is None:
-                self.write_header(b"Content-Type", content_type)
-                self.end_without_body(end_connection)
+                if isinstance(status, int):
+                    lib.socketify_res_send_int_code(
+                        self.app.SSL,
+                        self.res,
+                        ffi.NULL,
+                        0,
+                        status,
+                        content_type,
+                        len(content_type),
+                        1 if end_connection else 0,
+                    )
+                elif isinstance(status, str):
+                    status = status.encode("utf-8")
+                    lib.socketify_res_send(
+                        self.app.SSL,
+                        self.res,
+                        ffi.NULL,
+                        0,
+                        status,
+                        len(status),
+                        content_type,
+                        len(content_type),
+                        1 if end_connection else 0,
+                    )
+                else:
+                    lib.socketify_res_send(
+                        self.app.SSL,
+                        self.res,
+                        ffi.NULL,
+                        0,
+                        status,
+                        len(status),
+                        content_type,
+                        len(content_type),
+                        1 if end_connection else 0,
+                    )
                 return self
             else:
                 data = self.app._json_serializer.dumps(message).encode("utf-8")
-                # ignores content_type should always be json here
-                self.write_header(b"Content-Type", b"application/json")
+                content_type = b"application/json"
 
-            lib.uws_res_end(
-                self.app.SSL, self.res, data, len(data), 1 if end_connection else 0
-            )
+            if isinstance(status, int):
+                lib.socketify_res_send_int_code(
+                    self.app.SSL,
+                    self.res,
+                    data,
+                    len(data),
+                    status,
+                    content_type,
+                    len(content_type),
+                    1 if end_connection else 0,
+                )
+            elif isinstance(status, str):
+                status = status.encode("utf-8")
+                lib.socketify_res_send(
+                    self.app.SSL,
+                    self.res,
+                    ffi.NULL,
+                    0,
+                    status,
+                    len(status),
+                    content_type,
+                    len(content_type),
+                    1 if end_connection else 0,
+                )
+            else:
+                lib.socketify_res_send(
+                    self.app.SSL,
+                    self.res,
+                    data,
+                    len(data),
+                    status,
+                    len(status),
+                    content_type,
+                    len(content_type),
+                    1 if end_connection else 0,
+                )
+
         finally:
             return self
 
@@ -2505,7 +2571,6 @@ class App:
 
             self._native_options.append(cert_file_name)
             socket_options.cert_file_name = cert_file_name
-
 
             passphrase = (
                 ffi.NULL
