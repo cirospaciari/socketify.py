@@ -2476,7 +2476,7 @@ class AppRequest:
         return self
 
     def set_yield(self, has_yield):
-        lib.uws_req_set_field(self.req, 1 if has_yield else 0)
+        lib.uws_req_set_yield(self.req, 1 if has_yield else 0)
 
     def get_yield(self):
         return bool(lib.uws_req_get_yield(self.req))

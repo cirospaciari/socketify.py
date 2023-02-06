@@ -215,7 +215,7 @@ size_t uws_res_get_proxied_remote_address_as_text(int ssl, uws_res_t *res, const
 
 bool uws_req_is_ancient(uws_req_t *res);
 bool uws_req_get_yield(uws_req_t *res);
-void uws_req_set_field(uws_req_t *res, bool yield);
+void uws_req_set_yield(uws_req_t *res, bool yield);
 size_t uws_req_get_url(uws_req_t *res, const char **dest);
 size_t uws_req_get_method(uws_req_t *res, const char **dest);
 size_t uws_req_get_case_sensitive_method(uws_req_t *res, const char **dest);
