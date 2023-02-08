@@ -7,7 +7,7 @@ from .native import lib, ffi
 import platform
 
 is_pypy = platform.python_implementation() == "PyPy"
-from .tasks import create_task, create_task_with_factory
+from .tasks import create_task, TaskFactory
 import sys
 import logging
 
@@ -351,11 +351,10 @@ class _WSGI:
             # internally will still use custom task factory for pypy because of Loop
             if is_pypy:
                 if task_factory_max_items > 0:
-                    factory = create_task_with_factory(task_factory_max_items)
+                    factory = TaskFactory(task_factory_max_items)
 
                     def run_task(task):
                         factory(loop, task)
-                        loop._run_once()
 
                     self._run_task = run_task
                 else:
@@ -363,7 +362,6 @@ class _WSGI:
                     def run_task(task):
                         future = create_task(loop, task)
                         future._log_destroy_pending = False
-                        loop._run_once()
 
                     self._run_task = run_task
 

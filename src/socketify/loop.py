@@ -1,13 +1,12 @@
 import asyncio
 import logging
-from .tasks import create_task, create_task_with_factory
+from .tasks import create_task, TaskFactory
 from .uv import UVLoop
 
 import asyncio
 import platform
 
 is_pypy = platform.python_implementation() == "PyPy"
-
 
 async def task_wrapper(exception_handler, loop, response, task):
     try:
@@ -47,7 +46,7 @@ class Loop:
         self.started = False
         if is_pypy:  # PyPy async Optimizations
             if task_factory_max_items > 0:  # Only available in PyPy for now
-                self._task_factory = create_task_with_factory(task_factory_max_items)
+                self._task_factory = TaskFactory(task_factory_max_items)
             else:
                 self._task_factory = create_task
             self.run_async = self._run_async_pypy
@@ -57,10 +56,7 @@ class Loop:
 
             self.loop.set_task_factory(pypy_task_factory)
         else:
-            # CPython performs worse using custom create_task, so native create_task is used
-            # but this also did not allow the use of create_task_with_factory :/
-            # native create_task do not allow to change context, callbacks, state etc
-
+            # CPython performs equals or worse using TaskFactory
             self.run_async = self._run_async_cpython
 
     def set_timeout(self, timeout, callback, user_data):
@@ -125,19 +121,16 @@ class Loop:
     def _run_async_pypy(self, task, response=None):
         # this garanties error 500 in case of uncaught exceptions, and can trigger the custom error handler
         # using an coroutine wrapper generates less overhead than using add_done_callback
-        # this is an custom task/future with less overhead
+        # this is an custom task/future with less overhead and that calls the first step
         future = self._task_factory(
             self.loop, task_wrapper(self.exception_handler, self.loop, response, task)
         )
-        # this call makes pypy 10% to 20% faster in async, but will work without it 
-        # this also makes uvloop incompatible if uvloop becomes compatible with pypy
-        self.loop._run_once()
         return None  # this future maybe already done and reused not safe to await
 
     def _run_async_cpython(self, task, response=None):
         # this garanties error 500 in case of uncaught exceptions, and can trigger the custom error handler
         # using an coroutine wrapper generates less overhead than using add_done_callback
-        # custom task will call _step, reusing tasks in CPython is not worth
+        # this is an custom task/future with less overhead and that calls the first step
         future = create_task(self.loop, task_wrapper(self.exception_handler, self.loop, response, task))
         return None  # this future is safe to await but we return None for compatibility, and in the future will be the same behavior as PyPy
 

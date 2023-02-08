@@ -11,12 +11,10 @@ import logging
 
 from .native import ffi, lib
 from .loop import Loop
-from .status_codes import status_codes
 from .helpers import static_route
-from dataclasses import dataclass
 from .helpers import DecoratorRouter
 from typing import Union
-
+from .dataclasses import AppListenOptions
 
 @ffi.callback("void(const char*, size_t, void*)")
 def uws_missing_server_name(hostname, hostname_length, user_data):
@@ -2549,6 +2547,7 @@ class App:
         task_factory_max_items=100_000,
         lifespan=True,
     ):
+
         socket_options_ptr = ffi.new("struct us_socket_context_options_t *")
         socket_options = socket_options_ptr[0]
         self._options = options
@@ -2626,7 +2625,7 @@ class App:
             lambda loop, context, response: self.trigger_error(context, response, None),
             task_factory_max_items,
         )
-
+        self.run_async = self.loop.run_async
         # set async loop to be the last created (is thread_local), App must be one per thread otherwise will use only the lasted loop
         # needs to be called before uws_create_app or otherwise will create another loop and will not receive the right one
         lib.uws_get_loop_with_native(self.loop.get_native_loop())
@@ -3314,8 +3313,6 @@ class App:
 
         return self
 
-    def run_async(self, task, response=None):
-        return self.loop.run_async(task, response)
 
     def run(self):
         # populate factories
@@ -3409,53 +3406,3 @@ class App:
             self.loop.dispose()
             self.loop = None
 
-
-@dataclass
-class AppListenOptions:
-    port: int = 0
-    host: str = None
-    options: int = 0
-    domain: str = None
-
-    def __post_init__(self):
-        if not isinstance(self.port, int):
-            raise RuntimeError("port must be an int")
-        if not isinstance(self.host, (type(None), str)):
-            raise RuntimeError("host must be a str if specified")
-        if not isinstance(self.domain, (type(None), str)):
-            raise RuntimeError("domain must be a str if specified")
-        if not isinstance(self.options, int):
-            raise RuntimeError("options must be an int")
-        if self.domain and (self.host or self.port != 0):
-            raise RuntimeError(
-                "if domain is specified, host and port will be no effect"
-            )
-
-
-@dataclass
-class AppOptions:
-    key_file_name: str = None
-    cert_file_name: str = None
-    passphrase: str = None
-    dh_params_file_name: str = None
-    ca_file_name: str = None
-    ssl_ciphers: str = None
-    ssl_prefer_low_memory_usage: int = 0
-
-    def __post_init__(self):
-        NoneType = type(None)
-
-        if not isinstance(self.key_file_name, (NoneType, str)):
-            raise RuntimeError("key_file_name must be a str if specified")
-        if not isinstance(self.cert_file_name, (NoneType, str)):
-            raise RuntimeError("cert_file_name must be a str if specified")
-        if not isinstance(self.passphrase, (NoneType, str)):
-            raise RuntimeError("passphrase must be a str if specified")
-        if not isinstance(self.dh_params_file_name, (NoneType, str)):
-            raise RuntimeError("dh_params_file_name must be a str if specified")
-        if not isinstance(self.ca_file_name, (NoneType, str)):
-            raise RuntimeError("ca_file_name must be a str if specified")
-        if not isinstance(self.ssl_ciphers, (NoneType, str)):
-            raise RuntimeError("ssl_ciphers must be a str if specified")
-        if not isinstance(self.ssl_prefer_low_memory_usage, int):
-            raise RuntimeError("ssl_prefer_low_memory_usage must be an int")

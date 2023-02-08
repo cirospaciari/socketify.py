@@ -1,3 +1,4 @@
+
 from .native import ffi, lib
 
 
@@ -90,7 +91,7 @@ class UVLoop:
     def run(self):
         if self._loop != ffi.NULL:
             return lib.socketify_loop_run(self._loop, lib.SOCKETIFY_RUN_DEFAULT)
-
+    
     def run_once(self):
         if self._loop != ffi.NULL:
             return lib.socketify_loop_run(self._loop, lib.SOCKETIFY_RUN_ONCE)

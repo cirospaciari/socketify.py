@@ -1,7 +1,7 @@
-from socketify import App, OpCode, Loop
+from socketify import App, OpCode
 from queue import SimpleQueue
 from .native import lib, ffi
-from .tasks import create_task, create_task_with_factory
+from .tasks import create_task, TaskFactory
 import os
 import platform
 import sys
@@ -523,11 +523,10 @@ class _ASGI:
         # internally will still use custom task factory for pypy because of Loop
         if is_pypy:
             if task_factory_max_items > 0:
-                factory = create_task_with_factory(task_factory_max_items)
+                factory = TaskFactory(task_factory_max_items)
 
                 def run_task(task):
                     factory(loop, task_wrapper(task))
-                    loop._run_once()
 
                 self._run_task = run_task
             else:
@@ -535,7 +534,6 @@ class _ASGI:
                 def run_task(task):
                     future = create_task(loop, task_wrapper(task))
                     future._log_destroy_pending = False
-                    loop._run_once()
 
                 self._run_task = run_task
 
@@ -544,7 +542,6 @@ class _ASGI:
 
                 def run_task(task):
                     future = create_task(loop, task_wrapper(task))
-                    
                     future._log_destroy_pending = False
 
                 self._run_task = run_task

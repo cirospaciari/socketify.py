@@ -582,28 +582,51 @@ class RequestTask:
     __iter__ = __await__  # make compatible with 'yield from'.
 
 
-def create_task_with_factory(task_factory_max_items=100_000):
-    items = []
-    for _ in range(0, task_factory_max_items):
-        task = RequestTask(None, None, None, True)
-        if task._source_traceback:
-            del task._source_traceback[-1]
-        items.append(task)
+# def create_task_with_factory(task_factory_max_items=100_000):
+#     items = []
+#     for _ in range(0, task_factory_max_items):
+#         task = RequestTask(None, None, None, True)
+#         if task._source_traceback:
+#             del task._source_traceback[-1]
+#         items.append(task)
 
-    def factory(loop, coro, default_done_callback=None):
-        if len(items) == 0:
-            return create_task(loop, coro, default_done_callback)
-        task = items.pop()
+#     def factory(loop, coro, default_done_callback=None):
+#         if len(items) == 0:
+#             return create_task(loop, coro, default_done_callback)
+#         task = items.pop()
 
-        def done(f):
-            if default_done_callback is not None:
-                default_done_callback(f)
-            items.append(f)
+#         def done(f):
+#             if default_done_callback is not None:
+#                 default_done_callback(f)
+#             items.append(f)
 
-        task._reuse(coro, loop, done)
+#         task._reuse(coro, loop, done)
+#         return task
+
+#     return factory
+
+async def factory_task_wrapper(task, dispose):
+    try:
+        await task
+    finally:
+        dispose()
+
+class TaskFactory:
+    def __init__(self, task_factory_max_items=100_000):
+        self.items = []
+        for _ in range(0, task_factory_max_items):
+            task = RequestTask(None, None, None, True)
+            if task._source_traceback:
+                del task._source_traceback[-1]
+            self.items.append(task)
+
+    def __call__(self, loop, coro):
+        if len(self.items) == 0:
+            return create_task(loop, coro)
+        task = self.items.pop()
+
+        task._reuse(factory_task_wrapper(coro, lambda : self.items.append(task)), loop)
         return task
-
-    return factory
 
 
 def create_task(loop, coro, default_done_callback=None, context=None):

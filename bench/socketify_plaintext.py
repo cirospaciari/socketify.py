@@ -1,3 +1,4 @@
+
 from socketify import App
 import os
 import multiprocessing
@@ -7,7 +8,7 @@ def run_app():
     router = app.router()
 
     @router.get("/")
-    def home(res, req):
+    async def home(res, req):
         res.send(b"Hello, World!")
         
     app.listen(
@@ -28,7 +29,7 @@ def create_fork():
 
 
 # fork limiting the cpu count - 1
-for i in range(1, multiprocessing.cpu_count()):
-    create_fork()
+# for i in range(1, multiprocessing.cpu_count()):
+#     create_fork()
 
 run_app()  # run app on the main process too :)

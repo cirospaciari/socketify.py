@@ -1,9 +1,9 @@
 import asyncio
 
+from .dataclasses import AppListenOptions, AppOptions
+
 from .socketify import (
     App,
-    AppOptions,
-    AppListenOptions,
     OpCode,
     SendStatus,
     CompressOptions,
