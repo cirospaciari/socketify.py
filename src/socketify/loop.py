@@ -129,18 +129,16 @@ class Loop:
         future = self._task_factory(
             self.loop, task_wrapper(self.exception_handler, self.loop, response, task)
         )
-        # force asyncio run once to enable req in async functions before first await
+        # this call makes pypy 10% to 20% faster in async, but will work without it 
+        # this also makes uvloop incompatible if uvloop becomes compatible with pypy
         self.loop._run_once()
         return None  # this future maybe already done and reused not safe to await
 
     def _run_async_cpython(self, task, response=None):
         # this garanties error 500 in case of uncaught exceptions, and can trigger the custom error handler
         # using an coroutine wrapper generates less overhead than using add_done_callback
-        future = self.loop.create_task(
-            task_wrapper(self.exception_handler, self.loop, response, task)
-        )
-        # force asyncio run once to enable req in async functions before first await
-        self.loop._run_once()
+        # custom task will call _step, reusing tasks in CPython is not worth
+        future = create_task(self.loop, task_wrapper(self.exception_handler, self.loop, response, task))
         return None  # this future is safe to await but we return None for compatibility, and in the future will be the same behavior as PyPy
 
     def dispose(self):

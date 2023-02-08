@@ -115,7 +115,8 @@ class RequestTask:
             self._log_destroy_pending = False
             if self._loop.get_debug():
                 self._source_traceback = format_helpers.extract_stack(sys._getframe(1))
-            self._loop.call_soon(self.__step, context=self._context)
+            # self._loop.call_soon(self.__step, context=self._context)
+            self.__step()
             _register_task(self)
 
     def _reuse(self, coro, loop, default_done_callback=None):
@@ -147,7 +148,8 @@ class RequestTask:
         self._fut_waiter = None
         self._coro = coro
 
-        self._loop.call_soon(self.__step, context=self._context)
+        # self._loop.call_soon(self.__step, context=self._context)
+        self.__step()
         _register_task(self)
 
     def __repr__(self):

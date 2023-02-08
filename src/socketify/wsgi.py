@@ -361,7 +361,8 @@ class _WSGI:
                 else:
 
                     def run_task(task):
-                        create_task(loop, task)
+                        future = create_task(loop, task)
+                        future._log_destroy_pending = False
                         loop._run_once()
 
                     self._run_task = run_task
@@ -370,15 +371,15 @@ class _WSGI:
                 if sys.version_info >= (3, 8):  # name fixed to avoid dynamic name
 
                     def run_task(task):
-                        loop.create_task(task, name="socketify.py-request-task")
-                        loop._run_once()
+                        future = create_task(loop, task)
+                        future._log_destroy_pending = False
 
                     self._run_task = run_task
                 else:
 
                     def run_task(task):
-                        loop.create_task(task)
-                        loop._run_once()
+                        future = create_task(loop, task)
+                        future._log_destroy_pending = False
 
                     self._run_task = run_task
 
