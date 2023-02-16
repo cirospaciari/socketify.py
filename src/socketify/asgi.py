@@ -25,7 +25,6 @@ async def task_wrapper(task):
 
 EMPTY_RESPONSE = {"type": "http.request", "body": b"", "more_body": False}
 
-
 @ffi.callback("void(uws_websocket_t*, const char*, size_t, uws_opcode_t, void*)")
 def ws_message(ws, message, length, opcode, user_data):
     socket_data = ffi.from_handle(user_data)
@@ -427,7 +426,7 @@ def asgi(ssl, response, info, user_data, aborted):
         "http_version": "1.1",
         "server": (app.SERVER_HOST, app.SERVER_PORT),
         "client": (
-            ffi.unpack(info.remote_address, info.remote_address_size).decode("utf8"),
+            None if info.remote_address == ffi.NULL else ffi.unpack(info.remote_address, info.remote_address_size).decode("utf8"),
             None,
         ),
         "scheme": app.SERVER_SCHEME,
@@ -444,7 +443,9 @@ def asgi(ssl, response, info, user_data, aborted):
     else:
         data_queue = None
 
+    sended_empty = False
     async def receive():
+        nonlocal sended_empty
         if bool(aborted[0]):
             return {"type": "http.disconnect"}
         if data_queue:
@@ -458,8 +459,15 @@ def asgi(ssl, response, info, user_data, aborted):
             else:
                 return data_queue.queue.get(False)  # consume queue
 
-        # no more body, just empty
-        return EMPTY_RESPONSE
+        # no more body, just EMPTY RESPONSE
+        if not sended_empty:
+            sended_empty = True
+            return EMPTY_RESPONSE
+
+        # already sended empty body so wait for aborted request
+        while not bool(aborted[0]):
+            await asyncio.sleep(0.01) #10ms is good enought
+        return {"type": "http.disconnect"}
 
     async def send(options):
         if bool(aborted[0]):

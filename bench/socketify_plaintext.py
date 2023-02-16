@@ -1,16 +1,16 @@
-
 from socketify import App
 import os
 import multiprocessing
 import asyncio
+
 def run_app():
     app = App(request_response_factory_max_items=200_000)
     router = app.router()
 
     @router.get("/")
-    async def home(res, req):
+    def home(res, req):
         res.send(b"Hello, World!")
-        
+
     app.listen(
         8000,
         lambda config: print(
@@ -29,7 +29,7 @@ def create_fork():
 
 
 # fork limiting the cpu count - 1
-# for i in range(1, multiprocessing.cpu_count()):
-#     create_fork()
+for i in range(1, multiprocessing.cpu_count()):
+    create_fork()
 
 run_app()  # run app on the main process too :)

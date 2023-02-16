@@ -1,6 +1,5 @@
 from socketify import ASGI
 
-
 async def app(scope, receive, send):
     assert scope['type'] == 'http'
 

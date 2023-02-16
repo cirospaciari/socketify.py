@@ -5,8 +5,9 @@ from asyncio import (
     exceptions,
     futures,
     _register_task,
-    _enter_task,
-    _leave_task,
+    # _enter_task,
+    # current_task,
+    # _leave_task,
     _unregister_task,
 )
 import contextvars
@@ -36,7 +37,9 @@ class RequestTask:
 
     Differences:
 
-    - This class is only used by socketify.py loop.run_async
+    - This class do not support current_task
+
+    - This class executes the first step like node.js Promise
 
     - This class is not thread-safe.
 
@@ -115,9 +118,12 @@ class RequestTask:
             self._log_destroy_pending = False
             if self._loop.get_debug():
                 self._source_traceback = format_helpers.extract_stack(sys._getframe(1))
-            # self._loop.call_soon(self.__step, context=self._context)
-            self.__step()
             _register_task(self)
+            # if current_task():
+            #     self._loop.call_soon(self.__step, context=self._context)
+            # else:
+            self.__step()
+                
 
     def _reuse(self, coro, loop, default_done_callback=None):
         """Reuse an future that is not pending anymore."""
@@ -148,9 +154,12 @@ class RequestTask:
         self._fut_waiter = None
         self._coro = coro
 
-        # self._loop.call_soon(self.__step, context=self._context)
-        self.__step()
         _register_task(self)
+        # if current_task():
+        #     self._loop.call_soon(self.__step, context=self._context)
+        # else:
+        self.__step()
+        
 
     def __repr__(self):
         return base_tasks._task_repr(self)
@@ -489,8 +498,7 @@ class RequestTask:
             self._must_cancel = False
         coro = self._coro
         self._fut_waiter = None
-
-        _enter_task(self._loop, self)
+        # _enter_task(self._loop, self)
         # Call either coro.throw(exc) or coro.send(None).
         try:
             if exc is None:
@@ -560,7 +568,7 @@ class RequestTask:
                 new_exc = RuntimeError(f"Task got bad yield: {result!r}")
                 self._loop.call_soon(self.__step, new_exc, context=self._context)
         finally:
-            _leave_task(self._loop, self)
+            # _leave_task(self._loop, self)
             self = None  # Needed to break cycles when an exception occurs.
 
     def __wakeup(self, future):

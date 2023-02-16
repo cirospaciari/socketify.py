@@ -50,12 +50,22 @@ class Loop:
             else:
                 self._task_factory = create_task
             self.run_async = self._run_async_pypy
-            # custom task factory
+            
+            # TODO: check if any framework breaks without current_task(loop) support
+            # custom task factory for other tasks
             def pypy_task_factory(loop, coro, context=None):
                 return create_task(loop, coro, context=context)
 
             self.loop.set_task_factory(pypy_task_factory)
         else:
+            
+            # TODO: check if any framework breaks without current_task(loop) support
+            # custom task factory for other tasks
+            def cpython_task_factory(loop, coro, context=None):
+                return create_task(loop, coro, context=context)
+
+            self.loop.set_task_factory(cpython_task_factory)
+
             # CPython performs equals or worse using TaskFactory
             self.run_async = self._run_async_cpython
 
