@@ -362,62 +362,65 @@ class MiddlewareRouter:
         self.app = app
         self.middlewares = middlewares
 
+    def _get_middlewares_list(self):
+        return [*self.middlewares]
+ 
     def get(self, path, handler):
-        middies = list(*self.middlewares)
+        middies = self._get_middlewares_list()
         middies.append(handler)
         self.app.get(path, middleware(*middies))
         return self
 
     def post(self, path, handler):
-        middies = list(*self.middlewares)
+        middies = self._get_middlewares_list()
         middies.append(handler)
         self.app.post(path, middleware(*middies))
         return self
 
     def options(self, path, handler):
-        middies = list(*self.middlewares)
+        middies = self._get_middlewares_list()
         middies.append(handler)
         self.app.options(path, middleware(*middies))
         return self
 
     def delete(self, path, handler):
-        middies = list(*self.middlewares)
+        middies = self._get_middlewares_list()
         middies.append(handler)
         self.app.delete(path, middleware(*middies))
         return self
 
     def patch(self, path, handler):
-        middies = list(*self.middlewares)
+        middies = self._get_middlewares_list()
         middies.append(handler)
         self.app.patch(path, middleware(*middies))
         return self
 
     def put(self, path, handler):
-        middies = list(*self.middlewares)
+        middies = self._get_middlewares_list()
         middies.append(handler)
         self.app.put(path, middleware(*middies))
         return self
 
     def head(self, path, handler):
-        middies = list(*self.middlewares)
+        middies = self._get_middlewares_list()
         middies.append(handler)
         self.app.head(path, middleware(*middies))
         return self
 
     def connect(self, path, handler):
-        middies = list(*self.middlewares)
+        middies = self._get_middlewares_list()
         middies.append(handler)
         self.app.connect(path, middleware(*middies))
         return self
 
     def trace(self, path, handler):
-        middies = list(*self.middlewares)
+        middies = self._get_middlewares_list()
         middies.append(handler)
         self.app.trace(path, middleware(*middies))
         return self
 
     def any(self, path, handler):
-        middies = list(*self.middlewares)
+        middies = self._get_middlewares_list()
         middies.append(handler)
         self.app.any(path, middleware(*middies))
         return self
