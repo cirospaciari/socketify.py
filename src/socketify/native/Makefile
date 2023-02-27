@@ -1,7 +1,7 @@
 LIBRARY_NAME := libsocketify
 UWS_LIBRARY_NAME := libuwebsockets
-CC := clang
-CXX := clang++
+CC ?= clang
+CXX ?= clang++
 
 ARCH := amd64
 ifeq ($(PLATFORM), arm64)
