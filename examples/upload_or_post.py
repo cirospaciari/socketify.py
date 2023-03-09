@@ -78,6 +78,69 @@ async def upload_multiple(res, req):
     # We respond when we are done
     res.cork_end("Thanks for the data!")
 
+def upload_formdata(res, req):
+    # using streaming_form_data package for parsing
+    from streaming_form_data import StreamingFormDataParser
+    from streaming_form_data.targets import ValueTarget, FileTarget
+
+    print(f"Posted to {req.get_url()}")
+    parser = StreamingFormDataParser(headers=req.get_headers())
+    name = ValueTarget()
+    parser.register('name', name)
+    file = FileTarget('/tmp/file')
+    file2 = FileTarget('/tmp/file2')
+    parser.register('file', file)
+    parser.register('file2', file2)
+
+
+    def on_data(res, chunk, is_end):   
+        parser.data_received(chunk)
+        if is_end:
+            res.cork(on_finish)
+
+
+    def on_finish(res):
+        print(name.value)
+        
+        print(file.multipart_filename)
+        print(file.multipart_content_type)
+
+        print(file2.multipart_filename)
+        print(file2.multipart_content_type)
+
+        res.end("Thanks for the data!")
+
+    res.on_data(on_data)
+
+
+async def upload_formhelper(res, req):
+    # using streaming_form_data package for parsing + helper
+    from streaming_form_data import StreamingFormDataParser
+    from streaming_form_data.targets import ValueTarget, FileTarget
+    from .helpers.form_data import get_formdata
+
+
+    print(f"Posted to {req.get_url()}")
+    parser = StreamingFormDataParser(headers=req.get_headers())
+    name = ValueTarget()
+    parser.register('name', name)
+    file = FileTarget('/tmp/file')
+    file2 = FileTarget('/tmp/file2')
+    parser.register('file', file)
+    parser.register('file2', file2)
+
+    await get_formdata(res, parser)
+
+    print(name.value)
+    
+    print(file.multipart_filename)
+    print(file.multipart_content_type)
+
+    print(file2.multipart_filename)
+    print(file2.multipart_content_type)
+
+    res.cork_end("Thanks for the data!")
+
 
 app = App()
 app.post("/", upload)
@@ -86,6 +149,8 @@ app.post("/json", upload_json)
 app.post("/text", upload_text)
 app.post("/urlencoded", upload_urlencoded)
 app.post("/multiple", upload_multiple)
+app.post("/formdata", upload_formdata)
+app.post("/formdata2", upload_formdata)
 
 app.any("/*", lambda res, _: res.write_status(404).end("Not Found"))
 app.listen(
