@@ -117,7 +117,7 @@ async def upload_formhelper(res, req):
     # using streaming_form_data package for parsing + helper
     from streaming_form_data import StreamingFormDataParser
     from streaming_form_data.targets import ValueTarget, FileTarget
-    from .helpers.form_data import get_formdata
+    from helpers.form_data import get_formdata
 
 
     print(f"Posted to {req.get_url()}")
@@ -150,7 +150,7 @@ app.post("/text", upload_text)
 app.post("/urlencoded", upload_urlencoded)
 app.post("/multiple", upload_multiple)
 app.post("/formdata", upload_formdata)
-app.post("/formdata2", upload_formdata)
+app.post("/formdata2", upload_formhelper)
 
 app.any("/*", lambda res, _: res.write_status(404).end("Not Found"))
 app.listen(
