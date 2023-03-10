@@ -34,7 +34,6 @@ class Loop:
             asyncio.set_event_loop(self.loop)
 
         self.uv_loop = UVLoop()
-        self.call_uv_next = False
 
         if hasattr(exception_handler, "__call__"):
             self.exception_handler = exception_handler
