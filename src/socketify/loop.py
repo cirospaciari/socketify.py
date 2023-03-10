@@ -34,6 +34,7 @@ class Loop:
             asyncio.set_event_loop(self.loop)
 
         self.uv_loop = UVLoop()
+        self.call_uv_next = False
 
         if hasattr(exception_handler, "__call__"):
             self.exception_handler = exception_handler
@@ -74,10 +75,11 @@ class Loop:
 
     def create_future(self):
         return self.loop.create_future()
+        
 
     def _keep_alive(self):
         if self.started:
-            self.uv_loop.run_once()
+            self.uv_loop.run_nowait()
             self.loop.call_soon(self._keep_alive)
 
     def create_task(self, *args, **kwargs):
