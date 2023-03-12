@@ -1,12 +1,6 @@
-from io import BytesIO
-
 payload = None
 with open("xml.zip", "rb") as file:
     payload = file.read()
-
-
-stream = BytesIO()
-stream.write(payload)
 
 chunk_size = 64 * 1024
 content_length = len(payload)
@@ -37,6 +31,6 @@ def app_hello(environ, start_response):
 
 if __name__ == "__main__":
     from socketify import WSGI
-    WSGI(app_hello).listen(8000, lambda config: print(f"Listening on port http://localhost:{config.port} now\n")).run(1)
+    WSGI(app).listen(8000, lambda config: print(f"Listening on port http://localhost:{config.port} now\n")).run(4)
     # import fastwsgi
     # fastwsgi.run(wsgi_app=app_hello, host='127.0.0.1', port=8000)
