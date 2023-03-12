@@ -187,7 +187,6 @@ void uws_add_server_name_with_options(int ssl, uws_app_t *app, const char *hostn
 void uws_missing_server_name(int ssl, uws_app_t *app, uws_missing_server_handler handler, void *user_data);
 void uws_filter(int ssl, uws_app_t *app, uws_filter_handler handler, void *user_data);
 
-
 void uws_res_close(int ssl, uws_res_t *res);
 void uws_res_end(int ssl, uws_res_t *res, const char *data, size_t length, bool close_connection);
 void uws_res_pause(int ssl, uws_res_t *res);
@@ -216,7 +215,7 @@ size_t uws_res_get_proxied_remote_address_as_text(int ssl, uws_res_t *res, const
 
 bool uws_req_is_ancient(uws_req_t *res);
 bool uws_req_get_yield(uws_req_t *res);
-void uws_req_set_field(uws_req_t *res, bool yield);
+void uws_req_set_yield(uws_req_t *res, bool yield);
 size_t uws_req_get_url(uws_req_t *res, const char **dest);
 size_t uws_req_get_method(uws_req_t *res, const char **dest);
 size_t uws_req_get_case_sensitive_method(uws_req_t *res, const char **dest);
@@ -386,6 +385,12 @@ void socketify_ws_cork_send(int ssl, uws_websocket_t *ws, const char* data, size
 
 
 void socketify_ws_cork_send_with_options(int ssl, uws_websocket_t *ws, const char* data, size_t length, uws_opcode_t opcode, bool compress, bool close_connection);
+
+void socketify_res_send_int_code(int ssl, uws_res_t *res, const char* content_data, size_t content_data_size, int code, const char *content_type, size_t content_type_size, bool close_connection);
+void socketify_res_send(int ssl, uws_res_t *res, const char *content_data, size_t content_data_size, const char *status_code, size_t status_code_size, const char *content_type, size_t content_type_size, bool close_connection);
+
+void socketify_res_cork_send_int_code(int ssl, uws_res_t *res, const char* content_data, size_t content_data_size, int code, const char *content_type, size_t content_type_size, bool close_connection);
+void socketify_res_cork_send(int ssl, uws_res_t *res, const char *content_data, size_t content_data_size, const char *status_code, size_t status_code_size, const char *content_type, size_t content_type_size, bool close_connection);
 """
 )
 
@@ -402,5 +407,3 @@ library_path = os.path.join(
 
 
 lib = ffi.dlopen(library_path)
-
-

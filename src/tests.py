@@ -1,31 +1,19 @@
 from socketify import App
+import asyncio 
+app = App(lifespan=False)
+router = app.router()
 
-app = App()
+@app.on_start
+async def on_start():
+    print("wait...")
+    await asyncio.sleep(1)
+    print("start!")
 
-def extension(request, response, ws):
-
-    @request.method
-    async def get_user(self):
-        token = self.get_header("token")
-        self.token = token
-        return { "name": "Test" } if token else { "name", "Anonymous" }
-
-    @request.method
-    async def get_cart(self):
-        return [{ "quantity": 10, "name": "T-Shirt" }]
-
-    request.property("token", "testing")
-
-# extensions must be registered before routes
-app.register(extension)
-
-def auth_middleware(res, req, data):
-    token = req.get_query("token")
-    print("token?", token)
-    req.token = token
-    return { "name": "Test" } if token else { "name", "Anonymous" }
-
-router = app.router("")
+@app.on_shutdown
+async def on_shutdown():
+    print("wait...")
+    await asyncio.sleep(1)
+    print("shutdown!")
 
 @router.get("/")
 def home(res, req, data=None):
@@ -45,11 +33,3 @@ app.listen(
 )
 app.run()
 
-
-# uws_websocket_drain_handler
-# uws_websocket_subscription_handler
-# uws_websocket_open_handler
-# uws_websocket_message_handler
-# uws_websocket_pong_handler
-# uws_websocket_ping_handler
-# uws_websocket_close_handler

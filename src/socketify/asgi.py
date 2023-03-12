@@ -1,14 +1,17 @@
-from socketify import App, OpCode, Loop
+from socketify import App, OpCode
 from queue import SimpleQueue
 from .native import lib, ffi
-from .tasks import create_task, create_task_with_factory
+from .tasks import create_task, TaskFactory
 import os
 import platform
-import sys 
+import sys
 import logging
 import uuid
 import asyncio
+
 is_pypy = platform.python_implementation() == "PyPy"
+
+
 async def task_wrapper(task):
     try:
         return await task
@@ -19,8 +22,8 @@ async def task_wrapper(task):
         finally:
             return None
 
-EMPTY_RESPONSE = {"type": "http.request", "body": b"", "more_body": False}
 
+EMPTY_RESPONSE = {"type": "http.request", "body": b"", "more_body": False}
 
 @ffi.callback("void(uws_websocket_t*, const char*, size_t, uws_opcode_t, void*)")
 def ws_message(ws, message, length, opcode, user_data):
@@ -30,7 +33,7 @@ def ws_message(ws, message, length, opcode, user_data):
         message = message.decode("utf8")
 
     socket_data.message(ws, message, OpCode(opcode))
-    
+
 
 @ffi.callback("void(uws_websocket_t*, int, const char*, size_t, void*)")
 def ws_close(ws, code, message, length, user_data):
@@ -79,7 +82,7 @@ def ws_upgrade(ssl, response, info, socket_context, user_data, aborted):
         extensions = ffi.unpack(info.extensions, info.extensions_size).decode("utf8")
     compress = app.ws_compression
     ws = ASGIWebSocket(app.server.loop)
-    
+
     scope = {
         "type": "websocket",
         "asgi": {"version": "3.0", "spec_version": "2.3"},
@@ -160,10 +163,12 @@ def ws_upgrade(ssl, response, info, socket_context, user_data, aborted):
             else:
                 sec_web_socket_extensions_data = b""
             _id = uuid.uuid4()
-            
+
             app.server._socket_refs[_id] = ws
+
             def unregister():
                 app.server._socket_refs.pop(_id, None)
+
             ws.unregister = unregister
             lib.uws_res_upgrade(
                 ssl,
@@ -421,7 +426,7 @@ def asgi(ssl, response, info, user_data, aborted):
         "http_version": "1.1",
         "server": (app.SERVER_HOST, app.SERVER_PORT),
         "client": (
-            ffi.unpack(info.remote_address, info.remote_address_size).decode("utf8"),
+            None if info.remote_address == ffi.NULL else ffi.unpack(info.remote_address, info.remote_address_size).decode("utf8"),
             None,
         ),
         "scheme": app.SERVER_SCHEME,
@@ -438,7 +443,9 @@ def asgi(ssl, response, info, user_data, aborted):
     else:
         data_queue = None
 
+    sended_empty = False
     async def receive():
+        nonlocal sended_empty
         if bool(aborted[0]):
             return {"type": "http.disconnect"}
         if data_queue:
@@ -452,8 +459,15 @@ def asgi(ssl, response, info, user_data, aborted):
             else:
                 return data_queue.queue.get(False)  # consume queue
 
-        # no more body, just empty
-        return EMPTY_RESPONSE
+        # no more body, just EMPTY RESPONSE
+        if not sended_empty:
+            sended_empty = True
+            return EMPTY_RESPONSE
+
+        # already sended empty body so wait for aborted request
+        while not bool(aborted[0]):
+            await asyncio.sleep(0.01) #10ms is good enought
+        return {"type": "http.disconnect"}
 
     async def send(options):
         if bool(aborted[0]):
@@ -492,10 +506,18 @@ def asgi(ssl, response, info, user_data, aborted):
         return False
 
     app._run_task(app.app(scope, receive, send))
-    
+
 
 class _ASGI:
-    def __init__(self, app, options=None, websocket=True, websocket_options=None, task_factory_max_items=100_000, lifespan=True):
+    def __init__(
+        self,
+        app,
+        options=None,
+        websocket=True,
+        websocket_options=None,
+        task_factory_max_items=100_000,
+        lifespan=True,
+    ):
         self.server = App(options, task_factory_max_items=0)
         self.SERVER_PORT = None
         self.SERVER_HOST = ""
@@ -509,32 +531,35 @@ class _ASGI:
         # internally will still use custom task factory for pypy because of Loop
         if is_pypy:
             if task_factory_max_items > 0:
-                factory = create_task_with_factory(task_factory_max_items)
-                
+                factory = TaskFactory(task_factory_max_items)
+
                 def run_task(task):
                     factory(loop, task_wrapper(task))
-                    loop._run_once()
+
                 self._run_task = run_task
             else:
+
                 def run_task(task):
-                    create_task(loop, task_wrapper(task))
-                    loop._run_once()
+                    future = create_task(loop, task_wrapper(task))
+                    future._log_destroy_pending = False
+
                 self._run_task = run_task
-            
+
         else:
-            if sys.version_info >= (3, 8): # name fixed to avoid dynamic name
+            if sys.version_info >= (3, 8):  # name fixed to avoid dynamic name
+
                 def run_task(task):
-                    future = loop.create_task(task_wrapper(task), name='socketify.py-request-task')
+                    future = create_task(loop, task_wrapper(task))
                     future._log_destroy_pending = False
-                    loop._run_once()
+
                 self._run_task = run_task
             else:
+
                 def run_task(task):
-                    future = loop.create_task(task_wrapper(task))
+                    future = create_task(loop, task_wrapper(task))
                     future._log_destroy_pending = False
-                    loop._run_once()
+
                 self._run_task = run_task
-            
 
         self.app = app
         self.ws_compression = False
@@ -613,16 +638,16 @@ class _ASGI:
         if not self.lifespan:
             self.server.listen(port_or_options, handler)
             return self
-        
+
         scope = {"type": "lifespan", "asgi": {"version": "3.0", "spec_version": "2.3"}}
-        
+
         asgi_app = self
         self.is_starting = True
         self.is_stopped = False
-        self.status = 0 # 0 starting, 1 ok, 2 error, 3 stoping, 4 stopped, 5 stopped with error, 6 no lifespan
+        self.status = 0  # 0 starting, 1 ok, 2 error, 3 stoping, 4 stopped, 5 stopped with error, 6 no lifespan
         self.status_message = ""
         self.stop_future = self.server.loop.create_future()
-        
+
         async def send(options):
             nonlocal asgi_app
             type = options["type"]
@@ -660,7 +685,7 @@ class _ASGI:
                     # just log in console the error to call attention
                     logging.error("Uncaught Exception: %s" % str(error))
                     if asgi_app.status < 2:
-                        asgi_app.status = 6 # no more lifespan
+                        asgi_app.status = 6  # no more lifespan
                         asgi_app.server.listen(port_or_options, handler)
                 finally:
                     return None
@@ -676,21 +701,23 @@ class _ASGI:
 
     def run(self):
         if not self.lifespan:
-            self.server.run()  
+            self.server.run()
             return self
 
         # run app
-        self.server.run()  
+        self.server.run()
         # no more lifespan events
         if self.status == 6:
             return self
         # signal stop
         self.status = 3
-        self.stop_future.set_result({
-            "type": "lifespan.shutdown",
-            "asgi": {"version": "3.0", "spec_version": "2.3"},
-        })
-         # run until end or fail
+        self.stop_future.set_result(
+            {
+                "type": "lifespan.shutdown",
+                "asgi": {"version": "3.0", "spec_version": "2.3"},
+            }
+        )
+        # run until end or fail
         while self.status == 3:
             self.server.loop.run_once()
 
@@ -714,8 +741,8 @@ class ASGI:
         options=None,
         websocket=True,
         websocket_options=None,
-        task_factory_max_items=100_000, #default = 100k = +20mib in memory
-        lifespan=True
+        task_factory_max_items=100_000,  # default = 100k = +20mib in memory
+        lifespan=True,
     ):
         self.app = app
         self.options = options
@@ -737,22 +764,27 @@ class ASGI:
                 self.websocket,
                 self.websocket_options,
                 self.task_factory_max_items,
-                self.lifespan
+                self.lifespan,
             )
             if self.listen_options:
                 (port_or_options, handler) = self.listen_options
                 server.listen(port_or_options, handler)
             server.run()
 
-        def create_fork():
-            n = os.fork()
-            # n greater than 0 means parent process
-            if not n > 0:
-                run_task()
-
+        pid_list = []
         # fork limiting the cpu count - 1
         for _ in range(1, workers):
-            create_fork()
+            pid = os.fork()
+            # n greater than 0 means parent process
+            if not pid > 0:
+                run_task()
+                break
+            pid_list.append(pid)
 
         run_task()  # run app on the main process too :)
+
+        # sigint everything to gracefull shutdown
+        import signal
+        for pid in pid_list:
+            os.kill(pid, signal.SIGINT)
         return self

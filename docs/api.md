@@ -2,7 +2,11 @@
 ```python
 
 class App:
-    def __init__(self, options=None):
+    def __init__(self, options=None, request_response_factory_max_items=0, websocket_factory_max_items=0, task_factory_max_items=100_000, lifespan=True):
+
+    def on_start(self, method: callable):
+    def on_shutdown(self, method: callable):
+    def on_error(self, method: callable):    
     def router(self, prefix: str="", *middlewares):
     def register(self, extension):
     def template(self, template_engine):
@@ -34,11 +38,12 @@ class App:
 
 ```
 
-## AppResponse
+## Response
 ```python
-class AppResponse:
+class Response:
     def __init__(self, response, app):
     def cork(self, callback):
+    def close(self):
     def set_cookie(self, name, value, options={}):
     def run_async(self, task):
     async def get_form_urlencoded(self, encoding="utf-8"):
@@ -57,7 +62,7 @@ class AppResponse:
     def get_proxied_remote_address_bytes(self):
     def get_proxied_remote_address(self):
     def cork_send(self, message: any, content_type: str = b'text/plain', status : str | bytes | int = b'200 OK', headers=None, end_connection=False):
-    def send(self, message: any, content_type: str = b'text/plain', status : str | bytes | int = b'200 OK', headers=None, end_connection=False):
+    def send(self, message: any = b"", content_type: str = b'text/plain', status : str | bytes | int = b'200 OK', headers=None, end_connection=False):
     def end(self, message, end_connection=False):
     def pause(self):
     def resume(self):
@@ -83,9 +88,9 @@ class AppResponse:
     def __del__(self):
 ```
 
-## AppRequest
+## Request
 ```python
-class AppRequest:
+class Request:
     def __init__(self, request, app):
     def get_cookie(self, name):
     def get_url(self):
@@ -133,6 +138,8 @@ class WebSocket:
     # uuid for socket data, used to free data after socket closes
     def get_user_data_uuid(self):
     def get_user_data(self):
+    # clone the current instance to preserve it (you need to watch for closed connections when using it)
+    def clone(self):
     def get_buffered_amount(self):
     def subscribe(self, topic):
     def unsubscribe(self, topic):

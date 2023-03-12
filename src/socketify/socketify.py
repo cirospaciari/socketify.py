@@ -4,9 +4,6 @@ from http import cookies
 import inspect
 from io import BytesIO
 import json
-import mimetypes
-import os
-import platform
 import signal
 import uuid
 from urllib.parse import parse_qs, quote_plus, unquote_plus
@@ -14,13 +11,10 @@ import logging
 
 from .native import ffi, lib
 from .loop import Loop
-from .status_codes import status_codes
 from .helpers import static_route
-from dataclasses import dataclass
 from .helpers import DecoratorRouter
-
-mimetypes.init()
-
+from typing import Union
+from .dataclasses import AppListenOptions
 
 @ffi.callback("void(const char*, size_t, void*)")
 def uws_missing_server_name(hostname, hostname_length, user_data):
@@ -71,6 +65,27 @@ def uws_websocket_factory_drain_handler(ws, user_data):
         except Exception as err:
             if dispose:
                 app._ws_factory.dispose(instances)
+            logging.error(
+                "Uncaught Exception: %s" % str(err)
+            )  # just log in console the error to call attention
+
+
+@ffi.callback("void(uws_websocket_t*, void*)")
+def uws_websocket_drain_handler_with_extension(ws, user_data):
+    if user_data != ffi.NULL:
+        try:
+            handlers, app = ffi.from_handle(user_data)
+            ws = WebSocket(ws, app)
+            # bind methods to websocket
+            app._ws_extension.set_properties(ws)
+            # set default value in properties
+            app._ws_extension.bind_methods(ws)
+            handler = handlers.drain
+            if inspect.iscoroutinefunction(handler):
+                app.run_async(handler(ws))
+            else:
+                handler(ws)
+        except Exception as err:
             logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
@@ -216,6 +231,52 @@ def uws_websocket_subscription_handler(
             )  # just log in console the error to call attention
 
 
+@ffi.callback("void(uws_websocket_t*, const char *, size_t, int, int, void*)")
+def uws_websocket_subscription_handler_with_extension(
+    ws,
+    topic_name,
+    topic_name_length,
+    new_number_of_subscriber,
+    old_number_of_subscriber,
+    user_data,
+):
+    if user_data != ffi.NULL:
+        try:
+            handlers, app = ffi.from_handle(user_data)
+            ws = WebSocket(ws, app)
+            # bind methods to websocket
+            app._ws_extension.set_properties(ws)
+            # set default value in properties
+            app._ws_extension.bind_meth
+            handler = handlers.subscription
+
+            if topic_name == ffi.NULL:
+                topic = None
+            else:
+                topic = ffi.unpack(topic_name, topic_name_length).decode("utf-8")
+
+            if inspect.iscoroutinefunction(handler):
+                app.run_async(
+                    handler(
+                        ws,
+                        topic,
+                        int(new_number_of_subscriber),
+                        int(old_number_of_subscriber),
+                    )
+                )
+            else:
+                handler(
+                    ws,
+                    topic,
+                    int(new_number_of_subscriber),
+                    int(old_number_of_subscriber),
+                )
+        except Exception as err:
+            logging.error(
+                "Uncaught Exception: %s" % str(err)
+            )  # just log in console the error to call attention
+
+
 @ffi.callback("void(uws_websocket_t*, void*)")
 def uws_websocket_factory_open_handler(ws, user_data):
     if user_data != ffi.NULL:
@@ -243,6 +304,28 @@ def uws_websocket_factory_open_handler(ws, user_data):
         except Exception as err:
             if dispose:
                 app._ws_factory.dispose(instances)
+            logging.error(
+                "Uncaught Exception: %s" % str(err)
+            )  # just log in console the error to call attention
+
+
+@ffi.callback("void(uws_websocket_t*, void*)")
+def uws_websocket_open_handler_with_extension(ws, user_data):
+
+    if user_data != ffi.NULL:
+        try:
+            handlers, app = ffi.from_handle(user_data)
+            ws = WebSocket(ws, app)
+            # bind methods to websocket
+            app._ws_extension.set_properties(ws)
+            # set default value in properties
+            app._ws_extension.bind_meth
+            handler = handlers.open
+            if inspect.iscoroutinefunction(handler):
+                app.run_async(handler(ws))
+            else:
+                handler(ws)
+        except Exception as err:
             logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
@@ -302,6 +385,39 @@ def uws_websocket_factory_message_handler(ws, message, length, opcode, user_data
         except Exception as err:
             if dispose:
                 app._ws_factory.dispose(instances)
+            logging.error(
+                "Uncaught Exception: %s" % str(err)
+            )  # just log in console the error to call attention
+
+
+@ffi.callback("void(uws_websocket_t*, const char*, size_t, uws_opcode_t, void*)")
+def uws_websocket_message_handler_with_extension(
+    ws, message, length, opcode, user_data
+):
+    if user_data != ffi.NULL:
+        try:
+            handlers, app = ffi.from_handle(user_data)
+            ws = WebSocket(ws, app)
+            # bind methods to websocket
+            app._ws_extension.set_properties(ws)
+            # set default value in properties
+            app._ws_extension.bind_meth
+
+            if message == ffi.NULL:
+                data = None
+            else:
+                data = ffi.unpack(message, length)
+            opcode = OpCode(opcode)
+            if opcode == OpCode.TEXT:
+                data = data.decode("utf-8")
+
+            handler = handlers.message
+            if inspect.iscoroutinefunction(handler):
+                app.run_async(handler(ws, data, opcode))
+            else:
+                handler(ws, data, opcode)
+
+        except Exception as err:
             logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
@@ -373,6 +489,32 @@ def uws_websocket_factory_pong_handler(ws, message, length, user_data):
 
 
 @ffi.callback("void(uws_websocket_t*, const char*, size_t, void*)")
+def uws_websocket_pong_handler_with_extension(ws, message, length, user_data):
+    if user_data != ffi.NULL:
+        try:
+            handlers, app = ffi.from_handle(user_data)
+            ws = WebSocket(ws, app)
+            # bind methods to websocket
+            app._ws_extension.set_properties(ws)
+            # set default value in properties
+            app._ws_extension.bind_meth
+            if message == ffi.NULL:
+                data = None
+            else:
+                data = ffi.unpack(message, length)
+
+            handler = handlers.pong
+            if inspect.iscoroutinefunction(handler):
+                app.run_async(handler(ws, data))
+            else:
+                handler(ws, data)
+        except Exception as err:
+            logging.error(
+                "Uncaught Exception: %s" % str(err)
+            )  # just log in console the error to call attention
+
+
+@ffi.callback("void(uws_websocket_t*, const char*, size_t, void*)")
 def uws_websocket_pong_handler(ws, message, length, user_data):
     if user_data != ffi.NULL:
         try:
@@ -428,6 +570,34 @@ def uws_websocket_factory_ping_handler(ws, message, length, user_data):
         except Exception as err:
             if dispose:
                 app._ws_factory.dispose(instances)
+            logging.error(
+                "Uncaught Exception: %s" % str(err)
+            )  # just log in console the error to call attention
+
+
+@ffi.callback("void(uws_websocket_t*, const char*, size_t, void*)")
+def uws_websocket_ping_handler_with_extension(ws, message, length, user_data):
+    if user_data != ffi.NULL:
+        try:
+            handlers, app = ffi.from_handle(user_data)
+            ws = WebSocket(ws, app)
+            # bind methods to websocket
+            app._ws_extension.set_properties(ws)
+            # set default value in properties
+            app._ws_extension.bind_meth
+
+            if message == ffi.NULL:
+                data = None
+            else:
+                data = ffi.unpack(message, length)
+
+            handler = handlers.ping
+            if inspect.iscoroutinefunction(handler):
+                app.run_async(handler(ws, data))
+            else:
+                handler(ws, data)
+
+        except Exception as err:
             logging.error(
                 "Uncaught Exception: %s" % str(err)
             )  # just log in console the error to call attention
@@ -499,6 +669,51 @@ def uws_websocket_factory_close_handler(ws, code, message, length, user_data):
                     app._socket_refs.pop(key, None)
                 if dispose:
                     app._ws_factory.dispose(instances)
+
+        except Exception as err:
+            logging.error(
+                "Uncaught Exception: %s" % str(err)
+            )  # just log in console the error to call attention
+
+
+@ffi.callback("void(uws_websocket_t*, int, const char*, size_t, void*)")
+def uws_websocket_close_handler_with_extension(ws, code, message, length, user_data):
+    if user_data != ffi.NULL:
+        try:
+            handlers, app = ffi.from_handle(user_data)
+            # pass to free data on WebSocket if needed
+            ws = WebSocket(ws, app)
+            # bind methods to websocket
+            app._ws_extension.set_properties(ws)
+            # set default value in properties
+            app._ws_extension.bind_meth
+
+            if message == ffi.NULL:
+                data = None
+            else:
+                data = ffi.unpack(message, length)
+
+            handler = handlers.close
+
+            if handler is None:
+                return
+
+            if inspect.iscoroutinefunction(handler):
+
+                async def wrapper(app, handler, ws, data, code, dispose):
+                    try:
+                        return await handler(ws, code, data)
+                    finally:
+                        key = ws.get_user_data_uuid()
+                        if key is not None:
+                            app._socket_refs.pop(key, None)
+
+                app.run_async(wrapper(app, handler, ws, data, int(code)))
+            else:
+                handler(ws, int(code), data)
+                key = ws.get_user_data_uuid()
+                if key is not None:
+                    app._socket_refs.pop(key, None)
 
         except Exception as err:
             logging.error(
@@ -925,6 +1140,10 @@ class WebSocket:
         self.socket_data_id = None
         self.socket_data = None
         self.got_socket_data = False
+
+    def clone(self):
+        # clone and preserve this websocket in another instance
+        return WebSocket(self.ws, self.app)
 
     def trigger_for_each_topic_handler(self, topic):
         if hasattr(self, "_for_each_topic_handler") and hasattr(
@@ -1418,6 +1637,12 @@ class AppResponse:
         )
         return self
 
+    def close(self):
+        lib.uws_res_close(
+            self.app.SSL, self.res
+        )
+        return self
+
     def try_end(self, message, total_size, end_connection=False):
         try:
             if self.aborted:
@@ -1506,12 +1731,13 @@ class AppResponse:
 
     def cork_send(
         self,
-        message,
-        content_type: str | bytes = b"text/plain",
-        status: str | bytes | int = b"200 OK",
+        message: any,
+        content_type: Union[str, bytes] = b"text/plain",
+        status: Union[str, bytes, int] = b"200 OK",
         headers=None,
-        end_connection=False,
+        end_connection: bool = False,
     ):
+        # TODO: use socketify_res_cork_send_int_code and socketify_res_cork_send after optimize headers
         self.cork(
             lambda res: res.send(message, content_type, status, headers, end_connection)
         )
@@ -1519,37 +1745,107 @@ class AppResponse:
 
     def send(
         self,
-        message: any,
-        content_type: str | bytes = b"text/plain",
-        status: str | bytes | int = b"200 OK",
-        headers=None,
-        end_connection=False,
+        message: any = b"",
+        content_type: Union[str, bytes] = b"text/plain",
+        status: Union[str, bytes, int] = b"200 OK",
+        headers = None,
+        end_connection: bool = False,
     ):
-        if self.aborted:
-            return self
 
-        self.write_status(status)
-        self.write_header(b"Content-Type", content_type)
-
+        # TODO: optimize headers
         if headers is not None:
             for name, value in headers:
                 self.write_header(name, value)
         try:
+
+            # TODO: optimize Set-Cookie
             if self._write_jar is not None:
                 self.write_header("Set-Cookie", self._write_jar.output(header=""))
                 self._write_jar = None
+
             if isinstance(message, str):
                 data = message.encode("utf-8")
             elif isinstance(message, bytes):
                 data = message
             elif message is None:
-                self.end_without_body(end_connection)
+                if isinstance(status, int):
+                    lib.socketify_res_send_int_code(
+                        self.app.SSL,
+                        self.res,
+                        ffi.NULL,
+                        0,
+                        status,
+                        content_type,
+                        len(content_type),
+                        1 if end_connection else 0,
+                    )
+                elif isinstance(status, str):
+                    status = status.encode("utf-8")
+                    lib.socketify_res_send(
+                        self.app.SSL,
+                        self.res,
+                        ffi.NULL,
+                        0,
+                        status,
+                        len(status),
+                        content_type,
+                        len(content_type),
+                        1 if end_connection else 0,
+                    )
+                else:
+                    lib.socketify_res_send(
+                        self.app.SSL,
+                        self.res,
+                        ffi.NULL,
+                        0,
+                        status,
+                        len(status),
+                        content_type,
+                        len(content_type),
+                        1 if end_connection else 0,
+                    )
                 return self
             else:
                 data = self.app._json_serializer.dumps(message).encode("utf-8")
-            lib.uws_res_end(
-                self.app.SSL, self.res, data, len(data), 1 if end_connection else 0
-            )
+                content_type = b"application/json"
+
+            if isinstance(status, int):
+                lib.socketify_res_send_int_code(
+                    self.app.SSL,
+                    self.res,
+                    data,
+                    len(data),
+                    status,
+                    content_type,
+                    len(content_type),
+                    1 if end_connection else 0,
+                )
+            elif isinstance(status, str):
+                status = status.encode("utf-8")
+                lib.socketify_res_send(
+                    self.app.SSL,
+                    self.res,
+                    ffi.NULL,
+                    0,
+                    status,
+                    len(status),
+                    content_type,
+                    len(content_type),
+                    1 if end_connection else 0,
+                )
+            else:
+                lib.socketify_res_send(
+                    self.app.SSL,
+                    self.res,
+                    data,
+                    len(data),
+                    status,
+                    len(status),
+                    content_type,
+                    len(content_type),
+                    1 if end_connection else 0,
+                )
+
         finally:
             return self
 
@@ -2184,7 +2480,7 @@ class AppRequest:
         return self
 
     def set_yield(self, has_yield):
-        lib.uws_req_set_field(self.req, 1 if has_yield else 0)
+        lib.uws_req_set_yield(self.req, 1 if has_yield else 0)
 
     def get_yield(self):
         return bool(lib.uws_req_get_yield(self.req))
@@ -2249,49 +2545,78 @@ class App:
         request_response_factory_max_items=0,
         websocket_factory_max_items=0,
         task_factory_max_items=100_000,
+        lifespan=True,
     ):
+
         socket_options_ptr = ffi.new("struct us_socket_context_options_t *")
         socket_options = socket_options_ptr[0]
-        self.options = options
+        self._options = options
         self._template = None
+        self.lifespan = lifespan
         # keep socket data alive for CFFI
         self._socket_refs = {}
+        self._native_options = []
         if options is not None:
             self.is_ssl = True
             self.SSL = ffi.cast("int", 1)
-            socket_options.key_file_name = (
+
+            key_filename = (
                 ffi.NULL
                 if options.key_file_name is None
                 else ffi.new("char[]", options.key_file_name.encode("utf-8"))
             )
-            socket_options.cert_file_name = (
+            self._native_options.append(key_filename)
+            socket_options.key_file_name = key_filename
+
+            cert_file_name = (
                 ffi.NULL
                 if options.cert_file_name is None
                 else ffi.new("char[]", options.cert_file_name.encode("utf-8"))
             )
-            socket_options.passphrase = (
+
+            self._native_options.append(cert_file_name)
+            socket_options.cert_file_name = cert_file_name
+
+            passphrase = (
                 ffi.NULL
                 if options.passphrase is None
                 else ffi.new("char[]", options.passphrase.encode("utf-8"))
             )
-            socket_options.dh_params_file_name = (
+
+            self._native_options.append(passphrase)
+            socket_options.passphrase = passphrase
+
+            dh_params_file_name = (
                 ffi.NULL
                 if options.dh_params_file_name is None
                 else ffi.new("char[]", options.dh_params_file_name.encode("utf-8"))
             )
-            socket_options.ca_file_name = (
+
+            self._native_options.append(dh_params_file_name)
+            socket_options.dh_params_file_name = dh_params_file_name
+
+            ca_file_name = (
                 ffi.NULL
                 if options.ca_file_name is None
                 else ffi.new("char[]", options.ca_file_name.encode("utf-8"))
             )
-            socket_options.ssl_ciphers = (
+
+            self._native_options.append(ca_file_name)
+            socket_options.ca_file_name = ca_file_name
+
+            ssl_ciphers = (
                 ffi.NULL
                 if options.ssl_ciphers is None
                 else ffi.new("char[]", options.ssl_ciphers.encode("utf-8"))
             )
+
+            self._native_options.append(ssl_ciphers)
+            socket_options.ssl_ciphers = ssl_ciphers
+
             socket_options.ssl_prefer_low_memory_usage = ffi.cast(
                 "int", options.ssl_prefer_low_memory_usage
             )
+
         else:
             self.is_ssl = False
             self.SSL = ffi.cast("int", 0)
@@ -2300,7 +2625,7 @@ class App:
             lambda loop, context, response: self.trigger_error(context, response, None),
             task_factory_max_items,
         )
-
+        self.run_async = self.loop.run_async
         # set async loop to be the last created (is thread_local), App must be one per thread otherwise will use only the lasted loop
         # needs to be called before uws_create_app or otherwise will create another loop and will not receive the right one
         lib.uws_get_loop_with_native(self.loop.get_native_loop())
@@ -2331,6 +2656,16 @@ class App:
         self._request_extension = None
         self._response_extension = None
         self._ws_extension = None
+        self._on_start_handler = None
+        self._on_shutdown_handler = None
+
+    def on_start(self, method: callable):
+        self._on_start_handler = method
+        return method
+
+    def on_shutdown(self, method: callable):
+        self._on_shutdown_handler = method
+        return method
 
     def router(self, prefix: str = "", *middlewares):
         return DecoratorRouter(self, prefix, middlewares)
@@ -2779,71 +3114,101 @@ class App:
                 native_behavior.upgrade = uws_websocket_upgrade_handler_with_extension
             else:
                 native_behavior.upgrade = uws_websocket_upgrade_handler
+
         else:
             native_behavior.upgrade = ffi.NULL
 
         if open_handler:
             handlers.open = open_handler
-            native_behavior.open = (
-                uws_websocket_factory_open_handler
-                if self._ws_factory
-                else uws_websocket_open_handler
-            )
+
+            if self._factory:
+                native_behavior.open = uws_websocket_factory_open_handler
+            elif self._ws_extension and not self._ws_extension.empty:
+                native_behavior.open = uws_websocket_open_handler_with_extension
+            else:
+                native_behavior.open = uws_websocket_open_handler
+
         else:
             native_behavior.open = ffi.NULL
 
         if message_handler:
             handlers.message = message_handler
-            native_behavior.message = (
-                uws_websocket_factory_message_handler
-                if self._ws_factory
-                else uws_websocket_message_handler
-            )
+
+            if self._factory:
+                native_behavior.message = uws_websocket_factory_message_handler
+            elif self._ws_extension and not self._ws_extension.empty:
+                native_behavior.message = uws_websocket_message_handler_with_extension
+            else:
+                native_behavior.message = uws_websocket_message_handler
+
         else:
             native_behavior.message = ffi.NULL
 
         if drain_handler:
             handlers.drain = drain_handler
-            native_behavior.drain = (
-                uws_websocket_factory_drain_handler
-                if self._ws_factory
-                else uws_websocket_drain_handler
-            )
-        else:
+
+            if self._factory:
+                native_behavior.drain = uws_websocket_factory_drain_handler
+            elif self._ws_extension and not self._ws_extension.empty:
+                native_behavior.drain = uws_websocket_drain_handler_with_extension
+            else:
+                native_behavior.drain = uws_websocket_drain_handler
+
             native_behavior.drain = ffi.NULL
 
         if ping_handler:
             handlers.ping = ping_handler
-            native_behavior.ping = (
-                uws_websocket_factory_ping_handler
-                if self._ws_factory
-                else uws_websocket_ping_handler
-            )
+
+            if self._factory:
+                native_behavior.ping = uws_websocket_factory_ping_handler
+            elif self._ws_extension and not self._ws_extension.empty:
+                native_behavior.ping = uws_websocket_ping_handler_with_extension
+            else:
+                native_behavior.ping = uws_websocket_ping_handler
+
         else:
             native_behavior.ping = ffi.NULL
 
         if pong_handler:
             handlers.pong = pong_handler
-            native_behavior.pong = (
-                uws_websocket_factory_pong_handler
-                if self._ws_factory
-                else uws_websocket_pong_handler
-            )
+
+            if self._factory:
+                native_behavior.pong = uws_websocket_factory_pong_handler
+            elif self._ws_extension and not self._ws_extension.empty:
+                native_behavior.pong = uws_websocket_pong_handler_with_extension
+            else:
+                native_behavior.pong = uws_websocket_pong_handler
+
         else:
             native_behavior.pong = ffi.NULL
 
         if close_handler:
             handlers.close = close_handler
-            native_behavior.close = (
-                uws_websocket_factory_close_handler
-                if self._ws_factory
-                else uws_websocket_close_handler
-            )
+
+            if self._factory:
+                native_behavior.close = uws_websocket_factory_close_handler
+            elif self._ws_extension and not self._ws_extension.empty:
+                native_behavior.close = uws_websocket_close_handler_with_extension
+            else:
+                native_behavior.close = uws_websocket_close_handler
+
         else:  # always keep an close
             native_behavior.close = uws_websocket_close_handler
 
         if subscription_handler:
             handlers.subscription = subscription_handler
+
+            if self._factory:
+                native_behavior.subscription = (
+                    uws_websocket_factory_subscription_handler
+                )
+            elif self._ws_extension and not self._ws_extension.empty:
+                native_behavior.subscription = (
+                    uws_websocket_subscription_handler_with_extension
+                )
+            else:
+                native_behavior.subscription = uws_websocket_subscription_handler
+
             native_behavior.subscription = (
                 uws_websocket_factory_subscription_handler
                 if self._ws_factory
@@ -2858,6 +3223,25 @@ class App:
         return self
 
     def listen(self, port_or_options=None, handler=None):
+        if self.lifespan:
+
+            async def task_wrapper(task):
+                try:
+                    if inspect.iscoroutinefunction(task):
+                        await task()
+                    else:
+                        task()
+                except Exception as error:
+                    try:
+                        self.trigger_error(error, None, None)
+                    finally:
+                        return None
+
+            # start lifespan
+            if self._on_start_handler:
+                self.loop.run_until_complete(task_wrapper(self._on_start_handler))
+
+        # actual listen to server
         self._listen_handler = handler
         if port_or_options is None:
             lib.uws_app_listen(
@@ -2929,8 +3313,6 @@ class App:
 
         return self
 
-    def run_async(self, task, response=None):
-        return self.loop.run_async(task, response)
 
     def run(self):
         # populate factories
@@ -2941,6 +3323,24 @@ class App:
 
         signal.signal(signal.SIGINT, lambda sig, frame: self.close())
         self.loop.run()
+        if self.lifespan:
+
+            async def task_wrapper(task):
+                try:
+                    if inspect.iscoroutinefunction(task):
+                        await task()
+                    else:
+                        task()
+                except Exception as error:
+                    try:
+                        self.trigger_error(error, None, None)
+                    finally:
+                        return None
+
+            # shutdown lifespan
+            if self._on_shutdown_handler:
+                self.loop.run_until_complete(task_wrapper(self._on_shutdown_handler))
+
         return self
 
     def close(self):
@@ -2950,6 +3350,10 @@ class App:
                 self.socket = ffi.NULL
         self.loop.stop()
         return self
+
+    def on_error(self, handler):
+        self.set_error_handler(handler)
+        return handler
 
     def set_error_handler(self, handler):
         if hasattr(handler, "__call__"):
@@ -3002,52 +3406,3 @@ class App:
             self.loop.dispose()
             self.loop = None
 
-
-@dataclass
-class AppListenOptions:
-    port: int = 0
-    host: str = None
-    options: int = 0
-    domain: str = None
-
-    def __post_init__(self):
-        if not isinstance(self.port, int):
-            raise RuntimeError("port must be an int")
-        if not isinstance(self.host, (type(None), str)):
-            raise RuntimeError("host must be a str if specified")
-        if not isinstance(self.domain, (type(None), str)):
-            raise RuntimeError("domain must be a str if specified")
-        if not isinstance(self.options, int):
-            raise RuntimeError("options must be an int")
-        if self.domain and (self.host or self.port != 0):
-            raise RuntimeError(
-                "if domain is specified, host and port will be no effect"
-            )
-
-
-@dataclass
-class AppOptions:
-    key_file_name: str = (None,)
-    cert_file_name: str = (None,)
-    passphrase: str = (None,)
-    dh_params_file_name: str = (None,)
-    ca_file_name: str = (None,)
-    ssl_ciphers: str = (None,)
-    ssl_prefer_low_memory_usage: int = 0
-
-    def __post_init__(self):
-        NoneType = type(None)
-        if not isinstance(self.key_file_name, (NoneType, str)):
-            raise RuntimeError("key_file_name must be a str if specified")
-        if not isinstance(self.cert_file_name, (NoneType, str)):
-            raise RuntimeError("cert_file_name must be a str if specified")
-        if not isinstance(self.passphrase, (NoneType, str)):
-            raise RuntimeError("passphrase must be a str if specified")
-        if not isinstance(self.dh_params_file_name, (NoneType, str)):
-            raise RuntimeError("dh_params_file_name must be a str if specified")
-        if not isinstance(self.ca_file_name, (NoneType, str)):
-            raise RuntimeError("ca_file_name must be a str if specified")
-        if not isinstance(self.ssl_ciphers, (NoneType, str)):
-            raise RuntimeError("ssl_ciphers must be a str if specified")
-        if not isinstance(self.ssl_prefer_low_memory_usage, int):
-            raise RuntimeError("ssl_prefer_low_memory_usage must be an int")

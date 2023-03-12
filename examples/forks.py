@@ -2,7 +2,6 @@ from socketify import App
 import os
 import multiprocessing
 
-
 def run_app():
     app = App()
     app.get("/", lambda res, req: res.end("Hello, World!"))
@@ -16,15 +15,19 @@ def run_app():
     app.run()
 
 
-def create_fork():
-    n = os.fork()
-    # n greater than 0 means parent process
-    if not n > 0:
-        run_app()
-
-
+pid_list = []
 # fork limiting the cpu count - 1
-for i in range(1, multiprocessing.cpu_count()):
-    create_fork()
+for _ in range(1, multiprocessing.cpu_count()):
+    pid = os.fork()
+    # n greater than 0 means parent process
+    if not pid > 0:
+        run_app()
+        break
+    pid_list.append(pid)
 
 run_app()  # run app on the main process too :)
+
+# sigint everything to gracefull shutdown
+import signal
+for pid in pid_list:
+    os.kill(pid, signal.SIGINT)

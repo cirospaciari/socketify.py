@@ -5,8 +5,9 @@ from asyncio import (
     exceptions,
     futures,
     _register_task,
-    _enter_task,
-    _leave_task,
+    # _enter_task,
+    # current_task,
+    # _leave_task,
     _unregister_task,
 )
 import contextvars
@@ -36,7 +37,9 @@ class RequestTask:
 
     Differences:
 
-    - This class is only used by socketify.py loop.run_async
+    - This class do not support current_task
+
+    - This class executes the first step like node.js Promise
 
     - This class is not thread-safe.
 
@@ -89,7 +92,9 @@ class RequestTask:
     # status is still pending
     _log_destroy_pending = True
 
-    def __init__(self, coro, loop, default_done_callback=None, no_register=False, context=None):
+    def __init__(
+        self, coro, loop, default_done_callback=None, no_register=False, context=None
+    ):
         """Initialize the future.
 
         The optional event_loop argument allows explicitly setting the event
@@ -113,8 +118,12 @@ class RequestTask:
             self._log_destroy_pending = False
             if self._loop.get_debug():
                 self._source_traceback = format_helpers.extract_stack(sys._getframe(1))
-            self._loop.call_soon(self.__step, context=self._context)
             _register_task(self)
+            # if current_task():
+            #     self._loop.call_soon(self.__step, context=self._context)
+            # else:
+            self.__step()
+                
 
     def _reuse(self, coro, loop, default_done_callback=None):
         """Reuse an future that is not pending anymore."""
@@ -145,8 +154,12 @@ class RequestTask:
         self._fut_waiter = None
         self._coro = coro
 
-        self._loop.call_soon(self.__step, context=self._context)
         _register_task(self)
+        # if current_task():
+        #     self._loop.call_soon(self.__step, context=self._context)
+        # else:
+        self.__step()
+        
 
     def __repr__(self):
         return base_tasks._task_repr(self)
@@ -485,8 +498,7 @@ class RequestTask:
             self._must_cancel = False
         coro = self._coro
         self._fut_waiter = None
-
-        _enter_task(self._loop, self)
+        # _enter_task(self._loop, self)
         # Call either coro.throw(exc) or coro.send(None).
         try:
             if exc is None:
@@ -556,7 +568,7 @@ class RequestTask:
                 new_exc = RuntimeError(f"Task got bad yield: {result!r}")
                 self._loop.call_soon(self.__step, new_exc, context=self._context)
         finally:
-            _leave_task(self._loop, self)
+            # _leave_task(self._loop, self)
             self = None  # Needed to break cycles when an exception occurs.
 
     def __wakeup(self, future):
@@ -578,26 +590,51 @@ class RequestTask:
     __iter__ = __await__  # make compatible with 'yield from'.
 
 
-def create_task_with_factory(task_factory_max_items=100_000):
-    items = []
-    for _ in range(0, task_factory_max_items):
-        task = RequestTask(None, None, None, True)
-        if task._source_traceback:
-            del task._source_traceback[-1]
-        items.append(task)
+# def create_task_with_factory(task_factory_max_items=100_000):
+#     items = []
+#     for _ in range(0, task_factory_max_items):
+#         task = RequestTask(None, None, None, True)
+#         if task._source_traceback:
+#             del task._source_traceback[-1]
+#         items.append(task)
 
-    def factory(loop, coro, default_done_callback=None):
-        if len(items) == 0:
-            return create_task(loop, coro, default_done_callback)
-        task = items.pop()
-        def done(f):
-            if default_done_callback is not None:
-                default_done_callback(f)    
-            items.append(f)
-        task._reuse(coro, loop, done)
+#     def factory(loop, coro, default_done_callback=None):
+#         if len(items) == 0:
+#             return create_task(loop, coro, default_done_callback)
+#         task = items.pop()
+
+#         def done(f):
+#             if default_done_callback is not None:
+#                 default_done_callback(f)
+#             items.append(f)
+
+#         task._reuse(coro, loop, done)
+#         return task
+
+#     return factory
+
+async def factory_task_wrapper(task, dispose):
+    try:
+        await task
+    finally:
+        dispose()
+
+class TaskFactory:
+    def __init__(self, task_factory_max_items=100_000):
+        self.items = []
+        for _ in range(0, task_factory_max_items):
+            task = RequestTask(None, None, None, True)
+            if task._source_traceback:
+                del task._source_traceback[-1]
+            self.items.append(task)
+
+    def __call__(self, loop, coro):
+        if len(self.items) == 0:
+            return create_task(loop, coro)
+        task = self.items.pop()
+
+        task._reuse(factory_task_wrapper(coro, lambda : self.items.append(task)), loop)
         return task
-
-    return factory
 
 
 def create_task(loop, coro, default_done_callback=None, context=None):

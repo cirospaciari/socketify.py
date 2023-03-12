@@ -1,7 +1,7 @@
 from socketify import App, AppOptions, OpCode, CompressOptions
 
 remaining_clients = 16
-app = App(websocket_factory_max_itens=1_500_000)
+app = App(websocket_factory_max_items=1_500_000)
 
 
 def ws_open(ws):

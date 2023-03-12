@@ -1,3 +1,4 @@
+
 from .native import ffi, lib
 
 
@@ -6,6 +7,7 @@ def socketify_generic_handler(data):
     if not data == ffi.NULL:
         (handler, user_data) = ffi.from_handle(data)
         handler(user_data)
+
 
 class UVCheck:
     def __init__(self, loop, handler, user_data):
@@ -85,11 +87,11 @@ class UVLoop:
     def run_nowait(self):
         if self._loop != ffi.NULL:
             return lib.socketify_loop_run(self._loop, lib.SOCKETIFY_RUN_NOWAIT)
-        
+
     def run(self):
         if self._loop != ffi.NULL:
             return lib.socketify_loop_run(self._loop, lib.SOCKETIFY_RUN_DEFAULT)
-
+    
     def run_once(self):
         if self._loop != ffi.NULL:
             return lib.socketify_loop_run(self._loop, lib.SOCKETIFY_RUN_ONCE)

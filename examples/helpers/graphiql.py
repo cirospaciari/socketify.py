@@ -1,6 +1,6 @@
 import strawberry
 import strawberry.utils.graphiql
-
+from io import BytesIO
 
 def graphiql_from(Query, Mutation=None):
     if Mutation:
@@ -8,32 +8,44 @@ def graphiql_from(Query, Mutation=None):
     else:
         schema = strawberry.Schema(Query)
 
-    async def post(res, req):
+    def post(res, req):
         # we can pass whatever we want to context, query, headers or params, cookies etc
         context_value = req.preserve()
+        
+        buffer = BytesIO()
+        def on_data(res, chunk, is_end):   
+            buffer.write(chunk)
+            if is_end:
+                try:
+                    body = res.app._json_serializer.loads(buffer.getvalue().decode("utf-8"))
+                    res.run_async(graph_ql(res, body, context_value))
+                except Exception as err:
+                    res.app.trigger_error(err, res, None)
+    
+        res.grab_aborted_handler()
+        res.on_data(on_data)
 
-        # get all incoming data and parses as json
-        body = await res.get_json()
+        async def graph_ql(res, body, context_value):
+            query = body["query"]
+        
+            variables = body.get("variables", None)
+            root_value = body.get("rootValue", None)
+            operation_name = body.get("operationName", None)
 
-        query = body["query"]
-        variables = body.get("variables", None)
-        root_value = body.get("root_value", None)
-        operation_name = body.get("operation_name", None)
+            data = await schema.execute(
+                query,
+                variables,
+                context_value,
+                root_value,
+                operation_name,
+            )
 
-        data = await schema.execute(
-            query,
-            variables,
-            context_value,
-            root_value,
-            operation_name,
-        )
-
-        res.cork_end(
-            {
-                "data": (data.data),
-                **({"errors": data.errors} if data.errors else {}),
-                **({"extensions": data.extensions} if data.extensions else {}),
-            }
-        )
+            res.cork_send(
+                {
+                    "data": (data.data),
+                    **({"errors": data.errors} if data.errors else {}),
+                    **({"extensions": data.extensions} if data.extensions else {}),
+                }
+            )
 
     return post

@@ -9,7 +9,7 @@ mimetypes.init()
 # We have an version of this using aiofile and aiofiles
 # This is an sync version without any dependencies is normally much faster in CPython and PyPy3
 # In production we highly recommend to use CDN like CloudFlare or/and NGINX or similar for static files
-# TODO: this must be reimplemented pure C++ to avoid GIL 
+# TODO: this must be reimplemented pure C++ to avoid GIL
 async def sendfile(res, req, filename):
     # read headers before the first await
     if_modified_since = req.get_header("if-modified-since")
@@ -39,13 +39,13 @@ async def sendfile(res, req, filename):
 
         # check if modified since is provided
         if if_modified_since == last_modified:
-            return res.cork(lambda res: res.write_status(304).end_without_body()) 
+            return res.cork(lambda res: res.write_status(304).end_without_body())
 
         # add content type
         (content_type, encoding) = mimetypes.guess_type(filename, strict=True)
         if content_type and encoding:
             content_type = "%s; %s" % (content_type, encoding)
-        
+
         with open(filename, "rb") as fd:
             # check range and support it
             if start > 0 or not end == -1:
@@ -55,8 +55,14 @@ async def sendfile(res, req, filename):
                 fd.seek(start)
                 if start > total_size or size > total_size or size < 0 or start < 0:
                     if content_type:
-                        return res.cork(lambda res: res.write_header(b"Content-Type", content_type).write_status(416).end_without_body())        
-                    return res.cork(lambda res: res.write_status(416).end_without_body()) 
+                        return res.cork(
+                            lambda res: res.write_header(b"Content-Type", content_type)
+                            .write_status(416)
+                            .end_without_body()
+                        )
+                    return res.cork(
+                        lambda res: res.write_status(416).end_without_body()
+                    )
                 status = 206
             else:
                 end = size - 1
@@ -74,6 +80,7 @@ async def sendfile(res, req, filename):
                 res.write_header(
                     b"Content-Range", "bytes %d-%d/%d" % (start, end, total_size)
                 )
+
             res.cork(send_headers)
             pending_size = size
             # keep sending until abort or done
@@ -104,9 +111,9 @@ def static_route(app, route, directory):
     def route_handler(res, req):
         url = req.get_url()
         res.grab_aborted_handler()
-        url = url[len(route)::]
+        url = url[len(route) : :]
         if url.endswith("/"):
-            if url.startswith("/"):   
+            if url.startswith("/"):
                 url = url[1:-1]
             else:
                 url = url[:-1]
@@ -123,6 +130,7 @@ def static_route(app, route, directory):
         route = route[:-1]
     app.get("%s/*" % route, route_handler)
 
+
 def middleware(*functions):
     syncs = []
     asyncs = []
@@ -130,13 +138,13 @@ def middleware(*functions):
         # all is async after the first async
         if inspect.iscoroutinefunction(function) or len(asyncs) > 0:
             asyncs.append(function)
-        else: 
+        else:
             syncs.append(function)
-    if len(asyncs) == 0: # pure sync
+    if len(asyncs) == 0:  # pure sync
         return sync_middleware(*functions)
-    if len(syncs) == 0: # pure async
+    if len(syncs) == 0:  # pure async
         return async_middleware(*functions)
-    
+
     # we use Optional data=None at the end so you can use and middleware inside a middleware
     def optimized_middleware_route(res, req, data=None):
         # cicle to all middlewares
@@ -146,6 +154,7 @@ def middleware(*functions):
             # stops if returns Falsy
             if not data:
                 return
+
         async def wrapper(res, req, data):
             # cicle to all middlewares
             for function in asyncs:
@@ -157,7 +166,7 @@ def middleware(*functions):
                     data = function(res, req, data)
                 # stops if returns Falsy
                 if not data:
-                    break        
+                    break
             return data
 
         # in async query string, arguments and headers are only valid until the first await
@@ -168,7 +177,6 @@ def middleware(*functions):
         res.run_async(wrapper(res, req, data))
 
     return optimized_middleware_route
-    
 
 
 def sync_middleware(*functions):
@@ -184,6 +192,7 @@ def sync_middleware(*functions):
         return data
 
     return middleware_route
+
 
 def async_middleware(*functions):
     # we use Optional data=None at the end so you can use and middleware inside a middleware
@@ -211,42 +220,44 @@ def async_middleware(*functions):
 
 
 class DecoratorRouter:
-    def __init__(self, app, prefix: str="", *middlewares):
+    def __init__(self, app, prefix: str = "", *middlewares):
         self.app = app
-        self.middlewares = middlewares
+        self.middlewares = list(middlewares)
         self.prefix = prefix
 
     def get(self, path):
         path = f"{self.prefix}{path}"
-        
+
         def decorator(handler):
             if len(self.middlewares) > 0:
-                middies = list(*self.middlewares)
+                middies = list(self.middlewares)
                 middies.append(handler)
                 self.app.get(path, middleware(*middies))
             else:
                 self.app.get(path, handler)
             return handler
-        
+
         return decorator
 
     def post(self, path):
         path = f"{self.prefix}{path}"
+
         def decorator(handler):
             if len(self.middlewares) > 0:
-                middies = list(*self.middlewares)
+                middies = list(self.middlewares)
                 middies.append(handler)
                 self.app.post(path, middleware(*middies))
             else:
                 self.app.post(path, handler)
-        
+
         return decorator
 
     def options(self, path):
         path = f"{self.prefix}{path}"
+
         def decorator(handler):
             if len(self.middlewares) > 0:
-                middies = list(*self.middlewares)
+                middies = list(self.middlewares)
                 middies.append(handler)
                 self.app.options(path, middleware(*middies))
             else:
@@ -256,9 +267,10 @@ class DecoratorRouter:
 
     def delete(self, path):
         path = f"{self.prefix}{path}"
+
         def decorator(handler):
             if len(self.middlewares) > 0:
-                middies = list(*self.middlewares)
+                middies = list(self.middlewares)
                 middies.append(handler)
                 self.app.delete(path, middleware(*middies))
             else:
@@ -268,9 +280,10 @@ class DecoratorRouter:
 
     def patch(self, path):
         path = f"{self.prefix}{path}"
+
         def decorator(handler):
             if len(self.middlewares) > 0:
-                middies = list(*self.middlewares)
+                middies = list(self.middlewares)
                 middies.append(handler)
                 self.app.patch(path, middleware(*middies))
             else:
@@ -280,9 +293,10 @@ class DecoratorRouter:
 
     def put(self, path: str):
         path = f"{self.prefix}{path}"
+
         def decorator(handler):
             if len(self.middlewares) > 0:
-                middies = list(*self.middlewares)
+                middies = list(self.middlewares)
                 middies.append(handler)
                 self.app.put(path, middleware(*middies))
             else:
@@ -292,9 +306,10 @@ class DecoratorRouter:
 
     def head(self, path):
         path = f"{self.prefix}{path}"
+
         def decorator(handler):
             if len(self.middlewares) > 0:
-                middies = list(*self.middlewares)
+                middies = list(self.middlewares)
                 middies.append(handler)
                 self.app.head(path, middleware(*middies))
             else:
@@ -304,9 +319,10 @@ class DecoratorRouter:
 
     def connect(self, path):
         path = f"{self.prefix}{path}"
+
         def decorator(handler):
             if len(self.middlewares) > 0:
-                middies = list(*self.middlewares)
+                middies = list(self.middlewares)
                 middies.append(handler)
                 self.app.connect(path, middleware(*middies))
             else:
@@ -316,9 +332,10 @@ class DecoratorRouter:
 
     def trace(self, path):
         path = f"{self.prefix}{path}"
+
         def decorator(handler):
             if len(self.middlewares) > 0:
-                middies = list(*self.middlewares)
+                middies = list(self.middlewares)
                 middies.append(handler)
                 self.app.trace(path, middleware(*middies))
             else:
@@ -328,9 +345,10 @@ class DecoratorRouter:
 
     def any(self, path):
         path = f"{self.prefix}{path}"
+
         def decorator(handler):
             if len(self.middlewares) > 0:
-                middies = list(*self.middlewares)
+                middies = list(self.middlewares)
                 middies.append(handler)
                 self.app.any(path, middleware(*middies))
             else:
@@ -338,67 +356,68 @@ class DecoratorRouter:
 
         return decorator
 
+
 class MiddlewareRouter:
     def __init__(self, app, *middlewares):
         self.app = app
         self.middlewares = middlewares
 
     def get(self, path, handler):
-        middies = list(*self.middlewares)
+        middies = list(self.middlewares)
         middies.append(handler)
         self.app.get(path, middleware(*middies))
         return self
 
     def post(self, path, handler):
-        middies = list(*self.middlewares)
+        middies = list(self.middlewares)
         middies.append(handler)
         self.app.post(path, middleware(*middies))
         return self
 
     def options(self, path, handler):
-        middies = list(*self.middlewares)
+        middies = list(self.middlewares)
         middies.append(handler)
         self.app.options(path, middleware(*middies))
         return self
 
     def delete(self, path, handler):
-        middies = list(*self.middlewares)
+        middies = list(self.middlewares)
         middies.append(handler)
         self.app.delete(path, middleware(*middies))
         return self
 
     def patch(self, path, handler):
-        middies = list(*self.middlewares)
+        middies = list(self.middlewares)
         middies.append(handler)
         self.app.patch(path, middleware(*middies))
         return self
 
     def put(self, path, handler):
-        middies = list(*self.middlewares)
+        middies = list(self.middlewares)
         middies.append(handler)
         self.app.put(path, middleware(*middies))
         return self
 
     def head(self, path, handler):
-        middies = list(*self.middlewares)
+        middies = list(self.middlewares)
         middies.append(handler)
         self.app.head(path, middleware(*middies))
         return self
 
     def connect(self, path, handler):
-        middies = list(*self.middlewares)
+        middies = list(self.middlewares)
         middies.append(handler)
         self.app.connect(path, middleware(*middies))
         return self
 
     def trace(self, path, handler):
-        middies = list(*self.middlewares)
+        middies = list(self.middlewares)
         middies.append(handler)
         self.app.trace(path, middleware(*middies))
         return self
 
     def any(self, path, handler):
-        middies = list(*self.middlewares)
+        middies = list(self.middlewares)
         middies.append(handler)
         self.app.any(path, middleware(*middies))
         return self

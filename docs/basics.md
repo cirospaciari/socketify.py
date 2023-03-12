@@ -233,4 +233,68 @@ If you need to access the raw pointer of `libuv` you can use `app.get_native_han
 HttpRequest object being stack-allocated and only valid in one single callback invocation so only valid in the first "segment" before the first await. 
 If you just want to preserve headers, url, method, cookies and query string you can use `req.preserve()` to copy all data and keep it in the request object, but will be some performance penalty.
 
+
+# Lifespan / Lifecycle events
+You can use socketify start and shutdown events to create/clean thread pools, connections pools, etc when the application starts or shutdown itself.
+
+If any exception occurs in the start event the application will continue and start normally,
+if you want to fail a start you need to catch the exception and use `sys.exit(1)` to shut down prematurely.
+
+Both `app.on_start` and `app.on_shutdown` can be sync or async.
+
+
+```python
+from socketify import App
+
+def run(app: App):
+    
+    @app.on_start
+    async def on_start():
+        print("wait...")
+        await asyncio.sleep(1)
+        print("start!")
+
+    @app.on_shutdown
+    async def on_shutdown():
+        print("wait...")
+        await asyncio.sleep(1)
+        print("shutdown!")
+
+    router = app.router()
+
+    @router.get("/")
+    def home(res, req):
+        res.send("Hello, World!")
+
+```
+
+# Error handler events
+You can set a error handler to give the user an custom 500 page and/or for logging properly
+
+Using `app.set_error_handler(on_error)` or `app.on_error` decorator.
+
+
+```python
+from socketify import App
+
+def run(app: App):
+
+    @app.on_error
+    def on_error(error, res, req):
+        # here you can log properly the error and do a pretty response to your clients
+        print("Somethind goes %s" % str(error))
+        # response and request can be None if the error is in an async function
+        if res != None:
+            # if response exists try to send something
+            res.write_status(500)
+            res.end("Sorry we did something wrong")
+
+    router = app.router()
+
+    @router.get("/")
+    def home(res, req):
+        raise RuntimeError("Oops!")
+
+
+```
 ### Next [Upload and Post](upload-post.md)
