@@ -10,7 +10,7 @@ is_pypy = platform.python_implementation() == "PyPy"
 from .tasks import create_task, TaskFactory
 import sys
 import logging
-
+import uuid
 
 @ffi.callback("void(uws_res_t*, const char*, size_t, bool, void*)")
 def wsgi_on_data_handler(res, chunk, chunk_length, is_end, user_data):
@@ -24,6 +24,68 @@ def wsgi_on_data_handler(res, chunk, chunk_length, is_end, user_data):
             wsgi_corked_response_start_handler,
             data_response._ptr,
         )
+
+@ffi.callback("void(uws_res_t*, void*)")
+def wsgi_on_data_ref_abort_handler(res, user_data):
+    data_retry = ffi.from_handle(user_data)
+    data_retry.aborted = True
+    if data_retry.id is not None:
+        data_retry.app._data_refs.pop(data_retry.id, None)    
+    
+
+@ffi.callback("bool(uws_res_t*, uintmax_t, void*)")
+def wsgi_on_writable_handler(res, offset, user_data):
+    data_retry = ffi.from_handle(user_data)
+    if data_retry.aborted:
+        return False
+    
+
+    chunks = data_retry.chunks
+    last_sended_offset = data_retry.last_offset
+    ssl = data_retry.app.server.SSL
+    content_length = data_retry.content_length
+    
+    data = chunks[0]
+    last_offset = int(lib.uws_res_get_write_offset(ssl, res))
+    if last_sended_offset != last_offset:
+        offset = last_offset - last_sended_offset
+        data = data[offset:]
+        if len(data) == 0:
+            chunks.pop(0)
+        
+        if len(chunks) == 0:
+            logging.error(AssertionError("Content-Length do not match sended content"))
+            lib.uws_res_close(
+                ssl,
+                res
+            )
+            if data_retry.id is not None:
+                data_retry.app._data_refs.pop(data_retry.id, None)
+       
+            return False
+        data = chunks[0]
+
+    result = lib.uws_res_try_end(
+        ssl,
+        res,
+        data,
+        len(data),
+        ffi.cast("uintmax_t", content_length),
+        0,
+    )
+    if bool(result.ok):
+        chunks.pop(0)
+
+    if not bool(result.has_responded) and len(chunks) == 0:
+        logging.error(AssertionError("Content-Length do not match sended content"))
+        lib.uws_res_close(
+            ssl,
+            res
+        )
+    if bool(result.has_responded) and data_retry.id is not None:
+       data_retry.app._data_refs.pop(data_retry.id, None)
+
+    return False
 
 
 class WSGIBody:
@@ -115,14 +177,25 @@ class WSGIBody:
 
 
 class WSGIDataResponse:
-    def __init__(self, app, environ, start_response, aborted, buffer, on_data):
+    def __init__(self, app, environ, start_response, buffer, on_data):
         self.buffer = buffer
-        self.aborted = aborted
         self._ptr = ffi.new_handle(self)
         self.on_data = on_data
         self.environ = environ
         self.app = app
         self.start_response = start_response
+        self.id = None
+        self.aborted = False
+
+class WSGIRetryDataSend:
+    def __init__(self, app, chunks, content_length, last_offset):
+        self.chunks = chunks
+        self._ptr = ffi.new_handle(self)
+        self.app = app
+        self.content_length = content_length
+        self.last_offset = last_offset
+        self.id = None
+        self.aborted = False
 
 
 @ffi.callback("void(uws_res_t*, void*)")
@@ -264,15 +337,17 @@ def wsgi(ssl, response, info, user_data, aborted):
 
         return write
 
+    failed_chunks = None
+    content_length = ffi.cast("uintmax_t", content_length)
+    last_offset = -1
+    data_retry = None
     # check for body
     if bool(info.has_content):
         WSGI_INPUT = BytesIO()
         environ["wsgi.input"] = WSGIBody(WSGI_INPUT)
-        failed_chunks = None
-        last_offset = -1
         def on_data(data_response, response):
-            nonlocal failed_chunks, last_offset
-            if bool(data_response.aborted[0]):
+            nonlocal failed_chunks, last_offset, data_retry
+            if data_response.aborted:
                 return
 
             ssl = data_response.app.server.SSL
@@ -299,12 +374,13 @@ def wsgi(ssl, response, info, user_data, aborted):
                             if failed_chunks:
                                 failed_chunks.append(data)
                             else:
+                                last_offset = int(lib.uws_res_get_write_offset(ssl, response))
                                 result = lib.uws_res_try_end(
                                     ssl,
                                     response,
                                     data,
                                     len(data),
-                                    ffi.cast("uintmax_t", content_length),
+                                    content_length,
                                     0,
                                 )
                                 # this should be very very rare for HTTP
@@ -313,6 +389,10 @@ def wsgi(ssl, response, info, user_data, aborted):
                                     failed_chunks = []
                                     # just mark the chunks
                                     failed_chunks.append(data)
+                                    # add on writable handler
+                                    data_retry = WSGIRetryDataSend(
+                                        app, failed_chunks, content_length, last_offset
+                                    )
                                     break
 
             except Exception as error:
@@ -325,7 +405,12 @@ def wsgi(ssl, response, info, user_data, aborted):
                 write_headers(headers_set)         
             if is_chunked:
                 lib.uws_res_end_without_body(ssl, response, 0)
-            elif result is None or not bool(result.has_responded): # not reachs Content-Length
+            elif data_retry is not None:
+                _id = uuid.uuid4()
+                app._data_refs[_id] = data_retry
+                lib.uws_res_on_aborted(ssl, response, wsgi_on_data_ref_abort_handler, data_retry._ptr)
+                lib.uws_res_on_writable(ssl, response, wsgi_on_writable_handler, data_retry._ptr)
+            elif result is None or (not bool(result.has_responded) and bool(result.ok)): # not reachs Content-Length
                 logging.error(AssertionError("Content-Length do not match sended content"))
                 lib.uws_res_close(
                     ssl,
@@ -334,9 +419,12 @@ def wsgi(ssl, response, info, user_data, aborted):
 
 
         data_response = WSGIDataResponse(
-            app, environ, start_response, aborted, WSGI_INPUT, on_data
+            app, environ, start_response, WSGI_INPUT, on_data
         )
-
+        _id = uuid.uuid4()
+        data_response.id = _id
+        app._data_refs[_id] = data_response
+        lib.uws_res_on_aborted(ssl, response, wsgi_on_data_ref_abort_handler, data_response._ptr)
         lib.uws_res_on_data(ssl, response, wsgi_on_data_handler, data_response._ptr)
     else:
         environ["wsgi.input"] = None
@@ -356,23 +444,27 @@ def wsgi(ssl, response, info, user_data, aborted):
                     else:
                         if isinstance(data, str):
                             data = data.encode("utf-8")
-                        if failed_chunks:
-                                failed_chunks.append(data)
+                        if failed_chunks: # if failed once, will fail again later
+                            failed_chunks.append(data)
                         else:
+                            last_offset = int(lib.uws_res_get_write_offset(ssl, response))
                             result = lib.uws_res_try_end(
                                 ssl,
                                 response,
                                 data,
                                 len(data),
-                                ffi.cast("uintmax_t", content_length),
+                                content_length,
                                 0,
                             )
                             # this should be very very rare fot HTTP
                             if not bool(result.ok):
-                                last_offset = int(lib.uws_res_get_write_offset(ssl, response))
                                 failed_chunks = []
                                 # just mark the chunks
                                 failed_chunks.append(data)
+                                # add on writable handler
+                                data_retry = WSGIRetryDataSend(
+                                    app, failed_chunks, content_length, last_offset
+                                )
                                 break
                         
 
@@ -386,10 +478,13 @@ def wsgi(ssl, response, info, user_data, aborted):
             write_headers(headers_set)         
         if is_chunked:
             lib.uws_res_end_without_body(ssl, response, 0)
-        # elif failed_chunks: # have failed chunks, so go async
-            
-        #     pass
-        elif result is None or not bool(result.has_responded): # not reachs Content-Length
+        elif data_retry is not None:
+            _id = uuid.uuid4()
+            data_retry.id = _id
+            app._data_refs[_id] = data_retry
+            lib.uws_res_on_aborted(ssl, response, wsgi_on_data_ref_abort_handler, data_retry._ptr)
+            lib.uws_res_on_writable(ssl, response, wsgi_on_writable_handler, data_retry._ptr)
+        elif result is None or (not bool(result.has_responded) and bool(result.ok)): # not reachs Content-Length
             logging.error(AssertionError("Content-Length do not match sended content"))
             lib.uws_res_close(
                 ssl,
@@ -420,7 +515,7 @@ class _WSGI:
         self.wsgi = app
         self.BASIC_ENVIRON = dict(os.environ)
         self.ws_compression = False
-
+        self._data_refs = {}
         self._ptr = ffi.new_handle(self)
         self.asgi_http_info = lib.socketify_add_asgi_http_handler(
             self.server.SSL, self.server.app, wsgi, self._ptr
