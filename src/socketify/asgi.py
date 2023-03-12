@@ -771,15 +771,20 @@ class ASGI:
                 server.listen(port_or_options, handler)
             server.run()
 
-        def create_fork():
-            n = os.fork()
-            # n greater than 0 means parent process
-            if not n > 0:
-                run_task()
-
+        pid_list = []
         # fork limiting the cpu count - 1
         for _ in range(1, workers):
-            create_fork()
+            pid = os.fork()
+            # n greater than 0 means parent process
+            if not pid > 0:
+                run_task()
+                break
+            pid_list.append(pid)
 
         run_task()  # run app on the main process too :)
+
+        # sigint everything to gracefull shutdown
+        import signal
+        for pid in pid_list:
+            os.kill(pid, signal.SIGINT)
         return self

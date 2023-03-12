@@ -500,7 +500,7 @@ class WSGI:
         return self
 
     def run(self, workers=1):
-        def run_app():
+        def run_task():
             server = _WSGI(
                 self.app,
                 self.options,
@@ -513,15 +513,20 @@ class WSGI:
                 server.listen(port_or_options, handler)
             server.run()
 
-        def create_fork():
-            n = os.fork()
-            # n greater than 0 means parent process
-            if not n > 0:
-                run_app()
-
+        pid_list = []
         # fork limiting the cpu count - 1
-        for i in range(1, workers):
-            create_fork()
+        for _ in range(1, workers):
+            pid = os.fork()
+            # n greater than 0 means parent process
+            if not pid > 0:
+                run_task()
+                break
+            pid_list.append(pid)
 
-        run_app()  # run app on the main process too :)
+        run_task()  # run app on the main process too :)
+
+        # sigint everything to gracefull shutdown
+        import signal
+        for pid in pid_list:
+            os.kill(pid, signal.SIGINT)
         return self

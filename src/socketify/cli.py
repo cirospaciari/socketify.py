@@ -310,22 +310,20 @@ def execute(args):
                 fork_app.listen(AppListenOptions(port=port, host=host), listen_log)
             fork_app.run()
 
-        # now we can start all over again
-        def create_fork(_):
-            n = os.fork()
+        pid_list = []
+        # fork limiting the cpu count - 1
+        for _ in range(1, workers):
+            pid = os.fork()
             # n greater than 0 means parent process
-            if not n > 0:
+            if not pid > 0:
                 run_app()
-            return n
+                break
+            pid_list.append(pid)
 
-        # run in all forks
-        pid_list = list(map(create_fork, range(1, workers)))
+        run_app()  # run app on the main process too :)
 
-        # run in this process
-        run_app()
         # sigint everything to gracefull shutdown
         import signal
-
         for pid in pid_list:
             os.kill(pid, signal.SIGINT)
     else:
