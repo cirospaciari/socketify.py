@@ -8,11 +8,10 @@ class Home:
         resp.content_type = falcon.MEDIA_TEXT  # Default is JSON, so override
         resp.text = "Hello, World!"
     def on_post(self, req, resp):
-        raw_data = req.stream.getvalue()
-        print("data", raw_data)
+        raw_data = req.stream.read()
         resp.status = falcon.HTTP_200  # This is the default status
         resp.content_type = falcon.MEDIA_TEXT  # Default is JSON, so override
-        resp.text = raw_data
+        resp.text = 'Ok'
         
         
 
@@ -23,4 +22,4 @@ home = Home()
 app.add_route("/", home)
 
 if __name__ == "__main__":
-    WSGI(app).listen(8000, lambda config: print(f"Listening on port http://localhost:{config.port} now\n")).run(workers=8)
+    WSGI(app).listen(8000, lambda config: print(f"Listening on port http://localhost:{config.port} now\n")).run(workers=1)
