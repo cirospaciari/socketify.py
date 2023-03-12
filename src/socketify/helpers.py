@@ -360,6 +360,7 @@ class DecoratorRouter:
 class MiddlewareRouter:
     def __init__(self, app, *middlewares):
         self.app = app
+        print(middlewares)
         self.middlewares = middlewares
 
     def get(self, path, handler):
