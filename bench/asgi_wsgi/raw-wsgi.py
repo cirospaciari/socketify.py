@@ -30,7 +30,31 @@ def app_hello(environ, start_response):
     yield b'Hello, World!'
 
 if __name__ == "__main__":
-    from socketify import WSGI
-    WSGI(app_chunked).listen(8000, lambda config: print(f"Listening on port http://localhost:{config.port} now\n")).run(8)
     # import fastwsgi
     # fastwsgi.run(wsgi_app=app_hello, host='127.0.0.1', port=8000)
+    # from meinheld import server
+    # server.listen(("0.0.0.0", 8000))
+    # server.run(app_hello)
+    from socketify import WSGI
+    WSGI(app_hello).listen(8000, lambda config: print(f"Listening on port http://localhost:{config.port} now\n")).run(1)
+    # def run_app():
+    #     import fastwsgi
+    #     fastwsgi.run(wsgi_app=app_hello, host='127.0.0.1', port=8000)
+    
+    # import os
+    # pid_list = []
+    # # fork limiting the cpu count - 1
+    # for _ in range(1, 8):
+    #     pid = os.fork()
+    #     # n greater than 0 means parent process
+    #     if not pid > 0:
+    #         run_app()
+    #         break
+    #     pid_list.append(pid)
+
+    # run_app()  # run app on the main process too :)
+
+    # # sigint everything to gracefull shutdown
+    # import signal
+    # for pid in pid_list:
+    #     os.kill(pid, signal.SIGINT)

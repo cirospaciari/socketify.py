@@ -29,7 +29,7 @@ def create_fork():
 
 
 # fork limiting the cpu count - 1
-for i in range(1, multiprocessing.cpu_count()):
-    create_fork()
+# for i in range(1, multiprocessing.cpu_count()):
+#     create_fork()
 
 run_app()  # run app on the main process too :)

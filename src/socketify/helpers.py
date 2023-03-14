@@ -222,7 +222,7 @@ def async_middleware(*functions):
 class DecoratorRouter:
     def __init__(self, app, prefix: str = "", *middlewares):
         self.app = app
-        self.middlewares = list(middlewares)
+        self.middlewares = list(*middlewares)
         self.prefix = prefix
 
     def get(self, path):

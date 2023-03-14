@@ -323,6 +323,7 @@ def wsgi(ssl, response, info, user_data, aborted):
         # no content-length
         if content_length < 0:
             is_chunked = True
+        content_length = ffi.cast("uintmax_t", content_length)
 
     def start_response(status, headers, exc_info=None):
         nonlocal headers_set, status_text
@@ -355,7 +356,7 @@ def wsgi(ssl, response, info, user_data, aborted):
         return write
 
     failed_chunks = None
-    content_length = ffi.cast("uintmax_t", content_length)
+    
     last_offset = -1
     data_retry = None
     # check for body
@@ -379,6 +380,8 @@ def wsgi(ssl, response, info, user_data, aborted):
                     if data:
                         if not headers_written:
                             write_headers(headers_set)
+                            content_length = ffi.cast("uintmax_t", content_length)
+                            
                         if is_chunked:
                             if isinstance(data, bytes):
                                 lib.uws_res_write(ssl, response, data, len(data))

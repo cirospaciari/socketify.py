@@ -6,8 +6,8 @@
 # using oha -c 400 -z 5s http://localhost:3000/
 
 # nginx     - try_files                 -  77630.15 req/s
-# pypy3     - socketify static          -  15839.22 req/s
-# python3   - socketify static          -   8294.96 req/s
+# pypy3     - socketify static          -  16797.30 req/s
+# python3   - socketify static          -  10140.19 req/s
 # node.js   - @fastify/static           -   5437.16 req/s
 # node.js   - express.static            -   4077.49 req/s
 # python3   - socketify static_aiofile  -   2390.96 req/s
