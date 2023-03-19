@@ -27,11 +27,12 @@ def graphiql_from(Query, Mutation=None):
 
         async def graph_ql(res, body, context_value):
             query = body["query"]
+            
         
             variables = body.get("variables", None)
             root_value = body.get("rootValue", None)
             operation_name = body.get("operationName", None)
-
+            
             data = await schema.execute(
                 query,
                 variables,

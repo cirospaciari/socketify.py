@@ -24,14 +24,24 @@ def app(environ, start_response):
         yield payload[sended:end]
         sended = end
 
+# import gc
+
+# gc.collect()
+# gc.set_threshold(50, 3, 3)
+
+# import tracemalloc
+
+# tracemalloc.start()
+
 def app_hello(environ, start_response):
-    start_response('200 OK', [('Content-Type', 'text/plain'), ('Content-Length', '13')])
-    
-    yield b'Hello, World!'
+    # start_response('200 OK', [('Content-Type', 'text/plain'), ('Content-Length', '13')])
+    start_response('200 OK', [('Content-Type', 'text/plain')])
+
+    return [ b'Hello, World!']
 
 if __name__ == "__main__":
     # import fastwsgi
-    # fastwsgi.run(wsgi_app=app_hello, host='127.0.0.1', port=8000)
+    # fastwsgi.run(wsgi_app=app_hello, host='127.0.0.1', port=8000, loglevel=0)
     # from meinheld import server
     # server.listen(("0.0.0.0", 8000))
     # server.run(app_hello)

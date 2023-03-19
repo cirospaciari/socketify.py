@@ -221,9 +221,11 @@ def wsgi_corked_response_start_handler(res, user_data):
     data_response.on_data(data_response, res)
 
 
-@ffi.callback("void(int, uws_res_t*, socketify_asgi_data request, void*, bool*)")
-def wsgi(ssl, response, info, user_data, aborted):
+
+@ffi.callback("void(int, uws_res_t*, socketify_asgi_data request, void*)")
+def wsgi(ssl, response, info, user_data):
     app = ffi.from_handle(user_data)
+
     # reusing the dict is slower than cloning because we need to clear HTTP headers
     environ = dict(app.BASIC_ENVIRON)
 
@@ -355,16 +357,19 @@ def wsgi(ssl, response, info, user_data, aborted):
 
         return write
 
-    failed_chunks = None
     
-    last_offset = -1
-    data_retry = None
+    
+    
     # check for body
     if bool(info.has_content):
         WSGI_INPUT = BytesIO()
         environ["wsgi.input"] = WSGIBody(WSGI_INPUT)
         def on_data(data_response, response):
-            nonlocal failed_chunks, last_offset, data_retry
+            last_offset = -1
+            data_retry = None
+            failed_chunks = None
+
+
             if data_response.aborted:
                 return
 
@@ -372,15 +377,18 @@ def wsgi(ssl, response, info, user_data, aborted):
             data_response.environ["CONTENT_LENGTH"] = str(
                 data_response.buffer.getbuffer().nbytes
             )
+            if data_response.id is not None:
+                data_response.app._data_refs.pop(data_response.id, None)
+                
             app_iter = data_response.app.wsgi(
                 data_response.environ, data_response.start_response
             )
+            
             try:
                 for data in app_iter:
                     if data:
                         if not headers_written:
                             write_headers(headers_set)
-                            content_length = ffi.cast("uintmax_t", content_length)
                             
                         if is_chunked:
                             if isinstance(data, bytes):
@@ -434,8 +442,6 @@ def wsgi(ssl, response, info, user_data, aborted):
                     ssl,
                     response
                 )
-
-
         data_response = WSGIDataResponse(
             app, environ, start_response, WSGI_INPUT, on_data
         )
@@ -445,6 +451,9 @@ def wsgi(ssl, response, info, user_data, aborted):
         lib.uws_res_on_aborted(ssl, response, wsgi_on_data_ref_abort_handler, data_response._ptr)
         lib.uws_res_on_data(ssl, response, wsgi_on_data_handler, data_response._ptr)
     else:
+        failed_chunks = None
+        last_offset = -1
+        data_retry = None
         environ["wsgi.input"] = None
         app_iter = app.wsgi(environ, start_response)
         result = None
@@ -507,7 +516,6 @@ def wsgi(ssl, response, info, user_data, aborted):
                 ssl,
                 response
             )
-
 
 
 def is_asgi(module):

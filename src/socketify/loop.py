@@ -78,8 +78,12 @@ class Loop:
 
     def _keep_alive(self):
         if self.started:
-            self.uv_loop.run_nowait()
-            self.loop.call_soon(self._keep_alive)
+            if int(self.uv_loop.run_nowait()) > 1:
+                # be more agressive when needed
+                self.loop.call_soon(self._keep_alive)
+            else:
+                # this will relax CPU usage a lot when idle
+                self.loop.call_later(0.001, self._keep_alive)
 
     def create_task(self, *args, **kwargs):
         # this is not using optimized create_task yet

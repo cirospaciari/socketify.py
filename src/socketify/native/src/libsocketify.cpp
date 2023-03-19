@@ -114,7 +114,8 @@ extern "C"
         if (ssl)
         {
             uWS::HttpResponse<true> *uwsRes = (uWS::HttpResponse<true> *)res;
-            uwsRes->cork([=](){
+            uwsRes->cork([=]()
+                         {
                 socketify_res_write_int_status(ssl, res, code);
                 if (content_type && content_type_size)
                 {
@@ -128,13 +129,13 @@ extern "C"
                 else
                 {
                     uws_res_end_without_body(ssl, res, close_connection);
-                } 
-            });
+                } });
         }
         else
         {
             uWS::HttpResponse<false> *uwsRes = (uWS::HttpResponse<false> *)res;
-            uwsRes->cork([=](){ 
+            uwsRes->cork([=]()
+                         { 
                 
                 socketify_res_write_int_status(ssl, res, code);
 
@@ -150,8 +151,7 @@ extern "C"
                 else
                 {
                     uws_res_end_without_body(ssl, res, close_connection);
-                } 
-        });
+                } });
         }
     }
 
@@ -161,7 +161,8 @@ extern "C"
         if (ssl)
         {
             uWS::HttpResponse<true> *uwsRes = (uWS::HttpResponse<true> *)res;
-            uwsRes->cork([=](){
+            uwsRes->cork([=]()
+                         {
 
                 uws_res_write_status(ssl, res, status_code, status_code_size);
 
@@ -177,13 +178,13 @@ extern "C"
                 else
                 {
                     uws_res_end_without_body(ssl, res, close_connection);
-                } 
-            });
+                } });
         }
         else
         {
             uWS::HttpResponse<false> *uwsRes = (uWS::HttpResponse<false> *)res;
-            uwsRes->cork([=](){ 
+            uwsRes->cork([=]()
+                         { 
                 
                 uws_res_write_status(ssl, res, status_code, status_code_size);
 
@@ -199,8 +200,7 @@ extern "C"
                 else
                 {
                     uws_res_end_without_body(ssl, res, close_connection);
-                } 
-            });
+                } });
         }
     }
 
@@ -415,15 +415,7 @@ extern "C"
     {
         socksocketify_asgi_app_info *info = ((socksocketify_asgi_app_info *)user_data);
         socketify_asgi_data data = socketify_asgi_request(info->ssl, request, response);
-        bool *aborted = (bool *)malloc(sizeof(aborted));
-        *aborted = false;
-        uws_res_on_aborted(
-            info->ssl, response, [](uws_res_t *res, void *opcional_data)
-            {
-        bool* aborted = (bool*)opcional_data;
-        *aborted = true; },
-            aborted);
-        info->handler(info->ssl, response, data, info->user_data, aborted);
+        info->handler(info->ssl, response, data, info->user_data);
         socketify_destroy_headers(data.header_list);
     }
 
@@ -490,9 +482,9 @@ extern "C"
         }
     }
 
-    socksocketify_asgi_ws_app_info *socketify_add_asgi_ws_handler(int ssl, uws_app_t *app, uws_socket_behavior_t behavior, socketify_asgi_ws_method_handler handler, void *user_data)
+    socketify_asgi_ws_app_info *socketify_add_asgi_ws_handler(int ssl, uws_app_t *app, uws_socket_behavior_t behavior, socketify_asgi_ws_method_handler handler, void *user_data)
     {
-        socksocketify_asgi_ws_app_info *info = (socksocketify_asgi_ws_app_info *)malloc(sizeof(socksocketify_asgi_ws_app_info));
+        socketify_asgi_ws_app_info *info = (socketify_asgi_ws_app_info *)malloc(sizeof(socketify_asgi_ws_app_info));
         info->ssl = ssl;
         info->app = app;
         info->handler = handler;
@@ -505,35 +497,27 @@ extern "C"
 
         ws_behavior.upgrade = [](uws_res_t *response, uws_req_t *request, uws_socket_context_t *context, void *user_data)
         {
-            socksocketify_asgi_ws_app_info *info = ((socksocketify_asgi_ws_app_info *)user_data);
+            socketify_asgi_ws_app_info *info = ((socketify_asgi_ws_app_info *)user_data);
             socketify_asgi_ws_data data = socketify_asgi_ws_request(info->ssl, request, response);
-            bool *aborted = (bool *)malloc(sizeof(aborted));
-            *aborted = false;
-            uws_res_on_aborted(
-                info->ssl, response, [](uws_res_t *res, void *opcional_data)
-                {
-            bool* aborted = (bool*)opcional_data;
-            *aborted = true; },
-                aborted);
-            info->handler(info->ssl, response, data, context, info->user_data, aborted);
+            info->handler(info->ssl, response, data, context, info->user_data);
             socketify_destroy_headers(data.header_list);
         };
         ws_behavior.open = [](uws_websocket_t *ws, void *user_data)
         {
-            socksocketify_asgi_ws_app_info *info = ((socksocketify_asgi_ws_app_info *)user_data);
+            socketify_asgi_ws_app_info *info = ((socketify_asgi_ws_app_info *)user_data);
             auto socket_data = uws_ws_get_user_data(info->ssl, ws);
             info->behavior.open(ws, socket_data);
         };
         ws_behavior.message = [](uws_websocket_t *ws, const char *message, size_t length, uws_opcode_t opcode, void *user_data)
         {
-            socksocketify_asgi_ws_app_info *info = ((socksocketify_asgi_ws_app_info *)user_data);
+            socketify_asgi_ws_app_info *info = ((socketify_asgi_ws_app_info *)user_data);
             auto socket_data = uws_ws_get_user_data(info->ssl, ws);
             info->behavior.message(ws, message, length, opcode, socket_data);
         };
 
         ws_behavior.close = [](uws_websocket_t *ws, int code, const char *message, size_t length, void *user_data)
         {
-            socksocketify_asgi_ws_app_info *info = ((socksocketify_asgi_ws_app_info *)user_data);
+            socketify_asgi_ws_app_info *info = ((socketify_asgi_ws_app_info *)user_data);
             auto socket_data = uws_ws_get_user_data(info->ssl, ws);
             info->behavior.close(ws, code, message, length, socket_data);
         };
@@ -559,7 +543,7 @@ extern "C"
     {
         free(app);
     }
-    void socketify_destroy_asgi_ws_app_info(socksocketify_asgi_ws_app_info *app)
+    void socketify_destroy_asgi_ws_app_info(socketify_asgi_ws_app_info *app)
     {
         free(app);
     }

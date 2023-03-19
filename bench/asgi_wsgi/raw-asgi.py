@@ -19,4 +19,4 @@ async def app(scope, receive, send):
 
 
 if __name__ == "__main__":
-    ASGI(app, lifespan=False).listen(8000, lambda config: print(f"Listening on port http://localhost:{config.port} now\n")).run(8)
+    ASGI(app, lifespan=False).listen(8000, lambda config: print(f"Listening on port http://localhost:{config.port} now\n")).run(1)

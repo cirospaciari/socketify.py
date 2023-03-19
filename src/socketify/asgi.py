@@ -10,7 +10,13 @@ import uuid
 import asyncio
 
 is_pypy = platform.python_implementation() == "PyPy"
-
+@ffi.callback("void(uws_res_t*, void*)")
+def asgi_on_abort_handler(res, user_data):
+    ctx = ffi.from_handle(user_data)
+    ctx.aborted = True
+    if ctx.abort_future is not None:
+        ctx.abort_future.set_result(True)
+        ctx.abort_future = None
 
 async def task_wrapper(task):
     try:
@@ -49,9 +55,9 @@ def ws_open(ws, user_data):
 
 
 @ffi.callback(
-    "void(int, uws_res_t*, socketify_asgi_ws_data, uws_socket_context_t* socket, void*, bool*)"
+    "void(int, uws_res_t*, socketify_asgi_ws_data, uws_socket_context_t* socket, void*)"
 )
-def ws_upgrade(ssl, response, info, socket_context, user_data, aborted):
+def ws_upgrade(ssl, response, info, socket_context, user_data):
     app = ffi.from_handle(user_data)
     headers = []
     next_header = info.header_list
@@ -82,6 +88,7 @@ def ws_upgrade(ssl, response, info, socket_context, user_data, aborted):
         extensions = ffi.unpack(info.extensions, info.extensions_size).decode("utf8")
     compress = app.ws_compression
     ws = ASGIWebSocket(app.server.loop)
+    lib.uws_res_on_aborted(ssl, response, asgi_on_abort_handler, ws._ptr)
 
     scope = {
         "type": "websocket",
@@ -108,7 +115,7 @@ def ws_upgrade(ssl, response, info, socket_context, user_data, aborted):
     }
 
     async def send(options):
-        if bool(aborted[0]):
+        if ws.aborted:
             return False
         type = options["type"]
         if type == "websocket.send":
@@ -258,6 +265,22 @@ class ASGIDataQueue:
         self.is_end = False
         self.next_data_future = loop.create_future()
 
+class ASGIContext:
+    def __init__(self, ssl, response, loop):
+        self._ptr = ffi.new_handle(self)
+        self.aborted = False
+        self.sended_empty = False
+        self.data_queue = None
+        self.ssl = ssl
+        self.response = response
+        self.loop = loop
+        self.abort_future = None
+
+    async def wait_disconnect(self):
+        if not self.aborted:
+            if self.abort_future is None:
+                self.abort_future = self.loop.create_future()
+            await self.abort_future
 
 class ASGIWebSocket:
     def __init__(self, loop):
@@ -272,6 +295,14 @@ class ASGIWebSocket:
         self._message = None
         self._ptr = ffi.new_handle(self)
         self.unregister = None
+        self.aborted = False
+        self.abort_future = None
+
+    async def wait_disconnect(self):
+        if not self.aborted:
+            if self.abort_future is None:
+                self.abort_future = self.loop.create_future()
+            await self.abort_future
 
     def accept(self):
         self.accept_future = self.loop.create_future()
@@ -404,8 +435,8 @@ def uws_asgi_corked_403_handler(res, user_data):
     lib.uws_res_end_without_body(ssl, res, 0)
 
 
-@ffi.callback("void(int, uws_res_t*, socketify_asgi_data, void*, bool*)")
-def asgi(ssl, response, info, user_data, aborted):
+@ffi.callback("void(int, uws_res_t*, socketify_asgi_data, void*)")
+def asgi(ssl, response, info, user_data):
     app = ffi.from_handle(user_data)
 
     headers = []
@@ -436,18 +467,21 @@ def asgi(ssl, response, info, user_data, aborted):
         "raw_path": url,
         "query_string": ffi.unpack(info.query_string, info.query_string_size),
         "headers": headers,
+    
     }
+    loop = app.server.loop
+    ctx = ASGIContext(ssl, response, loop)
     if bool(info.has_content):
-        data_queue = ASGIDataQueue(app.server.loop)
+        data_queue = ASGIDataQueue(loop)
         lib.uws_res_on_data(ssl, response, asgi_on_data_handler, data_queue._ptr)
-    else:
-        data_queue = None
+        ctx.data_queue = data_queue
+    
+    lib.uws_res_on_aborted(ssl, response, asgi_on_abort_handler, ctx._ptr)
 
-    sended_empty = False
     async def receive():
-        nonlocal sended_empty
-        if bool(aborted[0]):
+        if ctx.aborted:
             return {"type": "http.disconnect"}
+        data_queue = ctx.data_queue
         if data_queue:
             if data_queue.queue.empty():
                 if not data_queue.is_end:
@@ -460,19 +494,21 @@ def asgi(ssl, response, info, user_data, aborted):
                 return data_queue.queue.get(False)  # consume queue
 
         # no more body, just EMPTY RESPONSE
-        if not sended_empty:
-            sended_empty = True
+        if not ctx.sended_empty:
+            ctx.sended_empty = True
             return EMPTY_RESPONSE
 
         # already sended empty body so wait for aborted request
-        while not bool(aborted[0]):
-            await asyncio.sleep(0.01) #10ms is good enought
+        if not ctx.aborted:
+            await ctx.wait_disconnect()
         return {"type": "http.disconnect"}
 
     async def send(options):
-        if bool(aborted[0]):
+        if ctx.aborted:
             return False
         type = options["type"]
+        ssl = ctx.ssl
+        response = ctx.response
         if type == "http.response.start":
             # can also be more native optimized to do it in one GIL call
             # try socketify_res_write_int_status_with_headers and create and socketify_res_cork_write_int_status_with_headers
@@ -501,6 +537,12 @@ def asgi(ssl, response, info, user_data, aborted):
                 elif isinstance(message, str):
                     data = message.encode("utf-8")
                     lib.socketify_res_cork_end(ssl, response, data, len(data), 0)
+                
+
+                if ctx.abort_future is not None:
+                    ctx.aborted = True
+                    ctx.abort_future.set_result(False)
+                    ctx.abort_future = None
 
             return True
         return False
@@ -546,14 +588,6 @@ class _ASGI:
                 self._run_task = run_task
 
         else:
-            if sys.version_info >= (3, 8):  # name fixed to avoid dynamic name
-
-                def run_task(task):
-                    future = create_task(loop, task_wrapper(task))
-                    future._log_destroy_pending = False
-
-                self._run_task = run_task
-            else:
 
                 def run_task(task):
                     future = create_task(loop, task_wrapper(task))

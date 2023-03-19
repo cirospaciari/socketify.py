@@ -8,7 +8,7 @@ def run_app():
     router = app.router()
 
     @router.get("/")
-    def home(res, req):
+    async def home(res, req):
         res.send(b"Hello, World!")
 
     app.listen(

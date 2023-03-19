@@ -590,29 +590,6 @@ class RequestTask:
     __iter__ = __await__  # make compatible with 'yield from'.
 
 
-# def create_task_with_factory(task_factory_max_items=100_000):
-#     items = []
-#     for _ in range(0, task_factory_max_items):
-#         task = RequestTask(None, None, None, True)
-#         if task._source_traceback:
-#             del task._source_traceback[-1]
-#         items.append(task)
-
-#     def factory(loop, coro, default_done_callback=None):
-#         if len(items) == 0:
-#             return create_task(loop, coro, default_done_callback)
-#         task = items.pop()
-
-#         def done(f):
-#             if default_done_callback is not None:
-#                 default_done_callback(f)
-#             items.append(f)
-
-#         task._reuse(coro, loop, done)
-#         return task
-
-#     return factory
-
 async def factory_task_wrapper(task, dispose):
     try:
         await task
