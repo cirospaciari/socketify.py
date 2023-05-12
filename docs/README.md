@@ -38,3 +38,4 @@ With no precedents websocket performance and a really fast HTTP server that can 
 - [SSL](ssl.md)
 - [CLI, ASGI and WSGI](cli.md)
 - [API Reference](api.md)
+- [Examples](examples.md)

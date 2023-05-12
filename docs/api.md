@@ -230,3 +230,6 @@ class MiddlewareRouter:
     def trace(self, path, handler):
     def any(self, path, handler):
 ```
+
+# Examples
+### Next [Examples](examples.md)
