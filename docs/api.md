@@ -231,5 +231,4 @@ class MiddlewareRouter:
     def any(self, path, handler):
 ```
 
-# Examples
 ### Next [Examples](examples.md)
