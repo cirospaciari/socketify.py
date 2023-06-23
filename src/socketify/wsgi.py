@@ -104,7 +104,6 @@ def wsgi_on_writable_handler(res, offset, user_data):
 
     return ok
 
-
 class WSGIBody:
     def __init__(self, buffer):
         self.buf = buffer
@@ -454,7 +453,11 @@ def wsgi(ssl, response, info, user_data):
         failed_chunks = None
         last_offset = -1
         data_retry = None
-        environ["wsgi.input"] = None
+        # Django do not check for None with is lame
+        # we use the same empty for everyone to avoid extra allocations
+        environ["wsgi.input"] = app.EMPTY_WSGI_BODY
+        # we also set CONTENT_LENGTH to 0 so if Django is lame again its covered
+        environ["CONTENT_LENGTH"] = "0"
         app_iter = app.wsgi(environ, start_response)
         result = None
         try:
@@ -538,6 +541,7 @@ class _WSGI:
         self.SERVER_PORT = None
         self.SERVER_WS_SCHEME = "wss" if self.server.options else "ws"
         self.wsgi = app
+        self.EMPTY_WSGI_BODY = WSGIBody(BytesIO())
         self.BASIC_ENVIRON = dict(os.environ)
         self.ws_compression = False
         self._data_refs = {}

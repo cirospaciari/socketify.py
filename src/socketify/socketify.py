@@ -1607,7 +1607,8 @@ class AppResponse:
                 pass
 
         def get_chunks(self, chunk, is_end):
-            self._data.write(chunk)
+            if chunk is not None:
+                self._data.write(chunk)
             if is_end:
                 self._dataFuture.set_result(self._data)
                 self._data = None
