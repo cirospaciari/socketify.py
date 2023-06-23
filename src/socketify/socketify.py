@@ -41,6 +41,7 @@ def uws_missing_server_name(hostname, hostname_length, user_data):
 def uws_websocket_factory_drain_handler(ws, user_data):
     if user_data != ffi.NULL:
         handlers, app = ffi.from_handle(user_data)
+        app.loop.is_idle = False
         instances = app._ws_factory.get(app, ws)
         ws, dispose = instances
         try:
@@ -76,6 +77,7 @@ def uws_websocket_drain_handler_with_extension(ws, user_data):
         try:
             handlers, app = ffi.from_handle(user_data)
             ws = WebSocket(ws, app)
+            app.loop.is_idle = False
             # bind methods to websocket
             app._ws_extension.set_properties(ws)
             # set default value in properties
@@ -97,6 +99,7 @@ def uws_websocket_drain_handler(ws, user_data):
         try:
             handlers, app = ffi.from_handle(user_data)
             ws = WebSocket(ws, app)
+            app.loop.is_idle = False
             handler = handlers.drain
             if inspect.iscoroutinefunction(handler):
                 app.run_async(handler(ws))
@@ -119,6 +122,7 @@ def uws_websocket_factory_subscription_handler(
 ):
     if user_data != ffi.NULL:
         handlers, app = ffi.from_handle(user_data)
+        app.loop.is_idle = False
         instances = app._ws_factory.get(app, ws)
         ws, dispose = instances
         try:
@@ -201,6 +205,7 @@ def uws_websocket_subscription_handler(
     if user_data != ffi.NULL:
         try:
             handlers, app = ffi.from_handle(user_data)
+            app.loop.is_idle = False
             ws = WebSocket(ws, app)
             handler = handlers.subscription
 
@@ -243,6 +248,7 @@ def uws_websocket_subscription_handler_with_extension(
     if user_data != ffi.NULL:
         try:
             handlers, app = ffi.from_handle(user_data)
+            app.loop.is_idle = False
             ws = WebSocket(ws, app)
             # bind methods to websocket
             app._ws_extension.set_properties(ws)
@@ -281,6 +287,7 @@ def uws_websocket_subscription_handler_with_extension(
 def uws_websocket_factory_open_handler(ws, user_data):
     if user_data != ffi.NULL:
         handlers, app = ffi.from_handle(user_data)
+        app.loop.is_idle = False
         instances = app._ws_factory.get(app, ws)
         ws, dispose = instances
         try:
@@ -315,6 +322,7 @@ def uws_websocket_open_handler_with_extension(ws, user_data):
     if user_data != ffi.NULL:
         try:
             handlers, app = ffi.from_handle(user_data)
+            app.loop.is_idle = False
             ws = WebSocket(ws, app)
             # bind methods to websocket
             app._ws_extension.set_properties(ws)
@@ -337,6 +345,7 @@ def uws_websocket_open_handler(ws, user_data):
     if user_data != ffi.NULL:
         try:
             handlers, app = ffi.from_handle(user_data)
+            app.loop.is_idle = False
             ws = WebSocket(ws, app)
             handler = handlers.open
             if inspect.iscoroutinefunction(handler):
@@ -353,6 +362,7 @@ def uws_websocket_open_handler(ws, user_data):
 def uws_websocket_factory_message_handler(ws, message, length, opcode, user_data):
     if user_data != ffi.NULL:
         handlers, app = ffi.from_handle(user_data)
+        app.loop.is_idle = False
         instances = app._ws_factory.get(app, ws)
         ws, dispose = instances
         try:
@@ -397,6 +407,7 @@ def uws_websocket_message_handler_with_extension(
     if user_data != ffi.NULL:
         try:
             handlers, app = ffi.from_handle(user_data)
+            app.loop.is_idle = False
             ws = WebSocket(ws, app)
             # bind methods to websocket
             app._ws_extension.set_properties(ws)
@@ -428,6 +439,7 @@ def uws_websocket_message_handler(ws, message, length, opcode, user_data):
     if user_data != ffi.NULL:
         try:
             handlers, app = ffi.from_handle(user_data)
+            app.loop.is_idle = False
             ws = WebSocket(ws, app)
 
             if message == ffi.NULL:
@@ -454,6 +466,7 @@ def uws_websocket_message_handler(ws, message, length, opcode, user_data):
 def uws_websocket_factory_pong_handler(ws, message, length, user_data):
     if user_data != ffi.NULL:
         handlers, app = ffi.from_handle(user_data)
+        app.loop.is_idle = False
         instances = app._ws_factory.get(app, ws)
         ws, dispose = instances
         try:
@@ -493,6 +506,7 @@ def uws_websocket_pong_handler_with_extension(ws, message, length, user_data):
     if user_data != ffi.NULL:
         try:
             handlers, app = ffi.from_handle(user_data)
+            app.loop.is_idle = False
             ws = WebSocket(ws, app)
             # bind methods to websocket
             app._ws_extension.set_properties(ws)
@@ -519,6 +533,7 @@ def uws_websocket_pong_handler(ws, message, length, user_data):
     if user_data != ffi.NULL:
         try:
             handlers, app = ffi.from_handle(user_data)
+            app.loop.is_idle = False
             ws = WebSocket(ws, app)
             if message == ffi.NULL:
                 data = None
@@ -540,6 +555,7 @@ def uws_websocket_pong_handler(ws, message, length, user_data):
 def uws_websocket_factory_ping_handler(ws, message, length, user_data):
     if user_data != ffi.NULL:
         handlers, app = ffi.from_handle(user_data)
+        app.loop.is_idle = False
         instances = app._ws_factory.get(app, ws)
         ws, dispose = instances
 
@@ -580,6 +596,7 @@ def uws_websocket_ping_handler_with_extension(ws, message, length, user_data):
     if user_data != ffi.NULL:
         try:
             handlers, app = ffi.from_handle(user_data)
+            app.loop.is_idle = False
             ws = WebSocket(ws, app)
             # bind methods to websocket
             app._ws_extension.set_properties(ws)
@@ -608,6 +625,7 @@ def uws_websocket_ping_handler(ws, message, length, user_data):
     if user_data != ffi.NULL:
         try:
             handlers, app = ffi.from_handle(user_data)
+            app.loop.is_idle = False
             ws = WebSocket(ws, app)
 
             if message == ffi.NULL:
@@ -631,6 +649,7 @@ def uws_websocket_ping_handler(ws, message, length, user_data):
 def uws_websocket_factory_close_handler(ws, code, message, length, user_data):
     if user_data != ffi.NULL:
         handlers, app = ffi.from_handle(user_data)
+        app.loop.is_idle = False
         instances = app._ws_factory.get(app, ws)
         ws, dispose = instances
 
@@ -681,6 +700,7 @@ def uws_websocket_close_handler_with_extension(ws, code, message, length, user_d
     if user_data != ffi.NULL:
         try:
             handlers, app = ffi.from_handle(user_data)
+            app.loop.is_idle = False
             # pass to free data on WebSocket if needed
             ws = WebSocket(ws, app)
             # bind methods to websocket
@@ -726,6 +746,7 @@ def uws_websocket_close_handler(ws, code, message, length, user_data):
     if user_data != ffi.NULL:
         try:
             handlers, app = ffi.from_handle(user_data)
+            app.loop.is_idle = False
             # pass to free data on WebSocket if needed
             ws = WebSocket(ws, app)
 
@@ -766,6 +787,7 @@ def uws_websocket_close_handler(ws, code, message, length, user_data):
 def uws_generic_factory_method_handler(res, req, user_data):
     if user_data != ffi.NULL:
         (handler, app) = ffi.from_handle(user_data)
+        app.loop.is_idle = False
         instances = app._factory.get(app, res, req)
         (response, request, dispose) = instances
         try:
@@ -800,6 +822,7 @@ def uws_generic_factory_method_handler(res, req, user_data):
 def uws_websocket_factory_upgrade_handler(res, req, context, user_data):
     if user_data != ffi.NULL:
         handlers, app = ffi.from_handle(user_data)
+        app.loop.is_idle = False
         instances = app._factory.get(app, res, req)
         (response, request, dispose) = instances
         try:
@@ -837,6 +860,7 @@ def uws_websocket_factory_upgrade_handler(res, req, context, user_data):
 def uws_websocket_upgrade_handler_with_extension(res, req, context, user_data):
     if user_data != ffi.NULL:
         handlers, app = ffi.from_handle(user_data)
+        app.loop.is_idle = False
         response = AppResponse(res, app)
         # set default value in properties
         app._response_extension.set_properties(response)
@@ -864,6 +888,7 @@ def uws_websocket_upgrade_handler_with_extension(res, req, context, user_data):
 def uws_websocket_upgrade_handler(res, req, context, user_data):
     if user_data != ffi.NULL:
         handlers, app = ffi.from_handle(user_data)
+        app.loop.is_idle = False
         response = AppResponse(res, app)
         request = AppRequest(req, app)
         try:
@@ -908,6 +933,7 @@ def uws_req_for_each_header_handler(
 def uws_generic_factory_method_handler(res, req, user_data):
     if user_data != ffi.NULL:
         (handler, app) = ffi.from_handle(user_data)
+        app.loop.is_idle = False
         instances = app._factory.get(app, res, req)
         (response, request, dispose) = instances
         try:
@@ -943,6 +969,7 @@ def uws_generic_factory_method_handler(res, req, user_data):
 def uws_generic_method_handler_with_extension(res, req, user_data):
     if user_data != ffi.NULL:
         (handler, app) = ffi.from_handle(user_data)
+        app.loop.is_idle = False
         response = AppResponse(res, app)
         # set default value in properties
         app._response_extension.set_properties(response)
@@ -969,6 +996,7 @@ def uws_generic_method_handler_with_extension(res, req, user_data):
 def uws_generic_method_handler(res, req, user_data):
     if user_data != ffi.NULL:
         (handler, app) = ffi.from_handle(user_data)
+        app.loop.is_idle = False
         response = AppResponse(res, app)
         request = AppRequest(req, app)
 
@@ -1006,6 +1034,7 @@ def uws_generic_listen_handler(listen_socket, config, user_data):
 
     if user_data != ffi.NULL:
         app = ffi.from_handle(user_data)
+        app.loop.is_idle = False
         config.port = lib.us_socket_local_port(app.SSL, listen_socket)
         if hasattr(app, "_listen_handler") and hasattr(app._listen_handler, "__call__"):
             app.socket = listen_socket
@@ -1041,6 +1070,7 @@ def uws_generic_aborted_handler(response, user_data):
 def uws_generic_on_data_handler(res, chunk, chunk_length, is_end, user_data):
     if user_data != ffi.NULL:
         res = ffi.from_handle(user_data)
+        res.app.loop.is_idle = False
         if chunk == ffi.NULL:
             data = None
         else:
@@ -1053,6 +1083,7 @@ def uws_generic_on_data_handler(res, chunk, chunk_length, is_end, user_data):
 def uws_generic_on_writable_handler(res, offset, user_data):
     if user_data != ffi.NULL:
         res = ffi.from_handle(user_data)
+        res.app.loop.is_idle = False
         result = res.trigger_writable_handler(offset)
         return result
     return False
@@ -1307,6 +1338,7 @@ class WebSocket:
             return None
 
     def send_fragment(self, message, compress=False):
+        self.app.loop.is_idle = False
         try:
             if isinstance(message, str):
                 data = message.encode("utf-8")
@@ -1327,6 +1359,7 @@ class WebSocket:
             return None
 
     def send_last_fragment(self, message, compress=False):
+        self.app.loop.is_idle = False
         try:
             if isinstance(message, str):
                 data = message.encode("utf-8")
@@ -1347,6 +1380,7 @@ class WebSocket:
             return None
 
     def send_first_fragment(self, message, opcode=OpCode.BINARY, compress=False):
+        self.app.loop.is_idle = False
         try:
             if isinstance(message, str):
                 data = message.encode("utf-8")
@@ -1373,6 +1407,7 @@ class WebSocket:
         return self
 
     def send(self, message, opcode=OpCode.BINARY, compress=False, fin=True):
+        self.app.loop.is_idle = False
         try:
             if isinstance(message, str):
                 data = message.encode("utf-8")
@@ -1399,6 +1434,7 @@ class WebSocket:
         return self
 
     def end(self, code=0, message=None):
+        self.app.loop.is_idle = False
         try:
             if not isinstance(code, int):
                 raise RuntimeError("code must be an int")
@@ -1447,6 +1483,8 @@ class AppResponse:
         self._data = None
 
     def cork(self, callback):
+        self.app.loop.is_idle = False
+        
         if not self.aborted:
             self.grab_aborted_handler()
             self._cork_handler = callback
@@ -1645,6 +1683,7 @@ class AppResponse:
         return self
 
     def try_end(self, message, total_size, end_connection=False):
+        self.app.loop.is_idle = False
         try:
             if self.aborted:
                 return False, True
@@ -1752,7 +1791,8 @@ class AppResponse:
         headers = None,
         end_connection: bool = False,
     ):
-
+        self.app.loop.is_idle = False
+        
         # TODO: optimize headers
         if headers is not None:
             for name, value in headers:
@@ -1851,6 +1891,8 @@ class AppResponse:
             return self
 
     def end(self, message, end_connection=False):
+        self.app.loop.is_idle = False
+        
         try:
             if self.aborted:
                 return self
@@ -1879,16 +1921,19 @@ class AppResponse:
         return self
 
     def resume(self):
+        self.app.loop.is_idle = False
         if not self.aborted:
             lib.uws_res_resume(self.app.SSL, self.res)
         return self
 
     def write_continue(self):
+        self.app.loop.is_idle = False
         if not self.aborted:
             lib.uws_res_write_continue(self.app.SSL, self.res)
         return self
 
     def write_status(self, status_or_status_text):
+        self.app.loop.is_idle = False
         if not self.aborted:
             if isinstance(status_or_status_text, int):
                 if bool(
@@ -1914,6 +1959,7 @@ class AppResponse:
         return self
 
     def write_header(self, key, value):
+        self.app.loop.is_idle = False
         if not self.aborted:
             if isinstance(key, str):
                 key_data = key.encode("utf-8")
@@ -1947,6 +1993,7 @@ class AppResponse:
         return self
 
     def end_without_body(self, end_connection=False):
+        self.app.loop.is_idle = False
         if not self.aborted:
             if self._write_jar is not None:
                 self.write_header("Set-Cookie", self._write_jar.output(header=""))
@@ -1956,6 +2003,7 @@ class AppResponse:
         return self
 
     def write(self, message):
+        self.app.loop.is_idle = False
         if not self.aborted:
             if isinstance(message, str):
                 data = message.encode("utf-8")
@@ -2923,6 +2971,7 @@ class App:
         )
 
     def publish(self, topic, message, opcode=OpCode.BINARY, compress=False):
+        self.loop.is_idle = False
 
         if isinstance(topic, str):
             topic_data = topic.encode("utf-8")

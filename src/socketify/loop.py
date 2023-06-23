@@ -29,6 +29,8 @@ class Loop:
 
         # get the current running loop or create a new one without warnings
         self.loop = asyncio._get_running_loop()
+        self._idle_count = 0
+        self.is_idle = False
         if self.loop is None:
             self.loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self.loop)
@@ -73,15 +75,27 @@ class Loop:
 
     def create_future(self):
         return self.loop.create_future()
-        
 
     def _keep_alive(self):
         if self.started:
-            self.uv_loop.run_nowait()
-            # be more agressive when needed
-            self.loop.call_soon(self._keep_alive)
-
-
+            relax = False
+            if not self.is_idle:
+                self._idle_count = 0
+            elif self._idle_count < 10000:
+                self._idle_count += 1
+            else:
+                relax = True
+            
+            self.is_idle = True
+                
+            if relax:
+                self.uv_loop.run_nowait()
+                self.loop.call_later(0.001, self._keep_alive)
+            else:
+                self.uv_loop.run_nowait()
+                # be more agressive when needed
+                self.loop.call_soon(self._keep_alive)
+                
     def create_task(self, *args, **kwargs):
         # this is not using optimized create_task yet
         return self.loop.create_task(*args, **kwargs)

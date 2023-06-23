@@ -15,6 +15,8 @@ import uuid
 @ffi.callback("void(uws_res_t*, const char*, size_t, bool, void*)")
 def wsgi_on_data_handler(res, chunk, chunk_length, is_end, user_data):
     data_response = ffi.from_handle(user_data)
+    data_response.app.server.loop.is_idle = False
+
     if chunk != ffi.NULL:
         data_response.buffer.write(ffi.unpack(chunk, chunk_length))
     if bool(is_end):
@@ -29,6 +31,7 @@ def wsgi_on_data_handler(res, chunk, chunk_length, is_end, user_data):
 def wsgi_on_data_ref_abort_handler(res, user_data):
     data_retry = ffi.from_handle(user_data)
     data_retry.aborted = True
+    data_retry.server.loop.is_idle = False
     if data_retry.id is not None:
         data_retry.app._data_refs.pop(data_retry.id, None)    
     
@@ -41,7 +44,9 @@ def wsgi_on_writable_handler(res, offset, user_data):
     
     chunks = data_retry.chunks
     last_sended_offset = data_retry.last_offset
-    ssl = data_retry.app.server.SSL
+    server = data_retry.app.server
+    ssl = server.SSL
+    server.loop.is_idle = False
     content_length = data_retry.content_length
     
     data = chunks[0]
@@ -224,6 +229,7 @@ def wsgi_corked_response_start_handler(res, user_data):
 @ffi.callback("void(int, uws_res_t*, socketify_asgi_data request, void*)")
 def wsgi(ssl, response, info, user_data):
     app = ffi.from_handle(user_data)
+    app.server.loop.is_idle = False
 
     # reusing the dict is slower than cloning because we need to clear HTTP headers
     environ = dict(app.BASIC_ENVIRON)
@@ -257,9 +263,10 @@ def wsgi(ssl, response, info, user_data):
     is_chunked = False
     content_length = -1
     def write_headers(headers):
-        nonlocal headers_written, headers_set, status_text, content_length, is_chunked
+        nonlocal headers_written, headers_set, status_text, content_length, is_chunked, app
         if headers_written or not headers_set:
             return
+        app.server.loop.is_idle = False
 
         headers_written = True
 
@@ -327,7 +334,8 @@ def wsgi(ssl, response, info, user_data):
         content_length = ffi.cast("uintmax_t", content_length)
 
     def start_response(status, headers, exc_info=None):
-        nonlocal headers_set, status_text
+        nonlocal headers_set, status_text, app
+        app.server.loop.is_idle = False
         if exc_info:
             try:
                 if headers_written:
@@ -342,7 +350,8 @@ def wsgi(ssl, response, info, user_data):
         status_text = status
 
         def write(data):
-            nonlocal is_chunked
+            nonlocal is_chunked, app
+            app.server.loop.is_idle = False
             if not headers_written:
                 write_headers(headers_set)
             # will allow older frameworks only with is_chunked
@@ -371,7 +380,7 @@ def wsgi(ssl, response, info, user_data):
 
             if data_response.aborted:
                 return
-
+            data_response.app.server.loop.is_idle = False
             ssl = data_response.app.server.SSL
             data_response.environ["CONTENT_LENGTH"] = str(
                 data_response.buffer.getbuffer().nbytes

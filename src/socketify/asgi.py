@@ -14,6 +14,8 @@ is_pypy = platform.python_implementation() == "PyPy"
 def asgi_on_abort_handler(res, user_data):
     ctx = ffi.from_handle(user_data)
     ctx.aborted = True
+    ctx.loop.is_idle = False
+
     if ctx.abort_future is not None:
         ctx.abort_future.set_result(True)
         ctx.abort_future = None
@@ -59,6 +61,7 @@ def ws_open(ws, user_data):
 )
 def ws_upgrade(ssl, response, info, socket_context, user_data):
     app = ffi.from_handle(user_data)
+    app.server.loop.is_idle = False
     headers = []
     next_header = info.header_list
     while next_header != ffi.NULL:
@@ -117,6 +120,7 @@ def ws_upgrade(ssl, response, info, socket_context, user_data):
     async def send(options):
         if ws.aborted:
             return False
+        ws.loop.is_idle = False
         type = options["type"]
         if type == "websocket.send":
             data = options.get("bytes", None)
@@ -244,6 +248,7 @@ def ws_upgrade(ssl, response, info, socket_context, user_data):
 @ffi.callback("void(uws_res_t*, const char*, size_t, bool, void*)")
 def asgi_on_data_handler(res, chunk, chunk_length, is_end, user_data):
     data_response = ffi.from_handle(user_data)
+    data_response.loop.is_idle = False
     data_response.is_end = bool(is_end)
     more_body = not data_response.is_end
     result = {
@@ -438,7 +443,8 @@ def uws_asgi_corked_403_handler(res, user_data):
 @ffi.callback("void(int, uws_res_t*, socketify_asgi_data, void*)")
 def asgi(ssl, response, info, user_data):
     app = ffi.from_handle(user_data)
-
+    app.server.loop.is_idle = False
+            
     headers = []
     next_header = info.header_list
     while next_header != ffi.NULL:
@@ -481,6 +487,8 @@ def asgi(ssl, response, info, user_data):
     async def receive():
         if ctx.aborted:
             return {"type": "http.disconnect"}
+
+        ctx.loop.is_idle = False
         data_queue = ctx.data_queue
         if data_queue:
             if data_queue.queue.empty():
@@ -506,6 +514,8 @@ def asgi(ssl, response, info, user_data):
     async def send(options):
         if ctx.aborted:
             return False
+        
+        ctx.loop.is_idle = False
         type = options["type"]
         ssl = ctx.ssl
         response = ctx.response
@@ -684,6 +694,7 @@ class _ASGI:
 
         async def send(options):
             nonlocal asgi_app
+            asgi_app.server.loop.is_idle = False
             type = options["type"]
             asgi_app.status_message = options.get("message", "")
             if type == "lifespan.startup.complete":
@@ -701,6 +712,7 @@ class _ASGI:
 
         async def receive():
             nonlocal asgi_app
+            asgi_app.server.loop.is_idle = False
             while not asgi_app.is_stopped:
                 if asgi_app.is_starting:
                     asgi_app.is_starting = False
@@ -723,7 +735,7 @@ class _ASGI:
                         asgi_app.server.listen(port_or_options, handler)
                 finally:
                     return None
-
+        self.server.loop.is_idle = False      
         # start lifespan
         self.server.loop.ensure_future(task_wrapper(self.app(scope, receive, send)))
         self.server.run()
