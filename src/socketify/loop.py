@@ -129,8 +129,15 @@ class Loop:
 
     def run_once(self):
         # run one step of asyncio
-        self.loop._stopping = True
-        self.loop._run_once()
+        # if loop._run_once is not available use loop.run_forever + loop.call_soon(loop.stop)
+        # this is useful when using uvloop or custom loops
+        try:
+            self.loop._stopping = True
+            self.loop._run_once()
+        except Exception: 
+            # this can be _StopError with means we should not call run_forever, but we can ignore it
+            self.loop.call_soon(self.loop.stop)
+            self.loop.run_forever()
         # run one step of libuv
         self.uv_loop.run_once()
 
