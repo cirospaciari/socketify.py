@@ -3449,10 +3449,13 @@ class App:
             self.loop = None
 
     def __del__(self):
-        if self.app:  # only destroy if exists
-            self.close()
-            lib.uws_app_destroy(self.SSL, self.app)
-        if self.loop:
-            self.loop.dispose()
-            self.loop = None
+        try:
+            if self.app:  # only destroy if exists
+                self.close()
+                lib.uws_app_destroy(self.SSL, self.app)
+            if self.loop:
+                self.loop.dispose()
+                self.loop = None
+        except:
+            pass
 

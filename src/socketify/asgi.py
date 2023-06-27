@@ -773,10 +773,13 @@ class _ASGI:
         return self
 
     def __del__(self):
-        if self.asgi_http_info:
-            lib.socketify_destroy_asgi_app_info(self.asgi_http_info)
-        if self.asgi_ws_info:
-            lib.socketify_destroy_asgi_ws_app_info(self.asgi_ws_info)
+        try:
+            if self.asgi_http_info:
+                lib.socketify_destroy_asgi_app_info(self.asgi_http_info)
+            if self.asgi_ws_info:
+                lib.socketify_destroy_asgi_ws_app_info(self.asgi_ws_info)
+        except:
+            pass
 
 
 # "Public" ASGI interface to allow easy forks/workers
@@ -797,12 +800,26 @@ class ASGI:
         self.listen_options = None
         self.task_factory_max_items = task_factory_max_items
         self.lifespan = lifespan
+        self.server = None
+        self.pid_list = None
 
     def listen(self, port_or_options, handler=None):
         self.listen_options = (port_or_options, handler)
         return self
 
-    def run(self, workers=1):
+    def close(self):
+        # always wait a sec so forks can start properly if close is called too fast
+        import time
+        time.sleep(1)
+        
+        if self.server is not None:
+            self.server.close()
+        if self.pid_list is not None:
+            import signal
+            for pid in self.pid_list:
+                os.kill(pid, signal.SIGINT)
+
+    def run(self, workers=1, block=True):
         def run_task():
             server = _ASGI(
                 self.app,
@@ -815,22 +832,27 @@ class ASGI:
             if self.listen_options:
                 (port_or_options, handler) = self.listen_options
                 server.listen(port_or_options, handler)
-            server.run()
+            self.server = server
+            server.run()     
 
         pid_list = []
+        start = 1 if block else 0
         # fork limiting the cpu count - 1
-        for _ in range(1, workers):
+        for _ in range(block, workers):
             pid = os.fork()
             # n greater than 0 means parent process
             if not pid > 0:
                 run_task()
                 break
             pid_list.append(pid)
+        
+        self.pid_list = pid_list
 
-        run_task()  # run app on the main process too :)
+        if block:
+            run_task()  # run app on the main process too :)
+            # sigint everything to gracefull shutdown
+            import signal
+            for pid in pid_list:
+                os.kill(pid, signal.SIGINT)
 
-        # sigint everything to gracefull shutdown
-        import signal
-        for pid in pid_list:
-            os.kill(pid, signal.SIGINT)
         return self
