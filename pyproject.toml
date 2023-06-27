@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "socketify"
-version = "0.0.21"
+version = "0.0.22"
 authors = [
   { name="Ciro Spaciari", email="ciro.spaciari@gmail.com" },
 ]
 description = "Bringing WebSockets, Http/Https High Performance servers for PyPy3 and Python3"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",

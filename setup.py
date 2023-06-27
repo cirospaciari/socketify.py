@@ -1,8 +1,8 @@
 import sys
 
 vi = sys.version_info
-if vi < (3, 7):
-    raise RuntimeError("socketify requires Python 3.7 or greater")
+if vi < (3, 8):
+    raise RuntimeError("socketify requires Python 3.8 or greater")
 
 # if sys.platform in ('win32', 'cygwin', 'cli'):
 #     raise RuntimeError('socketify does not support Windows at the moment')
@@ -58,7 +58,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="socketify",
-    version="0.0.21",
+    version="0.0.22",
     platforms=["any"],
     author="Ciro Spaciari",
     author_email="ciro.spaciari@gmail.com",
@@ -88,7 +88,7 @@ setuptools.setup(
             "./native/*/*/*",
         ]
     },
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     install_requires=["cffi>=1.0", "setuptools>=58.1.0"],
     has_ext_modules=lambda: True,
     cmdclass={},  # cmdclass={'sdist': Prepare, 'build_ext': Makefile},
