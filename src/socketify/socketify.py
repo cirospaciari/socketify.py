@@ -668,7 +668,7 @@ def uws_websocket_factory_close_handler(ws, code, message, length, user_data):
 
             if inspect.iscoroutinefunction(handler):
 
-                async def wrapper(app, instances, handler, ws, data, code, dispose):
+                async def wrapper(app, instances, handler, ws, code, data, dispose):
                     try:
                         return await handler(ws, code, data)
                     finally:
@@ -679,7 +679,7 @@ def uws_websocket_factory_close_handler(ws, code, message, length, user_data):
                             app._ws_factory.dispose(instances)
 
                 app.run_async(
-                    wrapper(app, instances, handler, ws, data, int(code), dispose)
+                    wrapper(app, instances, handler, ws, int(code), data, dispose)
                 )
             else:
                 handler(ws, int(code), data)
@@ -720,7 +720,7 @@ def uws_websocket_close_handler_with_extension(ws, code, message, length, user_d
 
             if inspect.iscoroutinefunction(handler):
 
-                async def wrapper(app, handler, ws, data, code, dispose):
+                async def wrapper(app, handler, ws, code, data):
                     try:
                         return await handler(ws, code, data)
                     finally:
@@ -728,7 +728,7 @@ def uws_websocket_close_handler_with_extension(ws, code, message, length, user_d
                         if key is not None:
                             app._socket_refs.pop(key, None)
 
-                app.run_async(wrapper(app, handler, ws, data, int(code)))
+                app.run_async(wrapper(app, handler, ws, int(code), data))
             else:
                 handler(ws, int(code), data)
                 key = ws.get_user_data_uuid()
@@ -762,7 +762,7 @@ def uws_websocket_close_handler(ws, code, message, length, user_data):
 
             if inspect.iscoroutinefunction(handler):
 
-                async def wrapper(app, handler, ws, data, code, dispose):
+                async def wrapper(app, handler, ws, code, data):
                     try:
                         return await handler(ws, code, data)
                     finally:
@@ -770,7 +770,7 @@ def uws_websocket_close_handler(ws, code, message, length, user_data):
                         if key is not None:
                             app._socket_refs.pop(key, None)
 
-                app.run_async(wrapper(app, handler, ws, data, int(code)))
+                app.run_async(wrapper(app, handler, ws, int(code), data))
             else:
                 handler(ws, int(code), data)
                 key = ws.get_user_data_uuid()
