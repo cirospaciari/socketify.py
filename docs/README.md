@@ -15,8 +15,18 @@
 <a href="https://github.com/sponsors/cirospaciari/" target="_blank"><img src="https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&link=https://github.com/sponsors/cirospaciari"/></a>
 <a href='https://discord.socketify.dev/' target="_blank"><img alt='Discord' src='https://img.shields.io/discord/1042529276219641906?label=Discord'></a>
 </p>
-<br/>
+<div align="center">
+  <a href="https://github.com/cirospaciari/socketify.py">Github</a>
+  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
+  <a href="https://discord.socketify.dev/">Discord</a>
+  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
+  <a href="https://github.com/cirospaciari/socketify.py/issues">Issues</a>
+  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
+  <a href="https://github.com/cirospaciari/socketify.py/tree/main/examples">Examples</a>
+  <br />
+</div>
 
+<br/>
 Socketify.py is a reliable, high-performance Python web framework for building large-scale app backends and microservices.
 With no precedents websocket performance and a really fast HTTP server that can delivery encrypted TLS 1.3 quicker than most alternative servers can do even unencrypted, cleartext messaging.
 
