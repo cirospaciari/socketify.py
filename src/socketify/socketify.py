@@ -3370,8 +3370,12 @@ class App:
             self._factory.populate()
         if self._ws_factory is not None:
             self._ws_factory.populate()
+    
+        def signal_handler(sig, frame):
+            self.close()
+            exit(0)
 
-        signal.signal(signal.SIGINT, lambda sig, frame: self.close())
+        signal.signal(signal.SIGINT, signal_handler)
         self.loop.run()
         if self.lifespan:
 
