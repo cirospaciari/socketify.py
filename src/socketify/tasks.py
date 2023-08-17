@@ -5,9 +5,9 @@ from asyncio import (
     exceptions,
     futures,
     _register_task,
-    # _enter_task,
-    # current_task,
-    # _leave_task,
+    _enter_task,
+    current_task,
+    _leave_task,
     _unregister_task,
 )
 import contextvars
@@ -92,6 +92,7 @@ class RequestTask:
     # status is still pending
     _log_destroy_pending = True
 
+    _parent_task = None
     def __init__(
         self, coro, loop, default_done_callback=None, no_register=False, context=None
     ):
@@ -498,6 +499,11 @@ class RequestTask:
             self._must_cancel = False
         coro = self._coro
         self._fut_waiter = None
+        
+        # _parent_task = current_task(self._loop)
+        # if _parent_task is not None:
+        #     _leave_task(self._loop, _parent_task)
+        #     self._parent_task = _parent_task
         # _enter_task(self._loop, self)
         # Call either coro.throw(exc) or coro.send(None).
         try:
@@ -569,6 +575,9 @@ class RequestTask:
                 self._loop.call_soon(self.__step, new_exc, context=self._context)
         finally:
             # _leave_task(self._loop, self)
+            # if self._parent_task is not None:
+            #     _enter_task(self._loop, self._parent_task)
+            #     self._parent_task = None
             self = None  # Needed to break cycles when an exception occurs.
 
     def __wakeup(self, future):
