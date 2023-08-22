@@ -500,11 +500,11 @@ class RequestTask:
         coro = self._coro
         self._fut_waiter = None
         
-        # _parent_task = current_task(self._loop)
-        # if _parent_task is not None:
-        #     _leave_task(self._loop, _parent_task)
-        #     self._parent_task = _parent_task
-        # _enter_task(self._loop, self)
+        _parent_task = current_task(self._loop)
+        if _parent_task is not None:
+            _leave_task(self._loop, _parent_task)
+            self._parent_task = _parent_task
+        _enter_task(self._loop, self)
         # Call either coro.throw(exc) or coro.send(None).
         try:
             if exc is None:
@@ -574,10 +574,10 @@ class RequestTask:
                 new_exc = RuntimeError(f"Task got bad yield: {result!r}")
                 self._loop.call_soon(self.__step, new_exc, context=self._context)
         finally:
-            # _leave_task(self._loop, self)
-            # if self._parent_task is not None:
-            #     _enter_task(self._loop, self._parent_task)
-            #     self._parent_task = None
+            _leave_task(self._loop, self)
+            if self._parent_task is not None:
+                _enter_task(self._loop, self._parent_task)
+                self._parent_task = None
             self = None  # Needed to break cycles when an exception occurs.
 
     def __wakeup(self, future):
