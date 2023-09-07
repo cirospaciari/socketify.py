@@ -1,6 +1,5 @@
 # socketify.py
 
-
 <p align="center">
   <a href="https://github.com/cirospaciari/socketify.py"><img src="https://raw.githubusercontent.com/cirospaciari/socketify.py/main/misc/logo.png" alt="Logo" height=170></a>
   <br />
@@ -50,6 +49,7 @@
 - [`Plugins/Extensions`](https://docs.socketify.dev/extensions.html)
 
 ## :mag_right: Upcoming Features
+
 - In-Memory Cache Tools
 - Fetch like API powered by libuv
 - Async file IO powered by libuv
@@ -65,6 +65,7 @@ We created and adapted the full C API from [uNetworking/uWebSockets](https://git
 Join Github [`Discussions`](https://github.com/cirospaciari/socketify.py/discussions) or [`Discord`](https://discord.socketify.dev/) for help and have a look at the development progress.
 
 ## :zap: Benchmarks
+
 Socketify WebFramework HTTP requests per second (Linux x64)
 
 ![image](https://raw.githubusercontent.com/cirospaciari/socketify.py/main/misc/bench-bar-graph-general.png)
@@ -81,14 +82,14 @@ WebSocket messages per second (Linux x64)
 
 ![image](https://raw.githubusercontent.com/cirospaciari/socketify.py/main/misc/bench-bar-graph-websockets.png)
 
-
 Http tested with TFB tool plaintext benchmark<br/>
 WebSocket tested with [Bun.sh](https://bun.sh) bench chat-client <br/>
 Source code in [TechEmPower](https://github.com/TechEmpower/FrameworkBenchmarks) and for websockets in [bench](https://github.com/cirospaciari/socketify.py/tree/main/bench)<br/>
 
-Machine OS: Debian GNU/Linux bookworm/sid x86_64 Kernel: 6.0.0-2-amd64 CPU: Intel i7-7700HQ (8) @ 3.800GHz Memory: 32066MiB 
+Machine OS: Debian GNU/Linux bookworm/sid x86_64 Kernel: 6.0.0-2-amd64 CPU: Intel i7-7700HQ (8) @ 3.800GHz Memory: 32066MiB
 
 ## 📦 Installation
+
 For macOS x64 & Silicon, Linux x64, Windows
 
 ```bash
@@ -100,9 +101,11 @@ pypy3 -m pip install -e socketify
 ```
 
 Using install via requirements.txt
+
 ```text
 socketify
 ```
+
 ```bash
 pip install -r ./requirements.txt 
 #or specify PyPy3
@@ -112,19 +115,28 @@ pypy3 -m pip install -r ./requirements.txt
 If you are using linux or macOS, you may need to install libuv and zlib in your system
 
 macOS
+
 ```bash
 brew install libuv
 brew install zlib
 ```
 
-Linux
+Linux (Ubuntu/Debian)
+
 ```bash
 apt install libuv1 zlib1g
+```
+
+Linux (RHEL/OEL)
+
+```bash
+yum install cmake zlib-devel libuv-devel
 ```
 
 ## 🤔 Usage
 
 Hello world app
+
 ```python
 from socketify import App
 
@@ -135,6 +147,7 @@ app.run()
 ```
 
 SSL version sample
+
 ``` python
 from socketify import App, AppOptions
 
@@ -145,6 +158,7 @@ app.run()
 ```
 
 WebSockets
+
 ```python
 from socketify import App, AppOptions, OpCode, CompressOptions
 
@@ -165,7 +179,7 @@ app.ws("/*", {
     'message': ws_message,
     'drain': lambda ws: print(f'WebSocket backpressure: {ws.get_buffered_amount()}'),
     'close': lambda ws, code, message: print('WebSocket closed'),
-    'subscription': lambda ws, topic, subscriptions, subscriptions_before: print(f'subscription/unsubscription on topic {topic} {subscriptions} {subscriptions_before}'),
+    'subscription': lambda ws, topic, subscriptions, subscriptions_before: print(f'subscribe/unsubscribe on topic {topic} {subscriptions} {subscriptions_before}'),
 })
 app.any("/", lambda res,req: res.end("Nothing to see here!'"))
 app.listen(3000, lambda config: print("Listening on port http://localhost:%d now\n" % (config.port)))
@@ -175,6 +189,7 @@ app.run()
 We have more than 20 examples [click here](https://github.com/cirospaciari/socketify.py/tree/main/examples) for more
 
 ## :hammer: Building from source
+
 ```bash
 #clone and update submodules
 git clone https://github.com/cirospaciari/socketify.py.git
@@ -191,6 +206,7 @@ pypy3 -m pip uninstall socketify
 ```
 
 ## :briefcase: Commercially supported
+
 I'm a Brazilian consulting & contracting company dealing with anything related with [socketify.py](https://github.com/cirospaciari/socketify.py) and [socketify.rb](https://github.com/cirospaciari/socketify.rb)
 
 Don't hesitate sending a mail if you are in need of advice, support, or having other business inquiries in mind. We'll figure out what's best for both parties.
@@ -198,6 +214,7 @@ Don't hesitate sending a mail if you are in need of advice, support, or having o
 Special thank's to [uNetworking AB](https://github.com/uNetworking) to develop [uWebSockets](https://github.com/uNetworking/uWebSockets), [uSockets](https://github.com/uNetworking/uSockets) and allow us to bring this features and performance to Python and PyPy
 
 ## :heart: Sponsors
+
 If you like to see this project thrive, you can sponsor us on GitHub too. We need all the help we can get.
 
 Thank you [`Otavio Augusto`](https://github.com/middlebaws) to be the first sponsor of this project!
@@ -205,14 +222,17 @@ Thank you [`Otavio Augusto`](https://github.com/middlebaws) to be the first spon
 <a href="https://github.com/sponsors/cirospaciari/" target="_blank"><img src="https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&link=https://github.com/sponsors/cirospaciari"/></a>
 
 ## :star: Stargazers
+
 [![Stargazers repo roster for @cirospaciari/socketify.py](https://reporoster.com/stars/dark/cirospaciari/socketify.py)](https://github.com/cirospaciari/socketify.py/stargazers)
 
 ## :wrench: Forkers
+
 [![Forkers repo roster for @cirospaciari/socketify.py](https://reporoster.com/forks/dark/cirospaciari/socketify.py)](https://github.com/cirospaciari/socketify.py/network/members)
 
 ## :grey_question: uvloop
+
 We don't use uvloop, because uvloop don't support Windows and PyPy3 at this moment, this can change in the future, but right now we want to implement our own libuv + asyncio solution, and a lot more.
 
 ## :dizzy: CFFI vs Cython vs HPy
-Cython performs really well on Python3 but really bad on PyPy3, CFFI are chosen for better support PyPy3 until we got our hands on a stable [`HPy`](https://hpyproject.org/) integration.
 
+Cython performs really well on Python3 but really bad on PyPy3, CFFI are chosen for better support PyPy3 until we got our hands on a stable [`HPy`](https://hpyproject.org/) integration.
