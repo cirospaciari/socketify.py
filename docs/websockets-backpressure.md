@@ -3,6 +3,52 @@ WebSocket "routes" are registered similarly, but not identically.
 
 Every websocket route has the same pattern and pattern matching as for Http, but instead of one single callback you have a whole set of them, here's an example:
 
+Configuration details, notes:
+- *idle_timeout*: number of seconds of inactivity before client is disconnected. If set to 0, no policy is enforced (connections can be stale).
+- *open*: callback function for websocket connection being open 
+    ```python
+    def on_open(ws : WebSocket): 
+        """
+        ws: WebSocket - websocket connection
+        """
+        ...
+    ```
+- *close*: callback function for websocket connection closed 
+    ```python
+    def on_close(ws: WebSocket, code: int, msg: Union[bytes, str]): 
+        """
+        ws: WebSocket 
+            websocket connection
+        code: int 
+            exit code from client
+        msg: byte, str
+            exit message
+        """
+        ...
+    ```
+- *upgrade*: callback function to upgrade socket connection details 
+    ```python
+    def on_upgrade(res: Response, req: Request, socket_context):
+        """
+        res: Response
+        req: Request
+        """
+        ...
+    ```
+- *message*: callback function for websocket message received 
+    ```python
+    def on_message(ws: WebSocket, msg: Union[bytes, str], opcode: OpCode): 
+        """
+        ws: WebSocket
+        msg: bytes, str
+        opcode: OpCode
+        """
+    ```
+- *drain*: in the event of backpressure, policy to drain ws buffer
+    ```python
+    def on_drain(ws: WebSocket):
+        ...
+    ```
 ```python
 app = App()
 app.ws(
@@ -11,10 +57,11 @@ app.ws(
         "compression": CompressOptions.SHARED_COMPRESSOR,
         "max_payload_length": 16 * 1024 * 1024,
         "idle_timeout": 12,
-        "open": ws_open,
-        "message": ws_message,
-        'drain': lambda ws: print(f'WebSocket backpressure: {ws.get_buffered_amount()}'),
-        "close": lambda ws, code, message: print("WebSocket closed"),
+        "open": on_open,
+        "message": on_message,
+        "close": on_close,
+        "upgrade": on_upgrade,
+        'drain': on_drain,
         "subscription": lambda ws, topic, subscriptions, subscriptions_before: print(f'subscription/unsubscription on topic {topic} {subscriptions} {subscriptions_before}'),
     },
 )
@@ -23,6 +70,57 @@ app.ws(
 You should use the provided user data feature to store and attach any per-socket user data. Going from user data to WebSocket is possible if you make your user data hold the WebSocket, and hook things up in the WebSocket open handler. Your user data memory is valid while your WebSocket is.
 
 If you want to create something more elaborate you could have the user data hold a pointer to some dynamically allocated memory block that keeps a boolean whether the WebSocket is still valid or not. Sky is the limit here.
+
+In order to do so, use the `upgrade` callback configuration in the `app.ws` settings.
+
+Example:
+```python
+from socketify import App, WebSocket, OpCode
+app = App()
+
+ID = 0
+
+def on_open(ws: WebSocket):
+    user_data = ws.get_user_data()
+    print('ws %s connected' % user_data['user_id'])
+    ws.send('Hello, world!')
+
+def on_upgrade(res, req, socket_context):
+    global ID
+    ID += 1
+    key = req.get_header("sec-websocket-key")
+    protocol = req.get_header("sec-websocket-protocol")
+    extensions = req.get_header("sec-websocket-extensions")
+    user_data=dict(user_id=ID)
+    res.upgrade(key, protocol, extensions, socket_context, user_data)
+
+def on_message(ws: WebSocket, msg: str, opcode: OpCode):
+    user_data = ws.get_user_data()
+    print('ws %s: %s' % (user_data['user_id'], msg))
+
+def on_close(ws, code, msg):
+    user_data = ws.get_user_data()
+    print('ws %s closed' % user_data['user_id'])
+
+def on_drain(ws: WebSocket):
+    user_data = ws.get_user_data()
+    print('ws %s backpressure: %s' % (user_data['user_id'], ws.get_buffered_amount()))
+
+app.ws(
+    "/*",
+    {
+        "compression": CompressOptions.SHARED_COMPRESSOR,
+        "max_payload_length": 16 * 1024 * 1024,
+        "idle_timeout": 12,
+        "open": on_open,
+        "message": on_message,
+        "close": on_close,
+        "upgrade": on_upgrade,
+        "drain": on_drain,
+        "subscription": lambda ws, topic, subscriptions, subscriptions_before: print(f'subscription/unsubscription on topic {topic} {subscriptions} {subscriptions_before}'),
+    }
+)
+```
 
 ## WebSockets are valid from open to close
 All given WebSocket are guaranteed to live from open event (where you got your WebSocket) until close event is called. 
