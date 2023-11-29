@@ -71,6 +71,8 @@ You should use the provided user data feature to store and attach any per-socket
 
 If you want to create something more elaborate you could have the user data hold a pointer to some dynamically allocated memory block that keeps a boolean whether the WebSocket is still valid or not. Sky is the limit here.
 
+In order to do so, use the `upgrade` callback configuration in the `app.ws` settings.
+
 Example:
 ```python
 from socketify import App, WebSocket, OpCode
