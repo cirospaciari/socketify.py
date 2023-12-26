@@ -1623,13 +1623,14 @@ class AppResponse:
             )  # if aborted set to done True and ok False
             return self._chunkFuture
 
+        self._lastChunkOffset = self.get_write_offset()
+
         (ok, done) = self.try_end(buffer, total_size)
         if ok:
             self._chunkFuture.set_result((ok, done))
             return self._chunkFuture
-        # failed to send chunk
-        self._lastChunkOffset = self.get_write_offset()
 
+        # failed to send chunk
         return self._chunkFuture
 
     def get_data(self):
