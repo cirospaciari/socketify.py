@@ -160,7 +160,7 @@ app.run()
 WebSockets
 
 ```python
-from socketify import App, AppOptions, OpCode, CompressOptions
+from socketify import App, OpCode, CompressOptions
 
 def ws_open(ws):
     print('A WebSocket got connected!')
