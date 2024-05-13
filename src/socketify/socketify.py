@@ -68,7 +68,7 @@ def uws_websocket_factory_drain_handler(ws, user_data):
             if dispose:
                 app._ws_factory.dispose(instances)
             logging.error(
-                "Uncaught Exception: %s" % str(err)
+                "Uncaught Exception: %s" % traceback.format_exc()
             )  # just log in console the error to call attention
 
 
@@ -90,7 +90,7 @@ def uws_websocket_drain_handler_with_extension(ws, user_data):
                 handler(ws)
         except Exception as err:
             logging.error(
-                "Uncaught Exception: %s" % str(err)
+                "Uncaught Exception: %s" % traceback.format_exc()
             )  # just log in console the error to call attention
 
 
@@ -108,7 +108,7 @@ def uws_websocket_drain_handler(ws, user_data):
                 handler(ws)
         except Exception as err:
             logging.error(
-                "Uncaught Exception: %s" % str(err)
+                "Uncaught Exception: %s" % traceback.format_exc()
             )  # just log in console the error to call attention
 
 
@@ -190,7 +190,7 @@ def uws_websocket_factory_subscription_handler(
             if dispose:
                 app._ws_factory.dispose(instances)
             logging.error(
-                "Uncaught Exception: %s" % str(err)
+                "Uncaught Exception: %s" % traceback.format_exc()
             )  # just log in console the error to call attention
 
 
@@ -233,7 +233,7 @@ def uws_websocket_subscription_handler(
                 )
         except Exception as err:
             logging.error(
-                "Uncaught Exception: %s" % str(err)
+                "Uncaught Exception: %s" % traceback.format_exc()
             )  # just log in console the error to call attention
 
 
@@ -280,7 +280,7 @@ def uws_websocket_subscription_handler_with_extension(
                 )
         except Exception as err:
             logging.error(
-                "Uncaught Exception: %s" % str(err)
+                "Uncaught Exception: %s" % traceback.format_exc()
             )  # just log in console the error to call attention
 
 
@@ -313,7 +313,7 @@ def uws_websocket_factory_open_handler(ws, user_data):
             if dispose:
                 app._ws_factory.dispose(instances)
             logging.error(
-                "Uncaught Exception: %s" % str(err)
+                "Uncaught Exception: %s" % traceback.format_exc()
             )  # just log in console the error to call attention
 
 
@@ -336,7 +336,7 @@ def uws_websocket_open_handler_with_extension(ws, user_data):
                 handler(ws)
         except Exception as err:
             logging.error(
-                "Uncaught Exception: %s" % str(err)
+                "Uncaught Exception: %s" % traceback.format_exc()
             )  # just log in console the error to call attention
 
 
@@ -355,7 +355,7 @@ def uws_websocket_open_handler(ws, user_data):
                 handler(ws)
         except Exception as err:
             logging.error(
-                "Uncaught Exception: %s" % str(err)
+                "Uncaught Exception: %s" % traceback.format_exc()
             )  # just log in console the error to call attention
 
 
@@ -397,7 +397,7 @@ def uws_websocket_factory_message_handler(ws, message, length, opcode, user_data
             if dispose:
                 app._ws_factory.dispose(instances)
             logging.error(
-                "Uncaught Exception: %s" % str(err)
+                "Uncaught Exception: %s" % traceback.format_exc()
             )  # just log in console the error to call attention
 
 
@@ -431,7 +431,7 @@ def uws_websocket_message_handler_with_extension(
 
         except Exception as err:
             logging.error(
-                "Uncaught Exception: %s" % str(err)
+                "Uncaught Exception: %s" % traceback.format_exc()
             )  # just log in console the error to call attention
 
 
@@ -459,7 +459,7 @@ def uws_websocket_message_handler(ws, message, length, opcode, user_data):
 
         except Exception as err:
             logging.error(
-                "Uncaught Exception: %s" % str(err)
+                "Uncaught Exception: %s" % traceback.format_exc()
             )  # just log in console the error to call attention
 
 
@@ -498,7 +498,7 @@ def uws_websocket_factory_pong_handler(ws, message, length, user_data):
             if dispose:
                 app._ws_factory.dispose(instances)
             logging.error(
-                "Uncaught Exception: %s" % str(err)
+                "Uncaught Exception: %s" % traceback.format_exc()
             )  # just log in console the error to call attention
 
 
@@ -525,7 +525,7 @@ def uws_websocket_pong_handler_with_extension(ws, message, length, user_data):
                 handler(ws, data)
         except Exception as err:
             logging.error(
-                "Uncaught Exception: %s" % str(err)
+                "Uncaught Exception: %s" % traceback.format_exc()
             )  # just log in console the error to call attention
 
 
@@ -548,7 +548,7 @@ def uws_websocket_pong_handler(ws, message, length, user_data):
                 handler(ws, data)
         except Exception as err:
             logging.error(
-                "Uncaught Exception: %s" % str(err)
+                "Uncaught Exception: %s" % traceback.format_exc()
             )  # just log in console the error to call attention
 
 
@@ -588,7 +588,7 @@ def uws_websocket_factory_ping_handler(ws, message, length, user_data):
             if dispose:
                 app._ws_factory.dispose(instances)
             logging.error(
-                "Uncaught Exception: %s" % str(err)
+                "Uncaught Exception: %s" % traceback.format_exc()
             )  # just log in console the error to call attention
 
 
@@ -617,7 +617,7 @@ def uws_websocket_ping_handler_with_extension(ws, message, length, user_data):
 
         except Exception as err:
             logging.error(
-                "Uncaught Exception: %s" % str(err)
+                "Uncaught Exception: %s" % traceback.format_exc()
             )  # just log in console the error to call attention
 
 
@@ -642,7 +642,7 @@ def uws_websocket_ping_handler(ws, message, length, user_data):
 
         except Exception as err:
             logging.error(
-                "Uncaught Exception: %s" % str(err)
+                "Uncaught Exception: %s" % traceback.format_exc()
             )  # just log in console the error to call attention
 
 
@@ -692,7 +692,7 @@ def uws_websocket_factory_close_handler(ws, code, message, length, user_data):
 
         except Exception as err:
             logging.error(
-                "Uncaught Exception: %s" % str(err)
+                "Uncaught Exception: %s" % traceback.format_exc()
             )  # just log in console the error to call attention
 
 
@@ -738,7 +738,7 @@ def uws_websocket_close_handler_with_extension(ws, code, message, length, user_d
 
         except Exception as err:
             logging.error(
-                "Uncaught Exception: %s" % str(err)
+                "Uncaught Exception: %s" % traceback.format_exc()
             )  # just log in console the error to call attention
 
 
@@ -780,7 +780,7 @@ def uws_websocket_close_handler(ws, code, message, length, user_data):
 
         except Exception as err:
             logging.error(
-                "Uncaught Exception: %s" % str(err)
+                "Uncaught Exception: %s" % traceback.format_exc()
             )  # just log in console the error to call attention
 
 
@@ -3421,7 +3421,7 @@ class App:
         if self.error_handler is None:
             try:
                 logging.error(
-                    "Uncaught Exception: %s" % str(error)
+                    "Uncaught Exception: %s" % traceback.format_exc()
                 )  # just log in console the error to call attention
                 response.write_status(500).end("Internal Error")
             finally:
@@ -3438,7 +3438,7 @@ class App:
                 try:
                     # Error handler got an error :D
                     logging.error(
-                        "Uncaught Exception: %s" % str(error)
+                        "Uncaught Exception: %s" % traceback.format_exc()
                     )  # just log in console the error to call attention
                     response.write_status(500).end("Internal Error")
                 finally:
