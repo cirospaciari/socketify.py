@@ -8,6 +8,7 @@ import signal
 import uuid
 from urllib.parse import parse_qs, quote_plus, unquote_plus
 import logging
+import traceback
 
 from .native import ffi, lib
 from .loop import Loop
@@ -33,7 +34,7 @@ def uws_missing_server_name(hostname, hostname_length, user_data):
                 handler(data)
         except Exception as err:
             logging.error(
-                "Uncaught Exception: %s" % str(err)
+                "Uncaught Exception:\n %s" % traceback.format_exc()
             )  # just log in console the error to call attention
 
 
