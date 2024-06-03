@@ -1,6 +1,8 @@
 import inspect
 import os
 import logging
+import glob
+import threading
 from . import App, AppOptions, AppListenOptions
 
 help = """
@@ -39,12 +41,13 @@ Options:
     --ws-factory-maxitems INT                           Pre allocated instances of WebSockets objects for socketify interface [default: 0]
     --task-factory-maxitems INT                         Pre allocated instances of Task objects for socketify, ASGI interface [default: 100000]
 
+    --reload                                            Enable auto-reload. This options also disable --workers or -w option.
+
 Example:
     python3 -m socketify main:app -w 8 -p 8181 
 
 """
 
-# --reload                                            Enable auto-reload. This options also disable --workers or -w option.
 # --reload-dir PATH                                   Set reload directories explicitly, instead of using the current working directory.
 # --reload-include TEXT                               Set extensions to include while watching for files.
 #                                                     Includes '.py,.html,.js,.png,.jpeg,.jpg and .webp' by default;
@@ -108,6 +111,25 @@ def load_module(file, reload=False):
 
 
 def execute(args):
+    print('execute')
+    
+    try:
+        _execute(args)
+    except SystemExit:
+        print('caught exit')
+        if '--reload' in args:
+            logging.info('RELOADING...')
+            import sys
+            import os
+            print(args)
+            print(sys.argv)
+
+            #os.execv(sys.executable, ['-m socketify'] + args[1:])
+            print(sys.executable, [sys.executable, '-m', 'socketify'] + args[1:])
+            os.execv(sys.executable, [sys.executable, '-m', 'socketify'] + args[1:])
+            os.kill(os.getpid(), signal.SIGINT) #or os.popen("wmic process where processid='{}' call terminate".format(os.getpid()))
+
+def _execute(args):
     arguments_length = len(args)
     if arguments_length <= 2:
         if arguments_length == 2 and (args[1] == "--help"):
@@ -288,6 +310,193 @@ def execute(args):
             return print(
                 "socketify interface must be callable with 1 parameter def run(app: App)"
             )
+
+        # file watcher
+        def launch_with_file_probe(run_method, user_module_function, loop, poll_frequency=0.5):
+            import asyncio
+            import importlib.util
+            directory = os.path.dirname(importlib.util.find_spec(user_module_function.__module__).origin)
+            logging.info("Watching %s" % directory)
+
+            def get_files():
+                new_files = {}  # path, mtime
+                for f in glob.glob(directory):
+                    if '__pycache__' in f:
+                        continue
+                    new_files[f] = os.path.getmtime(f)
+                return new_files
+
+
+
+            def do_check(prev_files, thread):
+                new_files = get_files()
+
+                if prev_files is not None and new_files != prev_files:
+                    print('Reload')
+                    logging.info("Reloading files...")
+                    import sys
+                    sys.exit(0)
+
+                return new_files, thread
+                    
+
+            import asyncio
+            print('rnt 0')
+            thread = None
+            thread = threading.Thread(target=run_method, kwargs={'from_main_thread': False}, daemon=True)
+            thread.start()
+            files = None
+            poll_frequency = 0.5 
+            while True:
+                import time
+                time.sleep(poll_frequency)
+                files, thread = do_check(files, thread)
+                #await asyncio.wait_for(thread, poll_frequency)
+        """
+        async def launch_with_file_probe(run_method, user_module_function, loop, poll_frequency=0.5):
+            import asyncio
+            import importlib.util
+            directory = os.path.dirname(importlib.util.find_spec(user_module_function.__module__).origin)
+            logging.info("Watching %s" % directory)
+
+            def get_files():
+                new_files = {}  # path, mtime
+                for f in glob.glob(directory):
+                    if '__pycache__' in f:
+                        continue
+                    new_files[f] = os.path.getmtime(f)
+                return new_files
+
+
+
+            def run_new_thread(thread):
+                #try:
+                #    loop = asyncio.get_running_loop()
+                #except Exception:
+                #    loop = asyncio.new_event_loop()
+                #if loop and thread:
+                #    loop.stop()
+                #    await loop.shutdown_default_executor()
+                async def arun():
+                    run_method(from_main_thread=False)
+                # new_task = loop.create_task(arun())
+                loop.call_later(delay=1, callback=check_loop, loop)
+                new_task = loop.run_once(arun())
+                print(type(new_task))
+                print(dir(new_task))
+                print('new thread')
+                return new_task
+                #new_thread = threading.Thread(target=run_method, args=[], kwargs={'from_main_thread': False}, daemon=True)
+                #new_thread.start()
+                #return new_thread
+
+
+
+            async def do_check(prev_files, thread):
+                new_files = get_files()
+
+                if prev_files is not None and new_files != prev_files:
+                    thread.cancel()
+                    try:
+                        await thread
+                    except asyncio.CancelledError:
+                        pass
+                    print('reload')
+                    logging.info("Reloading files...")
+                    thread = run_new_thread(thread)
+
+                return new_files, thread
+                    
+
+            import asyncio
+            print('rnt 0')
+            thread = run_new_thread(None)
+            files = None
+            poll_frequency = 0.5 
+            while True:
+                import time
+                print('awaiting')
+                # time.sleep(poll_frequency)
+                done, pending = await asyncio.wait([thread], timeout=poll_frequency)
+                print(pending, done)
+                #await asyncio.sleep(poll_frequency)
+                files, thread = await do_check(files, thread)
+                #await asyncio.wait_for(thread, poll_frequency)
+        # file watcher
+        async def launch_with_file_probe(run_method, user_module_function, loop, poll_frequency=0.5):
+            import asyncio
+            import importlib.util
+            directory = os.path.dirname(importlib.util.find_spec(user_module_function.__module__).origin)
+            logging.info("Watching %s" % directory)
+
+            def get_files():
+                new_files = {}  # path, mtime
+                for f in glob.glob(directory):
+                    if '__pycache__' in f:
+                        continue
+                    new_files[f] = os.path.getmtime(f)
+                return new_files
+
+
+
+            def run_new_thread(thread):
+                #try:
+                #    loop = asyncio.get_running_loop()
+                #except Exception:
+                #    loop = asyncio.new_event_loop()
+                #if loop and thread:
+                #    loop.stop()
+                #    await loop.shutdown_default_executor()
+                async def arun():
+                    run_method(from_main_thread=False)
+                # new_task = loop.create_task(arun())
+                loop.call_later(delay=1, callback=check_loop, loop)
+                new_task = loop.run_once(arun())
+                print(type(new_task))
+                print(dir(new_task))
+                print('new thread')
+                return new_task
+                #new_thread = threading.Thread(target=run_method, args=[], kwargs={'from_main_thread': False}, daemon=True)
+                #new_thread.start()
+                #return new_thread
+
+
+
+            async def do_check(prev_files, thread):
+                new_files = get_files()
+
+                if prev_files is not None and new_files != prev_files:
+                    thread.cancel()
+                    try:
+                        await thread
+                    except asyncio.CancelledError:
+                        pass
+                    print('reload')
+                    logging.info("Reloading files...")
+                    thread = run_new_thread(thread)
+
+                return new_files, thread
+                    
+
+            import asyncio
+            print('rnt 0')
+            thread = run_new_thread(None)
+            files = None
+            poll_frequency = 0.5 
+            while True:
+                import time
+                print('awaiting')
+                # time.sleep(poll_frequency)
+                done, pending = await asyncio.wait([thread], timeout=poll_frequency)
+                print(pending, done)
+                #await asyncio.sleep(poll_frequency)
+                files, thread = await do_check(files, thread)
+                #await asyncio.wait_for(thread, poll_frequency)
+                """
+
+
+
+
         # run app with the settings desired
         def run_app():
             fork_app = App(
@@ -308,7 +517,21 @@ def execute(args):
                 fork_app.listen(AppListenOptions(domain=uds), listen_log)
             else:
                 fork_app.listen(AppListenOptions(port=port, host=host), listen_log)
-            fork_app.run()
+
+            if auto_reload:
+                # there's watchfiles but socketify currently has no external dependencies...
+                # from watchfiles import arun_process
+                # w/o external dependencies
+                #import asyncio
+                #fork_app.loop.run_async(launch_with_file_probe(fork_app.run, module, fork_app.loop))
+                logging.info(' LAUNCHING WITH RELOAD ')
+                launch_with_file_probe(fork_app.run, module, fork_app.loop)
+                #asyncio.run(launch_with_file_probe(fork_app.run, module))
+                #thread = threading.Thread(target=launch_with_file_probe, args=[fork_app.run, module])
+                #thread.start()
+                #thread.join()
+            else: # run normally
+                fork_app.run()
 
         pid_list = []
         # fork limiting the cpu count - 1
