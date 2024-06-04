@@ -111,23 +111,26 @@ def load_module(file, reload=False):
 
 
 def execute(args):
-    print('execute')
+    print('cli.execute')
     
     try:
         _execute(args)
-    except SystemExit:
-        print('caught exit')
-        if '--reload' in args:
+    except SystemExit as se:
+        if 'reload' in str(se) and  '--reload' in args:
             logging.info('RELOADING...')
             import sys
             import os
-            print(args)
-            print(sys.argv)
+            #print(args)
+            #print(sys.argv)
 
             #os.execv(sys.executable, ['-m socketify'] + args[1:])
-            print(sys.executable, [sys.executable, '-m', 'socketify'] + args[1:])
+            #print(sys.executable, [sys.executable, '-m', 'socketify'] + args[1:])
+
+            # The app.run has already caught SIGUSR1 which closes the loop then raises SystemExit.
+            # Now we respawn the process with the original arguments 
             os.execv(sys.executable, [sys.executable, '-m', 'socketify'] + args[1:])
-            os.kill(os.getpid(), signal.SIGINT) #or os.popen("wmic process where processid='{}' call terminate".format(os.getpid()))
+            #os.kill(os.getpid(), signal.SIGINT)  <-- this done in the file probe 
+            #or os.popen("wmic process where processid='{}' call terminate".format(os.getpid()))
 
 def _execute(args):
     arguments_length = len(args)
@@ -332,26 +335,38 @@ def _execute(args):
                 new_files = get_files()
 
                 if prev_files is not None and new_files != prev_files:
+                    # Call exit, the wrapper will restart the process
                     print('Reload')
                     logging.info("Reloading files...")
+                    print('running sigint')
+                    import os, signal
+                    os.kill(os.getpid(),signal.SIGUSR1)  # call sigusr1 back on main thread which is caught by App.run()
+                    # os.kill(os.getpid(),signal.SIGINT)  # call sigint back on main thread which is caught by App.run()
+                    """print('running sysexit')
                     import sys
                     sys.exit(0)
+                    print('ran sysexit')
+                    """
 
                 return new_files, thread
                     
 
             import asyncio
             print('rnt 0')
+            def poll_check():
+                thread = None
+                poll_frequency = 0.5 
+                files = None
+                while True:
+                    import time
+                    time.sleep(poll_frequency)
+                    files, thread = do_check(files, thread)
+                    #await asyncio.wait_for(thread, poll_frequency)
             thread = None
-            thread = threading.Thread(target=run_method, kwargs={'from_main_thread': False}, daemon=True)
+            # thread = threading.Thread(target=run_method, kwargs={from_main_thread': False}, daemon=True)
+            thread = threading.Thread(target=poll_check, kwargs={}, daemon=True)
             thread.start()
-            files = None
-            poll_frequency = 0.5 
-            while True:
-                import time
-                time.sleep(poll_frequency)
-                files, thread = do_check(files, thread)
-                #await asyncio.wait_for(thread, poll_frequency)
+            run_method()
         """
         async def launch_with_file_probe(run_method, user_module_function, loop, poll_frequency=0.5):
             import asyncio
@@ -519,17 +534,11 @@ def _execute(args):
                 fork_app.listen(AppListenOptions(port=port, host=host), listen_log)
 
             if auto_reload:
-                # there's watchfiles but socketify currently has no external dependencies...
+                # there's watchfiles module but socketify currently has no external dependencies so
+                # we'll roll our own for now...
                 # from watchfiles import arun_process
-                # w/o external dependencies
-                #import asyncio
-                #fork_app.loop.run_async(launch_with_file_probe(fork_app.run, module, fork_app.loop))
                 logging.info(' LAUNCHING WITH RELOAD ')
                 launch_with_file_probe(fork_app.run, module, fork_app.loop)
-                #asyncio.run(launch_with_file_probe(fork_app.run, module))
-                #thread = threading.Thread(target=launch_with_file_probe, args=[fork_app.run, module])
-                #thread.start()
-                #thread.join()
             else: # run normally
                 fork_app.run()
 
