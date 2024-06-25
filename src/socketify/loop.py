@@ -1,5 +1,7 @@
 import asyncio
 import logging
+from time import sleep
+import threading
 from .tasks import create_task, TaskFactory
 from .uv import UVLoop
 
@@ -76,8 +78,45 @@ class Loop:
     def create_future(self):
         return self.loop.create_future()
 
+    def run_uv(self, uv_loop):
+        print('run uv', flush=True)
+        uv_loop.run()
+        #import time
+        #while True:
+        #    time.sleep(1)
+        #    uv_loop.run_nowait()
+
+    def start_uvloop(self):
+        '''
+        import time
+        if not self.started:
+            time.sleep(1)
+            self._keep_alive()
+        '''
+
+        if not hasattr(self, 'thread_started'):
+            logging.info('starting _keep_alive thread')
+            t1 = threading.Thread(target=self.run_uv, daemon=True, args=[self.uv_loop])
+            t1.start()
+        self.thread_started = True
+
     def _keep_alive(self):
+        '''if not self.started:
+            time.sleep(1)
+            self._keep_alive()
+        '''
+        '''
+        if not hasattr(self, 'thread_started'):
+            logging.info('starting _keep_alive thread')
+            t1 = threading.Thread(target=self.run_uv, daemon=True, args=[self.uv_loop])
+            t1.start()
+        '''
+        self.thread_started = True
         if self.started:
+            #sleep(5)  # TODO does this still run?
+            #asyncio.sleep(5)
+            logging.info('Commencing self.started loop checking ')
+            print('in _k_a')
             relax = False
             if not self.is_idle:
                 self._idle_count = 0
@@ -85,17 +124,20 @@ class Loop:
                 self._idle_count += 1
             else:
                 relax = True
-            
+            #print(self._idle_count, relax)
+
             self.is_idle = True
-                
+
             if relax:
-                self.uv_loop.run_nowait()
+                #self.uv_loop.run()
+                #self.uv_loop.run_nowait()
+                #self.loop.call_later(10, self._keep_alive)
                 self.loop.call_later(0.001, self._keep_alive)
             else:
-                self.uv_loop.run_nowait()
+                #self.uv_loop.run_nowait()
                 # be more agressive when needed
                 self.loop.call_soon(self._keep_alive)
-                
+
     def create_task(self, *args, **kwargs):
         # this is not using optimized create_task yet
         return self.loop.create_task(*args, **kwargs)
@@ -109,6 +151,10 @@ class Loop:
             future = self.ensure_future(task)
         else:
             future = None
+        print('RUC', flush=True)
+        # not sure if this method is used. if so,
+        # might want to use self.start_uvloop() here
+        # as well?
         self.loop.call_soon(self._keep_alive)
         self.loop.run_until_complete(future)
         # clean up uvloop
@@ -121,7 +167,9 @@ class Loop:
             future = self.ensure_future(task)
         else:
             future = None
-        self.loop.call_soon(self._keep_alive)
+        print('RUN', flush=True)
+        self.start_uvloop()
+        #self.loop.call_soon(self._keep_alive)
         self.loop.run_forever()
         # clean up uvloop
         self.uv_loop.stop()
