@@ -134,7 +134,7 @@ def execute(args):
             logging.info('RELOADING...')
             reload_state.reload_pending = False
 
-            # The app.run has already caught SIGTERM which closes the loop then raises SystemExit.
+            # The app.run has already caught SIGTERM which closes the uv/uw loop then raises SystemExit.
             # SIGTERM works across both Windows and Linux
             # Now we respawn the process with the original arguments 
             # Windows
@@ -331,7 +331,7 @@ def _execute(args):
             )
 
         # file watcher
-        def launch_with_file_probe(run_method, user_module_function, loop, poll_frequency=4):
+        def launch_with_file_probe(run_method, user_module_function, poll_frequency=4):
             import importlib.util
             directory = os.path.dirname(importlib.util.find_spec(user_module_function.__module__).origin)
             directory_glob = os.path.join(directory, '**')
@@ -343,7 +343,6 @@ def _execute(args):
             # scandir utility functions
             def _ignore(f):
                 for ignore_pattern in ignore_patterns:
-                    #if '__pycache__' in f or 'node_modules' in f:
                     if ignore_pattern in f:
                         return True
 
@@ -369,7 +368,6 @@ def _execute(args):
                 to emulate glob (which doesnt)
                 """
                 new_files = {} # store path, mtime
-                # [f.stat().st_mtime for f in list(os.scandir('.'))]
                 new_files = _get_dir(directory, new_files)
                 return new_files
 
@@ -387,7 +385,6 @@ def _execute(args):
                     """
                     print('Reloading...')
                     reload_state.reload_pending = True  #signal for Exeute to know whether it is a real external SIGTERM or our own
-                    import signal, sys
                     signal.raise_signal(signal.SIGTERM)  # sigterm works on windows and posix
 
                 return new_files
@@ -430,7 +427,7 @@ def _execute(args):
                 # there's watchfiles module but socketify currently has no external dependencies so
                 # we'll roll our own for now...
                 print(' LAUNCHING WITH RELOAD ', flush=True)
-                launch_with_file_probe(fork_app.run, module, fork_app.loop)
+                launch_with_file_probe(fork_app.run, module)
             else: # run normally
                 fork_app.run()
 
