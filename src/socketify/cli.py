@@ -2,6 +2,7 @@ import inspect
 import os
 import logging
 import glob
+import signal
 import threading
 from . import App, AppOptions, AppListenOptions
 
@@ -42,6 +43,7 @@ Options:
     --task-factory-maxitems INT                         Pre allocated instances of Task objects for socketify, ASGI interface [default: 100000]
 
     --reload                                            Enable auto-reload. This options also disable --workers or -w option.
+    --reload-ignore-patterns                           Comma delimited list of ignore strings Default "__pycache__,node_modules,build,target,.git"  could include gitignore?
 
 Example:
     python3 -m socketify main:app -w 8 -p 8181 
@@ -54,6 +56,8 @@ Example:
 #                                                     these defaults can be overridden with `--reload-exclude`.
 # --reload-exclude TEXT                               Set extensions to include while watching for files.
 # --reload-delay INT                                  Milliseconds to delay reload between file changes. [default: 1000]
+
+    
 def is_wsgi(module):
     return (
         hasattr(module, "__call__") and len(inspect.signature(module).parameters) == 2
@@ -90,6 +94,14 @@ def str_bool(text):
     text = str(text).lower()
     return text == "true"
 
+class ReloadState:
+    # Class object to store reload state
+    # Windows only catches (SIGTERM) but it's also used
+    # for other purposes, so we set a switch 
+    def __init__(self):
+        self.reload_pending = False
+
+reload_state = ReloadState()
 
 def load_module(file, reload=False):
     try:
@@ -116,8 +128,10 @@ def execute(args):
     try:
         _execute(args)
     except SystemExit as se:
-        if 'reload' in str(se) and  '--reload' in args:
+        print('caught System exit' + str(se), flush=True)
+        if 'reload' in str(se) and  '--reload' in args and reload_state.reload_pending:
             logging.info('RELOADING...')
+            reload_state.reload_pending = False
             import sys
             import os
             #print(args)
@@ -126,8 +140,15 @@ def execute(args):
             #os.execv(sys.executable, ['-m socketify'] + args[1:])
             #print(sys.executable, [sys.executable, '-m', 'socketify'] + args[1:])
 
-            # The app.run has already caught SIGUSR1 which closes the loop then raises SystemExit.
+            # The app.run has already caught SIGTERM which closes the loop then raises SystemExit.
+            # SIGTERM works across both Windows and Linux
             # Now we respawn the process with the original arguments 
+            # Windows
+            if sys.platform == 'win32':
+                import subprocess
+                subprocess.Popen([sys.executable, '-m', 'socketify'] + args[1:])
+                sys.exit(0)
+            # *ix
             os.execv(sys.executable, [sys.executable, '-m', 'socketify'] + args[1:])
             #os.kill(os.getpid(), signal.SIGINT)  <-- this done in the file probe 
             #or os.popen("wmic process where processid='{}' call terminate".format(os.getpid()))
@@ -157,20 +178,32 @@ def _execute(args):
     options_list = args[2:]
     options = {}
     selected_option = None
+    # lets try argparse in parallel
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--reload', default=False, action='store_true', help='reload the server on file changes, see --reload-ignore-patterns')
+    parser.add_argument('rem_args', nargs=argparse.REMAINDER)  # Can move the other options here too
+    args = parser.parse_args()
+    
     for option in options_list:
         if selected_option:
             options[selected_option] = option
             selected_option = None
         elif option.startswith("--") or option.startswith("-"):
-            if selected_option is None:
-                selected_option = option
+            if selected_option is None: # ??
+                selected_option = option # ??
             else:  # --factory, --reload etc
                 options[selected_option] = True
         else:
             return print(f"Invalid option ${selected_option} see --help")
     if selected_option:  # --factory, --reload etc
         options[selected_option] = True
-
+    print(options)
+    print('OPTIONS', flush=True)
+    print('BUG here, say i want to pass an arg to my app if you do --dev --reload you get "--dev": "--reload"')
+    print(options.get('--reload'))
+    print(args.reload)
+    print(args.rem_args)
     interface = (options.get("--interface", "auto")).lower()
 
     if interface == "auto":
@@ -220,7 +253,7 @@ def _execute(args):
     elif interface != "socketify":
         return print(f"{interface} interface is not supported yet")
 
-    auto_reload = options.get("--reload", False)
+    auto_reload = options.get("--reload", False) or '--reload' in options_list or args.reload
     workers = int(
         options.get(
             "--workers", options.get("-w", os.environ.get("WEB_CONCURRENCY", 1))
@@ -315,33 +348,75 @@ def _execute(args):
             )
 
         # file watcher
-        def launch_with_file_probe(run_method, user_module_function, loop, poll_frequency=0.5):
+        def launch_with_file_probe(run_method, user_module_function, loop, poll_frequency=20):
             import asyncio
             import importlib.util
             directory = os.path.dirname(importlib.util.find_spec(user_module_function.__module__).origin)
-            logging.info("Watching %s" % directory)
+            directory_glob = os.path.join(directory, '**')
+            logging.info("Watching %s" % directory_glob)
+            print("Watching %s" % directory_glob, flush=True)
+            ignore_patterns = options.get("--reload-ignore-patterns", "node_modules,__pycache__,.git")    
+            ignore_patterns = ignore_patterns.split(',')
+            print(ignore_patterns)
+            def _ignore(f):
+                for ignore_pattern in ignore_patterns:
+                    #if '__pycache__' in f or 'node_modules' in f:
+                    if ignore_pattern in f:
+                        return True
 
+            # individual os.path.mtime after glob is slow, so try using scandir
             def get_files():
+                new_files = {} # path, mtime
+                # [f.stat().st_mtime for f in list(os.scandir('.'))]
+                new_files = _get_dir(directory, new_files)
+                print(new_files)
+                return new_files
+
+            def _get_dir(path, new_files):
+                print(path, flush=True)
+                for f_or_d in os.scandir(path):
+                    if _ignore(f_or_d.path):
+                        continue
+                    if f_or_d.path in new_files:
+                        continue
+                    if f_or_d.is_dir(): # or f_or_d.is_symlink():
+                        new_files = _get_dir(f_or_d.path, new_files)
+                    if f_or_d.is_file():
+                        f_path = f_or_d.path
+                        new_files[f_path] = f_or_d.stat().st_mtime
+                return new_files
+
+            def get_files_glob_version_slow():
                 new_files = {}  # path, mtime
-                for f in glob.glob(directory):
-                    if '__pycache__' in f:
+                print(f"getfiles1... {datetime.now()}", flush=True)
+                    
+                for f in glob.glob(directory_glob, recursive=True):
+                    if _ignore(f):
                         continue
                     new_files[f] = os.path.getmtime(f)
+                print(f"getfiles2... {datetime.now()}", flush=True)
                 return new_files
 
 
 
             def do_check(prev_files, thread):
+                from datetime import datetime 
+                print(f"Doing check... {datetime.now()}", flush=True)
                 new_files = get_files()
-
+                print(f"got new files... {datetime.now()}", flush=True)
+                print(new_files)
+                
                 if prev_files is not None and new_files != prev_files:
                     # Call exit, the wrapper will restart the process
                     print('Reload')
                     logging.info("Reloading files...")
-                    print('running sigint')
-                    import os, signal
-                    os.kill(os.getpid(),signal.SIGUSR1)  # call sigusr1 back on main thread which is caught by App.run()
-                    # os.kill(os.getpid(),signal.SIGINT)  # call sigint back on main thread which is caught by App.run()
+                    reload_state.reload_pending = True  #signal for Exeute to know whether it is a real SIGTERM or our own
+                    print('running sigill')
+                    import signal, sys
+                    signal.raise_signal(signal.SIGTERM)
+                    # os.kill(os.getpid(), RELOAD_SIGNAL) #doesnt work windows # call sigusr1 back on main thread which is caught by App.run()
+                    #if sys.platform == 'win32':
+                    #    os.kill(os.getpid(),signal.SIGINT)  # call sigint back on main thread which is caught by App.run()
                     """print('running sysexit')
                     import sys
                     sys.exit(0)
@@ -351,13 +426,13 @@ def _execute(args):
                 return new_files, thread
                     
 
-            import asyncio
             print('rnt 0')
             def poll_check():
                 thread = None
-                poll_frequency = 0.5 
+                # poll_frequency = 1
                 files = None
                 while True:
+                    #print('polling fs', flush=True)
                     import time
                     time.sleep(poll_frequency)
                     files, thread = do_check(files, thread)
@@ -538,6 +613,7 @@ def _execute(args):
                 # we'll roll our own for now...
                 # from watchfiles import arun_process
                 logging.info(' LAUNCHING WITH RELOAD ')
+                print(' LAUNCHING WITH RELOAD ', flush=True)
                 launch_with_file_probe(fork_app.run, module, fork_app.loop)
             else: # run normally
                 fork_app.run()
