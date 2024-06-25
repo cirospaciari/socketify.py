@@ -1558,7 +1558,9 @@ class AppResponse:
         return self.app.loop.run_async(task, self)
 
     async def get_form_urlencoded(self, encoding="utf-8"):
+        print('getf u')
         data = await self.get_data()
+        print('got')
         try:
             # decode and unquote all
             result = {}
@@ -3380,10 +3382,15 @@ class App:
         signal.signal(signal.SIGINT, signal_handler)
         
         def reload_signal_handler(sig, frame):
+            print('caught sigterm')
             self.close()
+            print('closed, raising sysexit')
             raise SystemExit('reload')
-
-        signal.signal(signal.SIGUSR1, reload_signal_handler)  # used by --reload in cli.py to reload process
+        
+        #from .cli import RELOAD_SIGNAL # SIGUSR1 SIG_CTRL_BREAK
+        #print(RELOAD_SIGNAL)
+        #print(signal.NSIG)
+        signal.signal(signal.SIGTERM, reload_signal_handler)  # used by --reload in cli.py to reload process
 
         self.loop.run()
         if self.lifespan:
