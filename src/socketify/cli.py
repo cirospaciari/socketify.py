@@ -236,7 +236,7 @@ def _execute(args):
     elif interface != "socketify":
         return print(f"{interface} interface is not supported yet")
 
-    auto_reload = options.get("--reload", False) or '--reload' in options_list or args.reload
+    auto_reload = options.get("--reload", False) or '--reload' in options_list
     workers = int(
         options.get(
             "--workers", options.get("-w", os.environ.get("WEB_CONCURRENCY", 1))
