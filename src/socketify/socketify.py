@@ -1605,6 +1605,7 @@ class AppResponse:
                     )  # if aborted set to done True and ok False
             except:
                 pass
+            self.app.loop.wake_asyncio_loop()  # wake up async loop after set_result
 
         def on_writeble(self, offset):
             # Here the timeout is off, we can spend as much time before calling try_end we want to
@@ -1613,6 +1614,7 @@ class AppResponse:
             )
             if ok:
                 self._chunkFuture.set_result((ok, done))
+                self.app.loop.wake_asyncio_loop()  # wake up async loop after set_result
             return ok
 
         self.on_writable(on_writeble)
@@ -1622,6 +1624,7 @@ class AppResponse:
             self._chunkFuture.set_result(
                 (False, True)
             )  # if aborted set to done True and ok False
+            self.app.loop.wake_asyncio_loop()  # wake up async loop after set_result
             return self._chunkFuture
 
         self._lastChunkOffset = self.get_write_offset()
@@ -1629,12 +1632,15 @@ class AppResponse:
         (ok, done) = self.try_end(buffer, total_size)
         if ok:
             self._chunkFuture.set_result((ok, done))
+            """ Call self._write_to_self on the loop via one of these two lines
+            so that the application code can pick up on the new completed data """
+            self.app.loop.wake_asyncio_loop()  # wake up async loop after set_result
             return self._chunkFuture
 
         # failed to send chunk
         return self._chunkFuture
 
-    def get_data(self):
+    async def get_data(self):
         self._dataFuture = self.app.loop.create_future()
         self._data = BytesIO()
 
@@ -1645,17 +1651,26 @@ class AppResponse:
                     self._dataFuture.set_result(self._data)
             except:
                 pass
+            self.app.loop.wake_asyncio_loop()  # wake up async loop after set_result
 
         def get_chunks(self, chunk, is_end):
             if chunk is not None:
                 self._data.write(chunk)
+
             if is_end:
                 self._dataFuture.set_result(self._data)
                 self._data = None
 
+                """
+                    This wakes up the asyncio event loop so that get_data can act on the 
+                    completed _dataFuture
+                """
+                self.app.loop.wake_asyncio_loop()  # wake up async loop after set_result
+
         self.on_aborted(is_aborted)
         self.on_data(get_chunks)
-        return self._dataFuture
+
+        return await self._dataFuture
 
     def grab_aborted_handler(self):
         # only needed if is async
