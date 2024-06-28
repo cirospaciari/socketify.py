@@ -375,7 +375,7 @@ def _execute(args):
                 """ Get files and their modified time and compare with previous times. 
                 Restart the server if it has changed  """
                 new_files = get_files()
-                if len(new_files) > 50:
+                if len(new_files) > 180:
                     print(f"{len(new_files)} files being watched", new_files)
                 
                 if prev_files is not None and new_files != prev_files:
