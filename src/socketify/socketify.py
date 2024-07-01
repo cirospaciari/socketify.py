@@ -3378,6 +3378,15 @@ class App:
             exit(0)
 
         signal.signal(signal.SIGINT, signal_handler)
+        
+        def reload_signal_handler(sig, frame):
+            """ This signal handler captures a sigterm from cli.py which is a 
+            request to reload the process """
+            self.close()
+            raise SystemExit('reload')
+        
+        signal.signal(signal.SIGTERM, reload_signal_handler)  # used by --reload in cli.py to reload process
+
         self.loop.run()
         if self.lifespan:
 
