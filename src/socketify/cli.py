@@ -385,6 +385,7 @@ def _execute(args):
                     """
                     print('Reloading...')
                     reload_state.reload_pending = True  #signal for Exeute to know whether it is a real external SIGTERM or our own
+                    import signal
                     signal.raise_signal(signal.SIGTERM)  # sigterm works on windows and posix
 
                 return new_files
