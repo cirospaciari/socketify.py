@@ -1667,10 +1667,10 @@ class AppResponse:
         return self
 
     def redirect(self, location, status_code=302, end_connection=True):
-         self.write_status(status_code)
-         self.write_header("Location", location)
-         self.end_without_body(end_connection)  # warning changing default to True, otherwise redirect hangs for 8-9 seconds
-         return self
+        self.write_status(status_code)
+        self.write_header("Location", location)
+        self.end_without_body(end_connection)  # warning changing default to True, otherwise redirect hangs for 8-9 seconds
+        return self
 
     def write_offset(self, offset):
         lib.uws_res_override_write_offset(
