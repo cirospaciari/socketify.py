@@ -385,6 +385,7 @@ def _execute(args):
                     """
                     print('Reloading...')
                     reload_state.reload_pending = True  #signal for Exeute to know whether it is a real external SIGTERM or our own
+                    import signal  # signal is not in scope for some reason 
                     os.kill(os.getpid(), signal.SIGTERM) # sigterm works on windows and posix. raise_signal doesnt seem to send to right proces
 
                 return new_files
