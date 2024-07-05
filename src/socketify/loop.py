@@ -162,7 +162,7 @@ class Loop:
         check for and process new events """
         # These two lines will both call self._write_to_self and wake the event loop
         #asyncio.run_coroutine_threadsafe(asyncio.sleep(0), self._dataFuture.get_loop())
-        self.loop.call_soon_threadsafe(lambda: 2)  
+        self.loop.call_soon_threadsafe(lambda: 3)  
 
     def run_once(self):
         # run one step of asyncio
