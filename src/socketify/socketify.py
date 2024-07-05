@@ -3384,7 +3384,7 @@ class App:
             request to reload the process """
             self.close()
             raise SystemExit('reload')
-        
+
         signal.signal(signal.SIGTERM, reload_signal_handler)  # used by --reload in cli.py to reload process
 
         self.loop.run()

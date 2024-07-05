@@ -331,7 +331,7 @@ def _execute(args):
             )
 
         # file watcher
-        def launch_with_file_probe(run_method, user_module_function, poll_frequency=4):
+        def launch_with_file_probe(run_method, user_module_function, poll_frequency=3):
             import importlib.util
             directory = os.path.dirname(importlib.util.find_spec(user_module_function.__module__).origin)
             directory_glob = os.path.join(directory, '**')
@@ -375,8 +375,8 @@ def _execute(args):
                 """ Get files and their modified time and compare with previous times. 
                 Restart the server if it has changed  """
                 new_files = get_files()
-                if len(new_files) > 180:
-                    print(f"{len(new_files)} files being watched", new_files)
+                if len(new_files) > 200:
+                    print(f"Warning {len(new_files)} files being watched, --reload-ignore-patterns can be used to reduce number")
                 
                 if prev_files is not None and new_files != prev_files:
                     """ 
@@ -385,8 +385,7 @@ def _execute(args):
                     """
                     print('Reloading...')
                     reload_state.reload_pending = True  #signal for Exeute to know whether it is a real external SIGTERM or our own
-                    import signal
-                    signal.raise_signal(signal.SIGTERM)  # sigterm works on windows and posix
+                    os.kill(os.getpid(), signal.SIGTERM) # sigterm works on windows and posix. raise_signal doesnt seem to send to right proces
 
                 return new_files
                     
