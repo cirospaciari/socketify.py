@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import threading
 from .tasks import create_task, TaskFactory
 from .uv import UVLoop
 
@@ -45,6 +46,7 @@ class Loop:
             self.exception_handler = None
 
         self.started = False
+        self.uv_thread_started = None 
         if is_pypy:  # PyPy async Optimizations
             if task_factory_max_items > 0:  # Only available in PyPy for now
                 self._task_factory = TaskFactory(task_factory_max_items)
@@ -76,6 +78,16 @@ class Loop:
     def create_future(self):
         return self.loop.create_future()
 
+    def start_uv_loop(self):
+        if not self.uv_thread_started:
+            t1 = threading.Thread(target=self.uv_loop.run, daemon=True)
+            t1.start()
+        self.uv_thread_started = True
+
+    def stop_uv_loop(self):
+        self.uv_loop.stop()
+        self.uv_thread_started = False
+
     def _keep_alive(self):
         if self.started:
             relax = False
@@ -85,17 +97,19 @@ class Loop:
                 self._idle_count += 1
             else:
                 relax = True
-            
+
             self.is_idle = True
-                
+
             if relax:
-                self.uv_loop.run_nowait()
+                #self.uv_loop.run()
+                #self.uv_loop.run_nowait()
+                #self.loop.call_later(10, self._keep_alive)
                 self.loop.call_later(0.001, self._keep_alive)
             else:
-                self.uv_loop.run_nowait()
+                #self.uv_loop.run_nowait()
                 # be more agressive when needed
                 self.loop.call_soon(self._keep_alive)
-                
+
     def create_task(self, *args, **kwargs):
         # this is not using optimized create_task yet
         return self.loop.create_task(*args, **kwargs)
@@ -109,10 +123,21 @@ class Loop:
             future = self.ensure_future(task)
         else:
             future = None
-        self.loop.call_soon(self._keep_alive)
+        """
+        this function used by on_start, on_stop handlers
+        seems shouldnt need the uvloop running yet, otherwise
+        could start here, the start_uv_loop function is idempotent
+        self.start_uv_loop()
+        
+        shouldnt need to wake the loop as run_until_complete ought to 
+        take care of this.
+        """ 
+        # self.loop.call_soon(self._keep_alive)
+        #self.wake_asyncio_loop()
         self.loop.run_until_complete(future)
+        #self.wake_asyncio_loop()
         # clean up uvloop
-        self.uv_loop.stop()
+        self.stop_uv_loop()
         return future
 
     def run(self, task=None):
@@ -121,11 +146,23 @@ class Loop:
             future = self.ensure_future(task)
         else:
             future = None
-        self.loop.call_soon(self._keep_alive)
-        self.loop.run_forever()
+
+        self.start_uv_loop()
+
+        if not self.loop.is_running():
+            self.loop.run_forever()
+
         # clean up uvloop
-        self.uv_loop.stop()
+        self.stop_uv_loop()
         return future
+
+    def wake_asyncio_loop(self):
+        """ trigger event loop self._write_to_self to wake up, 
+        useful after future.set_result so that the async runtime knows to 
+        check for and process new events """
+        # These two lines will both call self._write_to_self and wake the event loop
+        #asyncio.run_coroutine_threadsafe(asyncio.sleep(0), self._dataFuture.get_loop())
+        self.loop.call_soon_threadsafe(lambda: 2)  
 
     def run_once(self):
         # run one step of asyncio
@@ -209,3 +246,4 @@ class Loop:
 
 # asyncio.set_event_loop(uws.Loop())
 # asyncio.get_event_loop().run_forever()
+
