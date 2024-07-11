@@ -3315,10 +3315,10 @@ class App:
             native_options = ffi.new("uws_app_listen_config_t *")
             options = native_options[0]
             port = port_or_options.get("port", 0)
-            options = port_or_options.get("options", 0)
+            options_ = port_or_options.get("options", 0)
             host = port_or_options.get("host", "0.0.0.0")
             options.port = (
-                ffi.cast("int", port, 0)
+                ffi.cast("int", port)
                 if isinstance(port, int)
                 else ffi.cast("int", 0)
             )
@@ -3328,8 +3328,8 @@ class App:
                 else ffi.NULL
             )
             options.options = (
-                ffi.cast("int", port)
-                if isinstance(options, int)
+                ffi.cast("int", options_)
+                if isinstance(options_, int)
                 else ffi.cast("int", 0)
             )
             self.native_options_listen = native_options  # Keep alive native_options
