@@ -89,10 +89,10 @@ class Loop:
             self.is_idle = True
                 
             if relax:
-                self.uv_loop.run_nowait()
+                self.uv_loop.run_once()
                 self.loop.call_later(0.001, self._keep_alive)
             else:
-                self.uv_loop.run_nowait()
+                self.uv_loop.run_once()
                 # be more agressive when needed
                 self.loop.call_soon(self._keep_alive)
                 
