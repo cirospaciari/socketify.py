@@ -120,10 +120,10 @@ class RequestTask:
             if self._loop.get_debug():
                 self._source_traceback = format_helpers.extract_stack(sys._getframe(1))
             _register_task(self)
-            # if current_task():
-            #     self._loop.call_soon(self.__step, context=self._context)
-            # else:
-            self.__step()
+            if loop.is_running():
+                self.__step()
+            else:
+                self._loop.call_soon(self.__step, context=self._context)
                 
 
     def _reuse(self, coro, loop, default_done_callback=None):
