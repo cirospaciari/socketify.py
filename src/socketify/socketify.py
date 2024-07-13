@@ -2599,6 +2599,7 @@ class App:
         websocket_factory_max_items=0,
         task_factory_max_items=100_000,
         lifespan=True,
+        idle_relaxation_time=0,
     ):
 
         socket_options_ptr = ffi.new("struct us_socket_context_options_t *")
@@ -2677,6 +2678,7 @@ class App:
         self.loop = Loop(
             lambda loop, context, response: self.trigger_error(context, response, None),
             task_factory_max_items,
+            idle_relaxation_time,
         )
         self.run_async = self.loop.run_async
         # set async loop to be the last created (is thread_local), App must be one per thread otherwise will use only the lasted loop

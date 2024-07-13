@@ -25,12 +25,13 @@ async def task_wrapper(exception_handler, loop, response, task):
 
 
 class Loop:
-    def __init__(self, exception_handler=None, task_factory_max_items=0):
+    def __init__(self, exception_handler=None, task_factory_max_items=0, idle_relaxation_time=0.01):
 
         # get the current running loop or create a new one without warnings
         self.loop = asyncio._get_running_loop()
         self._idle_count = 0
         self.is_idle = False
+        self.idle_relaxation_time = idle_relaxation_time
         if self.loop is None:
             self.loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self.loop)
@@ -97,7 +98,7 @@ class Loop:
                     self.loop.call_later(0.001, self._keep_alive)
                 else:
                     # we are really idle now lets use less CPU
-                    self.loop.call_later(0.01, self._keep_alive)
+                    self.loop.call_later(self.idle_relaxation_time, self._keep_alive)
             else:
                 self.uv_loop.run_nowait()
                 # be more agressive when needed
@@ -109,6 +110,11 @@ class Loop:
 
     def ensure_future(self, task):
         return asyncio.ensure_future(task, loop=self.loop)
+    
+    def create_background_task(self, bg_task):
+        def next_tick():
+            self.ensure_future(bg_task())
+        self.loop.call_soon(next_tick)
 
     def run_until_complete(self, task=None):
         self.started = True
@@ -121,12 +127,7 @@ class Loop:
         # clean up uvloop
         self.uv_loop.stop()
         return future
-    
-    def create_background_task(self, bg_task):
-        def next_tick():
-            self.ensure_future(bg_task())
-        self.loop.call_soon(next_tick)
-    
+
     def run(self, task=None):
         self.started = True
         if task is not None:
