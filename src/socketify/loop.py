@@ -90,7 +90,14 @@ class Loop:
                 
             if relax:
                 self.uv_loop.run_nowait()
-                self.loop.call_later(0.001, self._keep_alive)
+
+                if self._idle_count < 15000:
+                    self._idle_count += 1
+                    # we are idle not for long, wait 5s until next relax mode
+                    self.loop.call_later(0.001, self._keep_alive)
+                else:
+                    # we are really idle now lets use less CPU
+                    self.loop.call_later(0.01, self._keep_alive)
             else:
                 self.uv_loop.run_nowait()
                 # be more agressive when needed
