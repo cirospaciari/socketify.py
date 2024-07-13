@@ -111,6 +111,35 @@ class Loop:
     def ensure_future(self, task):
         return asyncio.ensure_future(task, loop=self.loop)
     
+    def set_event_loop(self, loop):
+        needs_start = False
+        if self.loop.is_running():
+            self.stop()
+        
+        self.loop = loop
+        if self.exception_handler is not None:
+            self.loop.set_exception_handler(
+                lambda loop, context: self.exception_handler(loop, context, None)
+            )
+
+        if is_pypy:  # PyPy async Optimizations
+            # TODO: check if any framework breaks without current_task(loop) support
+            # custom task factory for other tasks
+            def pypy_task_factory(loop, coro, context=None):
+                return create_task(loop, coro, context=context)
+
+            self.loop.set_task_factory(pypy_task_factory)
+        else:
+            
+            # TODO: check if any framework breaks without current_task(loop) support
+            # custom task factory for other tasks
+            def cpython_task_factory(loop, coro, context=None):
+                return create_task(loop, coro, context=context)
+
+            self.loop.set_task_factory(cpython_task_factory)
+        if needs_start:
+            self.run()
+
     def create_background_task(self, bg_task):
         def next_tick():
             self.ensure_future(bg_task())
