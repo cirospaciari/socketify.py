@@ -1669,7 +1669,9 @@ class AppResponse:
     def redirect(self, location, status_code=302):
         self.write_status(status_code)
         self.write_header("Location", location)
-        self.end_without_body(False)
+        # this is buggy need to update uWS
+        # self.end_without_body(False)
+        self.end("")
         return self
 
     def write_offset(self, offset):
