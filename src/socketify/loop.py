@@ -114,7 +114,12 @@ class Loop:
         # clean up uvloop
         self.uv_loop.stop()
         return future
-
+    
+    def create_background_task(self, bg_task):
+        def next_tick():
+            self.ensure_future(bg_task())
+        self.loop.call_soon(next_tick)
+    
     def run(self, task=None):
         self.started = True
         if task is not None:
