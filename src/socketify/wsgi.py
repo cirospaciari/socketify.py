@@ -238,7 +238,7 @@ def wsgi(ssl, response, info, user_data):
     environ["PATH_INFO"] = ffi.unpack(info.url, info.url_size).decode("utf8")
     environ["QUERY_STRING"] = ffi.unpack(
         info.query_string, info.query_string_size
-    ).decode("utf8")
+    ).decode("utf8")[1:]
     if info.remote_address != ffi.NULL:
         environ["REMOTE_ADDR"] = ffi.unpack(
             info.remote_address, info.remote_address_size
