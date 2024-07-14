@@ -671,7 +671,7 @@ class _WSGI:
                 "wsgi.errors": sys.stderr,
                 "wsgi.version": (1, 0),
                 "wsgi.run_once": False,
-                "wsgi.url_scheme": "https" if self.server.options else "http",
+                "wsgi.url_scheme": "https" if self.server.options and self.server.options.cert_file_name is not None else "http",
                 "wsgi.multithread": False,
                 "wsgi.multiprocess": False,
                 "wsgi.file_wrapper": None,  # No file wrapper support for now
