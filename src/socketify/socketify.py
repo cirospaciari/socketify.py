@@ -2371,6 +2371,24 @@ class AppRequest:
             return self.read_jar[name].value
         except Exception:
             return None
+            
+    def get_cookies(self):
+        if self.read_jar is None:
+            if self.jar_parsed:
+                return None
+
+            if self._headers:
+                raw_cookies = self._headers.get("cookie", None)
+            else:
+                raw_cookies = self.get_header("cookie")
+
+            if raw_cookies:
+                self.jar_parsed = True
+                self.read_jar = cookies.SimpleCookie(raw_cookies)
+            else:
+                self.jar_parsed = True
+                return None
+        return self.read_jar
 
     def get_url(self):
         if self._url:
