@@ -574,7 +574,7 @@ class _ASGI:
         self.SERVER_PORT = None
         self.SERVER_HOST = ""
         self.SERVER_SCHEME = "https" if self.server.options and self.server.options.cert_file_name is not None else "http"
-        self.SERVER_WS_SCHEME = "wss" if self.server.options and self.server.options.cert_file_name is not Noneelse "ws"
+        self.SERVER_WS_SCHEME = "wss" if self.server.options and self.server.options.cert_file_name is not None else "ws"
         self.task_factory_max_items = task_factory_max_items
         self.lifespan = lifespan
 
