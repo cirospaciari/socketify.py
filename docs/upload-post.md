@@ -47,7 +47,7 @@ Similar to `res.get_data()`, `res.get_json()` will decode the json as dict.
 async def upload_json(res, req):
     print(f"Posted to {req.get_url()}")
     # await all the data and parses as json, returns None if fail
-    info = await res.get_json()
+    info = res.get_json()
 
     print(info)
 
@@ -79,7 +79,7 @@ async def upload_multiple(res, req):
     content_type = req.get_header("content-type")
     # we can check the Content-Type to accept multiple formats
     if content_type == "application/json":
-        data = await res.get_json()
+        data = res.get_json()
     elif content_type == "application/x-www-form-urlencoded":
         data = await res.get_form_urlencoded()
     else:

@@ -1585,8 +1585,8 @@ class AppResponse:
         except Exception:
             return None  # invalid encoding
 
-    async def get_json(self):
-        data = await self.get_data()
+    def get_json(self):
+        data = self.get_data()
         try:
             return self.app._json_serializer.loads(data.getvalue().decode("utf-8"))
         except Exception:
