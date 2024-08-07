@@ -55,7 +55,7 @@ def graphiql_from(Query, Mutation=None):
         context_value = req.preserve()
 
         # get all incoming data and parses as json
-        body = await res.get_json()
+        body = res.get_json()
 
         query = body["query"]
         variables = body.get("variables", None)
