@@ -2617,7 +2617,7 @@ class App:
         websocket_factory_max_items=0,
         task_factory_max_items=100_000,
         lifespan=True,
-        idle_relaxation_time=0,
+        idle_relaxation_time=0.01,
     ):
 
         socket_options_ptr = ffi.new("struct us_socket_context_options_t *")
