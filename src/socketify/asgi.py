@@ -688,7 +688,7 @@ class _ASGI:
         asgi_app = self
         self.is_starting = True
         self.is_stopped = False
-        self.status = 0  # 0 starting, 1 ok, 2 error, 3 stoping, 4 stopped, 5 stopped with error, 6 no lifespan
+        self.status = 0  # 0 starting, 1 ok, 2 error, 3 stopping, 4 stopped, 5 stopped with error, 6 no lifespan
         self.status_message = ""
         self.stop_future = self.server.loop.create_future()
 
@@ -850,7 +850,7 @@ class ASGI:
 
         if block:
             run_task()  # run app on the main process too :)
-            # sigint everything to gracefull shutdown
+            # sigint everything to graceful shutdown
             import signal
             for pid in pid_list:
                 os.kill(pid, signal.SIGINT)

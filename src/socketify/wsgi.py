@@ -444,7 +444,7 @@ def wsgi(ssl, response, info, user_data):
                 app._data_refs[_id] = data_retry
                 lib.uws_res_on_aborted(ssl, response, wsgi_on_data_ref_abort_handler, data_retry._ptr)
                 lib.uws_res_on_writable(ssl, response, wsgi_on_writable_handler, data_retry._ptr)
-            elif result is None or (not bool(result.has_responded) and bool(result.ok)): # not reachs Content-Length
+            elif result is None or (not bool(result.has_responded) and bool(result.ok)): # not reaches Content-Length
                 logging.error(AssertionError("Content-Length do not match sended content"))
                 lib.uws_res_close(
                     ssl,
@@ -495,7 +495,7 @@ def wsgi(ssl, response, info, user_data):
                                 content_length,
                                 0,
                             )
-                            # this should be very very rare fot HTTP
+                            # this should be very very rare for HTTP
                             if not bool(result.ok):
                                 failed_chunks = []
                                 # just mark the chunks
@@ -522,7 +522,7 @@ def wsgi(ssl, response, info, user_data):
             app._data_refs[_id] = data_retry
             lib.uws_res_on_aborted(ssl, response, wsgi_on_data_ref_abort_handler, data_retry._ptr)
             lib.uws_res_on_writable(ssl, response, wsgi_on_writable_handler, data_retry._ptr)
-        elif result is None or (not bool(result.has_responded) and bool(result.ok)): # not reachs Content-Length
+        elif result is None or (not bool(result.has_responded) and bool(result.ok)): # not reaches Content-Length
             logging.error(AssertionError("Content-Length do not match sended content"))
             lib.uws_res_close(
                 ssl,
@@ -768,7 +768,7 @@ class WSGI:
 
         if block:
             run_task()  # run app on the main process too :)
-            # sigint everything to gracefull shutdown
+            # sigint everything to graceful shutdown
             import signal
             for pid in pid_list:
                 os.kill(pid, signal.SIGINT)

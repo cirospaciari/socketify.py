@@ -6,7 +6,7 @@ from socketify import App
 def middleware(*functions):
     def middleware_route(res, req):
         data = None
-        # cicle to all middlewares
+        # circle to all middlewares
         for function in functions:
             # call middlewares
             data = function(res, req, data)

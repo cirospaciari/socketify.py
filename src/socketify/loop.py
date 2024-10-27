@@ -101,7 +101,7 @@ class Loop:
                     self.loop.call_later(self.idle_relaxation_time, self._keep_alive)
             else:
                 self.uv_loop.run_nowait()
-                # be more agressive when needed
+                # be more aggressive when needed
                 self.loop.call_soon(self._keep_alive)
                 
     def create_task(self, *args, **kwargs):
@@ -194,7 +194,7 @@ class Loop:
         return self.uv_loop.get_native_loop()
 
     def _run_async_pypy(self, task, response=None):
-        # this garanties error 500 in case of uncaught exceptions, and can trigger the custom error handler
+        # this guarantees error 500 in case of uncaught exceptions, and can trigger the custom error handler
         # using an coroutine wrapper generates less overhead than using add_done_callback
         # this is an custom task/future with less overhead and that calls the first step
         future = self._task_factory(
@@ -203,7 +203,7 @@ class Loop:
         return None  # this future maybe already done and reused not safe to await
 
     def _run_async_cpython(self, task, response=None):
-        # this garanties error 500 in case of uncaught exceptions, and can trigger the custom error handler
+        # this guarantees error 500 in case of uncaught exceptions, and can trigger the custom error handler
         # using an coroutine wrapper generates less overhead than using add_done_callback
         # this is an custom task/future with less overhead and that calls the first step
         future = create_task(self.loop, task_wrapper(self.exception_handler, self.loop, response, task))

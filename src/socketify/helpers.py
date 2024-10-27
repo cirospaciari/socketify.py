@@ -70,7 +70,7 @@ async def sendfile(res, req, filename):
 
             def send_headers(res):
                 res.write_status(status)
-                # tells the broswer the last modified date
+                # tells the browser the last modified date
                 res.write_header(b"Last-Modified", last_modified)
 
                 # tells the browser that we support range
@@ -147,7 +147,7 @@ def middleware(*functions):
 
     # we use Optional data=None at the end so you can use and middleware inside a middleware
     def optimized_middleware_route(res, req, data=None):
-        # cicle to all middlewares
+        # circle to all middlewares
         for function in syncs:
             # call middlewares
             data = function(res, req, data)
@@ -156,7 +156,7 @@ def middleware(*functions):
                 return
 
         async def wrapper(res, req, data):
-            # cicle to all middlewares
+            # circle to all middlewares
             for function in asyncs:
                 # detect if is coroutine or not
                 if inspect.iscoroutinefunction(function):
@@ -182,7 +182,7 @@ def middleware(*functions):
 def sync_middleware(*functions):
     # we use Optional data=None at the end so you can use and middleware inside a middleware
     def middleware_route(res, req, data=None):
-        # cicle to all middlewares
+        # circle to all middlewares
         for function in functions:
             # call middlewares
             data = function(res, req, data)
@@ -198,7 +198,7 @@ def async_middleware(*functions):
     # we use Optional data=None at the end so you can use and middleware inside a middleware
     async def middleware_route(res, req, data=None):
         some_async_as_run = False
-        # cicle to all middlewares
+        # circle to all middlewares
         for function in functions:
             # detect if is coroutine or not
             if inspect.iscoroutinefunction(function):
