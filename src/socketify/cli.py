@@ -28,7 +28,7 @@ Options:
     --ws-close-on-backpressure-limit BOOLEAN            Close connections that hits maximum backpressure [default: False]
     --lifespan [auto|on|off]                            Lifespan implementation.  [default: auto]
     --interface [auto|asgi|asgi3|wsgi|ssgi|socketify]   Select ASGI (same as ASGI3), ASGI3, WSGI or SSGI as the application interface. [default: auto]
-    --disable-listen-log BOOLEAN                        Disable log when start listenning [default: False]
+    --disable-listen-log BOOLEAN                        Disable log when start listening [default: False]
     --version or -v                                     Display the socketify.py version and exit.
     --ssl-keyfile TEXT                                  SSL key file
     --ssl-certfile TEXT                                 SSL certificate file
@@ -188,10 +188,10 @@ def execute(args):
 
     elif interface == "ssgi":
         # if not is_ssgi(module):
-        #      return print("SSGI is in development yet but is comming soon")
+        #      return print("SSGI is in development yet but is coming soon")
         # from . import SSGI as Interface
         # interface = "ssgi"
-        return print("SSGI is in development yet but is comming soon")
+        return print("SSGI is in development yet but is coming soon")
     elif interface != "socketify":
         return print(f"{interface} interface is not supported yet")
 
@@ -322,7 +322,7 @@ def execute(args):
 
         run_app()  # run app on the main process too :)
 
-        # sigint everything to gracefull shutdown
+        # sigint everything to graceful shutdown
         import signal
         for pid in pid_list:
             os.kill(pid, signal.SIGINT)

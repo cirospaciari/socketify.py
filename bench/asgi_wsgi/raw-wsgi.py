@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
     # run_app()  # run app on the main process too :)
 
-    # # sigint everything to gracefull shutdown
+    # # sigint everything to graceful shutdown
     # import signal
     # for pid in pid_list:
     #     os.kill(pid, signal.SIGINT)

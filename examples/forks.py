@@ -27,7 +27,7 @@ for _ in range(1, multiprocessing.cpu_count()):
 
 run_app()  # run app on the main process too :)
 
-# sigint everything to gracefull shutdown
+# sigint everything to graceful shutdown
 import signal
 for pid in pid_list:
     os.kill(pid, signal.SIGINT)

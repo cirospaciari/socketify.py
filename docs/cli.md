@@ -30,7 +30,7 @@ Options:
     --ws-close-on-backpressure-limit BOOLEAN            Close connections that hits maximum backpressure [default: False]
     --lifespan [auto|on|off]                            Lifespan implementation.  [default: auto]
     --interface [auto|asgi|asgi3|wsgi|ssgi|socketify]   Select ASGI (same as ASGI3), ASGI3, WSGI or SSGI as the application interface. [default: auto]
-    --disable-listen-log BOOLEAN                        Disable log when start listenning [default: False]
+    --disable-listen-log BOOLEAN                        Disable log when start listening [default: False]
     --version or -v                                     Display the socketify.py version and exit.
     --ssl-keyfile TEXT                                  SSL key file
     --ssl-certfile TEXT                                 SSL certificate file

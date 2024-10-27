@@ -15,7 +15,7 @@ class SSGIHttpResponse:
     # send chunk of data, can be used to perform with less backpressure than using send
     # total_size is the sum of all lengths in bytes of all chunks to be sended
     # connection will end when total_size is met
-    # returns tuple(bool, bool) first bool represents if the chunk is succefully sended, the second if the connection has ended
+    # returns tuple(bool, bool) first bool represents if the chunk is successfully sended, the second if the connection has ended
     def send_chunk(self, chunk: Union[str, bytes, bytearray, memoryview], total_size: int = False) -> Awaitable:
         pass
 
