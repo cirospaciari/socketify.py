@@ -548,7 +548,7 @@ class _WSGI:
         self.server = App(options, task_factory_max_items=0)
         self.SERVER_HOST = None
         self.SERVER_PORT = None
-        self.SERVER_WS_SCHEME = "wss" if self.server.options else "ws"
+        self.SERVER_WS_SCHEME = "wss" if self.server._options else "ws"
         self.wsgi = app
         self.EMPTY_WSGI_BODY = WSGIBody(BytesIO())
         self.BASIC_ENVIRON = dict(os.environ)
@@ -671,7 +671,7 @@ class _WSGI:
                 "wsgi.errors": sys.stderr,
                 "wsgi.version": (1, 0),
                 "wsgi.run_once": False,
-                "wsgi.url_scheme": "https" if self.server.options and self.server.options.cert_file_name is not None else "http",
+                "wsgi.url_scheme": "https" if self.server._options and self.server._options.cert_file_name is not None else "http",
                 "wsgi.multithread": False,
                 "wsgi.multiprocess": False,
                 "wsgi.file_wrapper": None,  # No file wrapper support for now
