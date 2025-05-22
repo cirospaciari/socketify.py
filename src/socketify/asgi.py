@@ -107,7 +107,7 @@ def ws_upgrade(ssl, response, info, socket_context, user_data):
         "root_path": "",
         "path": url.decode("utf8"),
         "raw_path": url,
-        "query_string": ffi.unpack(info.query_string, info.query_string_size),
+        "query_string": ffi.unpack(info.query_string, info.query_string_size)[1:],
         "headers": headers,
         "subprotocols": [protocol] if protocol else [],
         "extensions": {
@@ -471,7 +471,7 @@ def asgi(ssl, response, info, user_data):
         "root_path": "",
         "path": url.decode("utf8"),
         "raw_path": url,
-        "query_string": ffi.unpack(info.query_string, info.query_string_size),
+        "query_string": ffi.unpack(info.query_string, info.query_string_size)[1:],
         "headers": headers,
     
     }
