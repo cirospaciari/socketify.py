@@ -1001,6 +1001,8 @@ def uws_generic_method_handler(res, req, user_data):
         response = AppResponse(res, app)
         request = AppRequest(req, app)
 
+        response._content_length = int(request.get_header("content-length"))
+
         try:
             if inspect.iscoroutinefunction(handler):
                 response.grab_aborted_handler()
@@ -1482,6 +1484,7 @@ class AppResponse:
         self._chunkFuture = None
         self._dataFuture = None
         self._data = None
+        self._content_length = None
 
     def cork(self, callback):
         self.app.loop.is_idle = False
@@ -2035,6 +2038,11 @@ class AppResponse:
         return self
 
     def on_data(self, handler):
+        if self.app.max_content_length is not None and self._content_length is not None:
+            if self._content_length > self.app.max_content_length:
+                self.write_status(413).end("413 Request Entity Too Large")
+                return self
+
         if not self.aborted:
             if hasattr(handler, "__call__"):
                 self._data_handler = handler
@@ -2618,6 +2626,7 @@ class App:
         task_factory_max_items=100_000,
         lifespan=True,
         idle_relaxation_time=0.01,
+        max_content_length=None,
     ):
 
         socket_options_ptr = ffi.new("struct us_socket_context_options_t *")
@@ -2625,6 +2634,7 @@ class App:
         self._options = options
         self._template = None
         self.lifespan = lifespan
+        self.max_content_length = max_content_length
         # keep socket data alive for CFFI
         self._socket_refs = {}
         self._native_options = []
