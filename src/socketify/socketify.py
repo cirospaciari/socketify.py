@@ -2618,6 +2618,7 @@ class App:
         task_factory_max_items=100_000,
         lifespan=True,
         idle_relaxation_time=0.01,
+        max_content_length=0,
     ):
 
         socket_options_ptr = ffi.new("struct us_socket_context_options_t *")
@@ -2688,7 +2689,6 @@ class App:
             socket_options.ssl_prefer_low_memory_usage = ffi.cast(
                 "int", options.ssl_prefer_low_memory_usage
             )
-
         else:
             self.is_ssl = False
             self.SSL = ffi.cast("int", 0)
@@ -2706,6 +2706,7 @@ class App:
         self._ptr = ffi.new_handle(self)
         if bool(lib.uws_constructor_failed(self.SSL, self.app)):
             raise RuntimeError("Failed to create connection")
+        lib.uws_set_max_content_length(self.app, max_content_length)
 
         self.handlers = []
         self.error_handler = None
