@@ -1349,7 +1349,9 @@ class WebSocket:
                 lib.uws_ws_send_fragment(self.app.SSL, self.ws, b"", 0, compress)
                 return self
             else:
-                data = self.app._json_serializer.dumps(message).encode("utf-8")
+                data = self.app._json_serializer.dumps(message)
+                if isinstance(data, str):
+                    data = data.encode("utf-8")
 
             return SendStatus(
                 lib.uws_ws_send_fragment(
@@ -1370,7 +1372,9 @@ class WebSocket:
                 lib.uws_ws_send_last_fragment(self.app.SSL, self.ws, b"", 0, compress)
                 return self
             else:
-                data = self.app._json_serializer.dumps(message).encode("utf-8")
+                data = self.app._json_serializer.dumps(message)
+                if isinstance(data, str):
+                    data = data.encode("utf-8")
 
             return SendStatus(
                 lib.uws_ws_send_last_fragment(
@@ -1393,7 +1397,9 @@ class WebSocket:
                 )
                 return self
             else:
-                data = self.app._json_serializer.dumps(message).encode("utf-8")
+                data = self.app._json_serializer.dumps(message)
+                if isinstance(data, str):
+                    data = data.encode("utf-8")
 
             return SendStatus(
                 lib.uws_ws_send_first_fragment_with_opcode(
@@ -1420,7 +1426,9 @@ class WebSocket:
                 )
                 return self
             else:
-                data = self.app._json_serializer.dumps(message).encode("utf-8")
+                data = self.app._json_serializer.dumps(message)
+                if isinstance(data, str):
+                    data = data.encode("utf-8")
 
             return SendStatus(
                 lib.uws_ws_send_with_options(
@@ -1447,7 +1455,9 @@ class WebSocket:
                 lib.uws_ws_end(self.app.SSL, self.ws, b"", 0)
                 return self
             else:
-                data = self.app._json_serializer.dumps(message).encode("utf-8")
+                data = self.app._json_serializer.dumps(message)
+                if isinstance(data, str):
+                    data = data.encode("utf-8")
 
             lib.uws_ws_end(self.app.SSL, self.ws, code, data, len(data))
         finally:
@@ -1851,7 +1861,9 @@ class AppResponse:
                     )
                 return self
             else:
-                data = self.app._json_serializer.dumps(message).encode("utf-8")
+                data = self.app._json_serializer.dumps(message)
+                if isinstance(data, str):
+                    data = data.encode("utf-8")
                 content_type = b"application/json"
 
             if isinstance(status, int):
@@ -1912,7 +1924,9 @@ class AppResponse:
                 return self
             else:
                 self.write_header(b"Content-Type", b"application/json")
-                data = self.app._json_serializer.dumps(message).encode("utf-8")
+                data = self.app._json_serializer.dumps(message)
+                if isinstance(data, str):
+                    data = data.encode("utf-8")
             lib.uws_res_end(
                 self.app.SSL, self.res, data, len(data), 1 if end_connection else 0
             )
@@ -1955,9 +1969,9 @@ class AppResponse:
             elif isinstance(status_or_status_text, bytes):
                 data = status_or_status_text
             else:
-                data = self.app._json_serializer.dumps(status_or_status_text).encode(
-                    "utf-8"
-                )
+                data = self.app._json_serializer.dumps(status_or_status_text)
+                if isinstance(data, str):
+                    data = data.encode("utf-8")
 
             lib.uws_res_write_status(self.app.SSL, self.res, data, len(data))
         return self
@@ -1970,7 +1984,9 @@ class AppResponse:
             elif isinstance(key, bytes):
                 key_data = key
             else:
-                key_data = self.app._json_serializer.dumps(key).encode("utf-8")
+                key_data = self.app._json_serializer.dumps(key)
+                if isinstance(key_data, str):
+                    key_data = key_data.encode("utf-8")
 
             if isinstance(value, int):
                 lib.uws_res_write_header_int(
@@ -1985,7 +2001,9 @@ class AppResponse:
             elif isinstance(value, bytes):
                 value_data = value
             else:
-                value_data = self.app._json_serializer.dumps(value).encode("utf-8")
+                value_data = self.app._json_serializer.dumps(value)
+                if isinstance(value_data, str):
+                    value_data = value_data.encode("utf-8")
             lib.uws_res_write_header(
                 self.app.SSL,
                 self.res,
@@ -2014,7 +2032,9 @@ class AppResponse:
             elif isinstance(message, bytes):
                 data = message
             else:
-                data = self.app._json_serializer.dumps(message).encode("utf-8")
+                data = self.app._json_serializer.dumps(message)
+                if isinstance(data, str):
+                    data = data.encode("utf-8")
             lib.uws_res_write(self.app.SSL, self.res, data, len(data))
         return self
 
@@ -2461,7 +2481,9 @@ class AppRequest:
         elif isinstance(lower_case_header, bytes):
             data = lower_case_header
         else:
-            data = self.app._json_serializer.dumps(lower_case_header).encode("utf-8")
+            data = self.app._json_serializer.dumps(lower_case_header)
+            if isinstance(data, str):
+                data = data.encode("utf-8")
 
         buffer = ffi.new("char**")
         length = lib.uws_req_get_header(self.req, data, len(data), buffer)
@@ -2498,7 +2520,9 @@ class AppRequest:
         elif isinstance(key, bytes):
             key_data = key
         else:
-            key_data = self.app._json_serializer.dumps(key).encode("utf-8")
+            key_data = self.app._json_serializer.dumps(key)
+            if isinstance(key_data, str):
+                key_data = key_data.encode("utf-8")
 
         length = lib.uws_req_get_query(self.req, key_data, len(key_data), buffer)
         buffer_address = ffi.addressof(buffer, 0)[0]
@@ -3011,7 +3035,9 @@ class App:
         elif message is None:
             message_data = b""
         else:
-            message_data = self._json_serializer.dumps(message).encode("utf-8")
+            message_data = self._json_serializer.dumps(message)
+            if isinstance(message_data, str):
+                message_data = message_data.encode("utf-8")
 
         return bool(
             lib.uws_publish(
