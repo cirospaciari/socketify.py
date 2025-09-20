@@ -2512,15 +2512,16 @@ class AppRequest:
     def get_parameters(self):
         if self._params:
             return self._params
-        self._params = []
+        params = []
         i = 0
         while True:
             value = self.get_parameter(i)
             if value:
-                self._params.append(value)
+                params.append(value)
             else:
                 break
             i = i + 1
+        self._params = params
         return self._params
 
     def get_parameter(self, index):
