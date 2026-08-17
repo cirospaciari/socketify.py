@@ -3371,16 +3371,18 @@ class App:
                 if isinstance(port, int)
                 else ffi.cast("int", 0)
             )
-            options.host = (
+            host_cdata = (
                 ffi.new("char[]", host.encode("utf-8"))
                 if isinstance(host, str)
                 else ffi.NULL
             )
+            options.host = host_cdata
             options.options = (
                 ffi.cast("int", options_)
                 if isinstance(options_, int)
                 else ffi.cast("int", 0)
             )
+            self._native_options.append(host_cdata) # Keep alive (possible) char[]
             self.native_options_listen = native_options  # Keep alive native_options
             lib.uws_app_listen_with_config(
                 self.SSL, self.app, options, uws_generic_listen_handler, self._ptr
@@ -3401,12 +3403,14 @@ class App:
                 native_options = ffi.new("uws_app_listen_config_t *")
                 options = native_options[0]
                 options.port = ffi.cast("int", port_or_options.port)
-                options.host = (
+                host_cdata = (
                     ffi.NULL
                     if port_or_options.host is None
                     else ffi.new("char[]", port_or_options.host.encode("utf-8"))
                 )
+                options.host = host_cdata
                 options.options = ffi.cast("int", port_or_options.options)
+                self._native_options.append(host_cdata) # Keep alive (possible) char[]
                 self.native_options_listen = native_options  # Keep alive native_options
                 lib.uws_app_listen_with_config(
                     self.SSL, self.app, options, uws_generic_listen_handler, self._ptr
